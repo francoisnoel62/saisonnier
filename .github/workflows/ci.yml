@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: saisonnier
+          POSTGRES_DB: saisonnier_test
+          # Base jetable, comme en local (docker-compose.yml) : aucun mot de passe à versionner.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saisonnier -d saisonnier_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+
+    # Mêmes variables que .env.test.local : base jetable, emails en console (pas de RESEND_API_KEY).
+    env:
+      DATABASE_URL: postgres://saisonnier@localhost:5432/saisonnier_test
+      BETTER_AUTH_URL: http://localhost:3100
+      EMAIL_FROM: onboarding@resend.dev
+      ADMIN_NOTIFICATION_EMAIL: fondateur@example.com
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Secret propre à chaque exécution, jamais versionné.
+      - run: echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:int
+
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore

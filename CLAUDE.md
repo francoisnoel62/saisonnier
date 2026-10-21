@@ -23,8 +23,12 @@
 | `npm run db:generate` | migration SQL depuis `src/lib/db/schema` (`--custom` pour une migration de données) |
 | `npm run db:migrate` / `db:check` / `db:studio` | appliquer, vérifier, explorer |
 | `npm run admin:grant -- <email>` | passer en `admin` un compte existant et vérifié (autre base : préfixer `DATABASE_URL=…`) |
+| `npm run e2e` / `e2e:ui` | tests Playwright (`e2e/*.spec.ts`), projets `chromium` et `mobile` (Pixel 7), sur `saisonnier_test` |
 
-Le plan 05 ajoute `e2e`.
+- L'E2E lance son propre `next dev -p 3100` (dossier `.next-e2e`) : il tourne en même temps que `npm run dev`.
+- Il vide la base de test à chaque exécution, référentiels exceptés : tout nouveau référentiel s'ajoute à `REFERENCE_TABLES` (`e2e/helpers/db.ts`). Il refuse toute base dont le nom ne finit pas par `_test`.
+- Chaque plan ajoute son `e2e/<sujet>.spec.ts` ; chaque test porte le nom du point de contrôle qu'il couvre (ex. `§9 — CV privé`). Fixtures `asCandidate`, `asEmployer`, `asAdmin` et `db` dans `e2e/fixtures.ts`.
+- La CI (`.github/workflows/ci.yml`) enchaîne lint, typecheck, tests, intégration et E2E.
 
 ## Base de données
 
