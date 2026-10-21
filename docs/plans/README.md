@@ -106,8 +106,8 @@ Le cahier des charges laisse ces points ouverts. Les plans appliquent les choix 
 | H1 | Un compte = un rôle (candidat ou employeur), choisi à l'inscription. Le rôle admin est attribué par un script. | 03 |
 | H2 | Chaque rattachement employeur ↔ entreprise est vérifié par l'admin, premier déposant compris. Un déposant vérifié publie ensuite sans modération préalable. Avant la vérification, ses annonces sont « en attente » et invisibles. | 13, 14 |
 | H3 | Dossier complet = nom + téléphone + CV PDF (≤ 4 Mo). Les coordonnées de candidature ne sont envoyées au navigateur que si le dossier est complet. | 10, 11 |
-| H4 | Dates : par défaut, le contrat doit être entièrement inclus dans la disponibilité. L'option « flexible » accepte un chevauchement. Une offre sans dates précises (durée seule) est exclue dès qu'un critère de dates est actif. | 08 |
-| H5 | Salaire : on compare uniquement la base choisie (net ou brut), uniquement les montants **mensuels**, sur la borne basse de la fourchette. | 08 |
+| H4 | Dates : par défaut, le contrat doit être entièrement inclus dans la disponibilité. L'option « flexible » accepte un chevauchement. Une offre sans dates précises (durée seule, ou date de début et durée) est exclue dès qu'un critère de dates est actif. | 08 |
+| H5 | Salaire : on compare uniquement la base choisie (net ou brut), uniquement les montants **mensuels**, sur la borne basse de la fourchette. Le minimum exige une base ; la base seule ne restreint rien. | 08 |
 | H6 | Langues : le critère « langues que je parle » retient les offres sans langue exigée, ou celles dont toutes les langues exigées font partie de la sélection. | 08 |
 | H7 | Horaires : temps plein ou partiel, heures hebdomadaires et précisions libres. Le filtre porte sur plein / partiel. À affiner (coupures, travail de nuit…). | 07, 08 |
 | H8 | Le critère expérience devient le filtre « Débutants acceptés ». Le critère permis devient le filtre « Permis non exigé ». | 08 |

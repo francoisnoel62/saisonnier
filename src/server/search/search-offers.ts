@@ -1,0 +1,122 @@
+import { asc, desc, eq } from "drizzle-orm"
+
+import { publicCompanyName } from "@/domain/application"
+import type { DurationUnit, OfferOrigin, Season } from "@/domain/offer"
+import { todayInParis } from "@/domain/offer-activity"
+import { displayedSalary, type SalaryStatement } from "@/domain/salary"
+import type { SearchCriteria } from "@/domain/search-criteria"
+import type { TriState } from "@/domain/tri-state"
+import { db } from "@/lib/db"
+import { companies, departments, offers } from "@/lib/db/schema"
+
+import { searchConditions } from "./build-conditions"
+
+// Ce qu'affiche la carte d'une offre dans les résultats (plan 09), rien de plus : ni contact, ni
+// identité masquée.
+export type OfferListItem = {
+  id: string
+  title: string
+  // publicCompanyName : « Entreprise confidentielle » si l'identité est masquée.
+  companyName: string
+  communeName: string
+  department: { code: string; name: string }
+  season: Season
+  // Des dates précises, ou une durée seule.
+  startDate: string | null
+  endDate: string | null
+  durationValue: number | null
+  durationUnit: DurationUnit | null
+  // displayedSalary : null si aucun salaire n'est indiqué.
+  salary: SalaryStatement | null
+  housing: TriState
+  meals: TriState
+  origin: OfferOrigin
+}
+
+export const DEFAULT_PAGE_SIZE = 20
+
+export type SearchOptions = {
+  // À partir de 1.
+  page?: number
+  pageSize?: number
+  // AAAA-MM-JJ, Europe/Paris ; par défaut, aujourd'hui.
+  today?: string
+}
+
+function assertPositiveInteger(name: string, value: number) {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new RangeError(`${name} doit être un entier positif : ${value}.`)
+  }
+}
+
+// Les offres actives satisfaisant tous les critères, les plus récemment publiées d'abord, et
+// leur nombre total. L'identifiant départage les dates égales : la pagination est stable.
+export async function searchOffers(
+  criteria: SearchCriteria,
+  {
+    page = 1,
+    pageSize = DEFAULT_PAGE_SIZE,
+    today = todayInParis(new Date()),
+  }: SearchOptions = {},
+): Promise<{ items: OfferListItem[]; total: number }> {
+  assertPositiveInteger("page", page)
+  assertPositiveInteger("pageSize", pageSize)
+  const where = searchConditions(criteria, today)
+
+  const [rows, total] = await Promise.all([
+    db
+      .select({
+        id: offers.id,
+        title: offers.title,
+        hideCompanyIdentity: offers.hideCompanyIdentity,
+        company: {
+          legalName: companies.legalName,
+          displayName: companies.displayName,
+        },
+        communeName: offers.communeName,
+        department: { code: departments.code, name: departments.name },
+        season: offers.season,
+        startDate: offers.startDate,
+        endDate: offers.endDate,
+        durationValue: offers.durationValue,
+        durationUnit: offers.durationUnit,
+        salaryNetMinCents: offers.salaryNetMinCents,
+        salaryNetMaxCents: offers.salaryNetMaxCents,
+        salaryNetUnit: offers.salaryNetUnit,
+        salaryGrossMinCents: offers.salaryGrossMinCents,
+        salaryGrossMaxCents: offers.salaryGrossMaxCents,
+        salaryGrossUnit: offers.salaryGrossUnit,
+        housing: offers.housing,
+        meals: offers.meals,
+        origin: offers.origin,
+      })
+      .from(offers)
+      .innerJoin(companies, eq(companies.id, offers.companyId))
+      .innerJoin(departments, eq(departments.code, offers.departmentCode))
+      .where(where)
+      .orderBy(desc(offers.publishedAt), asc(offers.id))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.$count(offers, where),
+  ])
+
+  return {
+    items: rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      companyName: publicCompanyName(row),
+      communeName: row.communeName,
+      department: row.department,
+      season: row.season,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      durationValue: row.durationValue,
+      durationUnit: row.durationUnit,
+      salary: displayedSalary(row),
+      housing: row.housing,
+      meals: row.meals,
+      origin: row.origin,
+    })),
+    total,
+  }
+}
