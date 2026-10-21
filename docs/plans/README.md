@@ -73,7 +73,7 @@ Après le plan 07, deux pistes peuvent avancer en parallèle :
 | 09 | [Interface de recherche](09-interface-recherche.md) | 08 | M | filtres dynamiques + critères actifs | ☑ |
 | 10 | [Dossier candidat & CV privé](10-dossier-candidat-cv.md) | 05 | M | dépôt et téléchargement du CV privé | ☑ |
 | 11 | [Fiche offre & candidature](11-fiche-offre-candidature.md) | 06, 09, 10 | M | fiche « non précisé » + candidature directe | ☑ |
-| 12 | [Sauvegarde & suivi](12-sauvegarde-suivi.md) | 11 | S | « Mes offres », « J'ai postulé » | ☐ |
+| 12 | [Sauvegarde & suivi](12-sauvegarde-suivi.md) | 11 | S | « Mes offres », « J'ai postulé » | ☑ |
 | 13 | [Entreprise & vérification](13-entreprise-verification.md) | 07 | M | rattachement employeur + file de vérification | ☐ |
 | 14 | [Dépôt & gestion des annonces](14-depot-annonces-employeur.md) | 11, 13 | L | formulaire structuré + liste employeur | ☐ |
 | 15 | [Back-office : collecte & modération](15-back-office-collecte.md) | 14 | M | annonces collectées, référentiels, KPI admin | ☐ |
