@@ -15,6 +15,13 @@
       "when": 1792577546481,
       "tag": "0001_referentiels",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792579454954,
+      "tag": "0002_auth",
+      "breakpoints": true
     }
   ]
 }

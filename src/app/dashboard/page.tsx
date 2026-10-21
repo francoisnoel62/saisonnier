@@ -4,10 +4,14 @@ import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { requireUser } from "@/lib/dal"
 
 import data from "./data.json"
 
-export default function Page() {
+// Démonstration du bloc dashboard-01, supprimée au plan 04.
+export default async function Page() {
+  await requireUser()
+
   return (
     <SidebarProvider
       style={

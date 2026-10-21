@@ -15,13 +15,14 @@
 | `npm run dev` | serveur de développement |
 | `npm run build` | build de production |
 | `npm run lint` | ESLint |
-| `npm run typecheck` | `tsc --noEmit` |
+| `npm run typecheck` | `next typegen` (types des routes) puis `tsc --noEmit` |
 | `npm test` | tests unitaires Vitest (`src/**/*.test.ts`) |
 | `npm run test:int` | tests d'intégration (`src/**/*.int.test.ts`) sur `saisonnier_test`, migrations appliquées au démarrage |
 | `npm run format` | Prettier (+ tri des classes Tailwind) |
 | `npm run db:up` / `db:down` | Postgres 18 local (Docker) : bases `saisonnier` et `saisonnier_test` |
 | `npm run db:generate` | migration SQL depuis `src/lib/db/schema` (`--custom` pour une migration de données) |
 | `npm run db:migrate` / `db:check` / `db:studio` | appliquer, vérifier, explorer |
+| `npm run admin:grant -- <email>` | passer en `admin` un compte existant et vérifié (autre base : préfixer `DATABASE_URL=…`) |
 
 Le plan 05 ajoute `e2e`.
 
@@ -32,6 +33,14 @@ Le plan 05 ajoute `e2e`.
 - Local : `.env.development.local` et `.env.test.local` (non versionnés). Vercel : Neon (Postgres 18) injecte `DATABASE_URL` (poolée) et `DATABASE_URL_UNPOOLED` (migrations).
 - Les migrations versionnées dans `drizzle/` s'appliquent au build Vercel (`vercel.json`) ; chaque preview migre sa branche Neon.
 - Les référentiels (régions, départements, métiers, domaines exclus) sont insérés par migration SQL en `ON CONFLICT DO NOTHING`, jamais par un script manuel.
+
+## Authentification
+
+- Better Auth 1.7 (`src/lib/auth.ts`), email + mot de passe, vérification d'email obligatoire. Rôles `candidate` / `employer` / `admin` sur `user.role` (`input: false` : jamais fourni par le client ; contrainte CHECK en base).
+- Tables dans `src/lib/db/schema/auth.ts` : régénérées par `npx auth@latest generate`, puis réalignées sur le projet (`casing`, `timestamptz`). Ne pas renommer tables ni propriétés.
+- Pages : `getSession` / `requireUser` / `requireRole` de `src/lib/dal.ts`. Accueil de chaque rôle : `homePathFor` (`src/domain/roles.ts`).
+- La limitation de débit de Better Auth ne s'applique qu'aux requêtes vers `/api/auth` : connexion, renvois de liens et mots de passe passent par `authClient`. Une Server Action (`auth.api.*`) n'est utilisée que si le serveur doit décider (ex. rôle employeur à l'inscription).
+- Sans `RESEND_API_KEY`, les emails s'affichent dans la console du serveur, liens compris.
 
 ## Conventions
 
