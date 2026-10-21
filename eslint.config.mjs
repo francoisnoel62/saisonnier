@@ -9,10 +9,16 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".next-e2e/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Rapports Playwright
+    "playwright-report/**",
+    "test-results/**",
   ]),
+  // `use`, dans les fixtures Playwright, n'est pas un hook React.
+  { files: ["e2e/**"], rules: { "react-hooks/rules-of-hooks": "off" } },
 ])
 
 export default eslintConfig
