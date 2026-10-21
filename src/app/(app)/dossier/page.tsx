@@ -1,10 +1,12 @@
-import { LockIcon } from "lucide-react"
+import { ArrowLeftIcon, LockIcon } from "lucide-react"
 import type { Metadata } from "next"
+import Link from "next/link"
 
 import { ApplicationMessageForm } from "@/components/dossier/application-message-form"
 import { ContactDetailsForm } from "@/components/dossier/contact-details-form"
 import { DocumentField } from "@/components/dossier/document-field"
 import { DossierStatus } from "@/components/dossier/dossier-banner"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -13,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { dossierStatus } from "@/domain/candidate-dossier"
+import { safeNextPath } from "@/domain/redirects"
 import { requireRole } from "@/lib/dal"
 import { getDossier } from "@/server/candidates/dossier"
 import {
@@ -24,9 +27,17 @@ export const metadata: Metadata = { title: "Mon dossier" }
 
 // Dossier du candidat (§5) : exigé pour candidater, jamais pour rechercher. Les documents sont
 // privés : ni les employeurs ni l'admin n'y ont accès (H11).
-export default async function DossierPage() {
+export default async function DossierPage({
+  searchParams,
+}: PageProps<"/dossier">) {
   const { user } = await requireRole("candidate")
-  const dossier = await getDossier(user.id)
+  const [dossier, { retour }] = await Promise.all([
+    getDossier(user.id),
+    searchParams,
+  ])
+  // ?retour=/offres/<id> : le candidat vient d'une fiche et y retournera pour candidater.
+  const back = safeNextPath(retour)
+  const offerPath = back?.startsWith("/offres/") ? back : null
   const { missing } = dossierStatus({
     name: dossier.name,
     phone: dossier.phone,
@@ -35,6 +46,19 @@ export default async function DossierPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      {offerPath && (
+        <Button
+          asChild
+          variant={missing.length === 0 ? "default" : "ghost"}
+          size="lg"
+          className="self-start"
+        >
+          <Link href={offerPath}>
+            <ArrowLeftIcon data-icon="inline-start" aria-hidden />
+            Revenir à l&rsquo;offre
+          </Link>
+        </Button>
+      )}
       <DossierStatus missing={missing} />
 
       <Card>

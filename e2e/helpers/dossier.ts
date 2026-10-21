@@ -20,8 +20,13 @@ export async function uploadCv(page: Page, file: ReturnType<typeof pdfFile>) {
 }
 
 // Téléphone et CV : avec le nom du compte, le dossier est complet (H3).
+// Déjà sur /dossier (arrivée depuis une fiche, avec ?retour=), la page est gardée.
 export async function completeDossier(page: Page, label: string) {
-  await openDossier(page)
+  if (new URL(page.url()).pathname === "/dossier") {
+    await page.waitForLoadState("networkidle")
+  } else {
+    await openDossier(page)
+  }
   await page.getByLabel("Téléphone").fill("06 39 98 12 34")
   await page
     .getByRole("button", { name: "Enregistrer mes coordonnées" })

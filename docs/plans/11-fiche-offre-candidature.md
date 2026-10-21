@@ -67,11 +67,11 @@ Les coordonnées de candidature ne sont révélées qu'à un candidat dont le do
 
 ## Critères d'acceptation
 
-- [ ] §9 : aucun parcours de candidature ordinaire ne mène à un job-board exclu.
-- [ ] §9 : les inconnues ne sont jamais converties ; net, brut et unités restent distingués.
-- [ ] §9 : un dossier complet est exigé pour candidater, et aucun document n'est envoyé automatiquement.
-- [ ] §7 : le mode de candidature est expliqué sur chaque annonce.
-- [ ] §7 : l'anonymat est réservé au canal chargé de recrutement.
+- [x] §9 : aucun parcours de candidature ordinaire ne mène à un job-board exclu.
+- [x] §9 : les inconnues ne sont jamais converties ; net, brut et unités restent distingués.
+- [x] §9 : un dossier complet est exigé pour candidater, et aucun document n'est envoyé automatiquement.
+- [x] §7 : le mode de candidature est expliqué sur chaque annonce.
+- [x] §7 : l'anonymat est réservé au canal chargé de recrutement.
 
 ## Hors périmètre
 
