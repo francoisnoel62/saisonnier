@@ -71,7 +71,7 @@ Après le plan 07, deux pistes peuvent avancer en parallèle :
 | 07 | [Modèle Offre & règles métier](07-modele-offre-regles-metier.md) | 05 | L | schéma des offres, règles testées, données de démo | ☑ |
 | 08 | [Moteur de recherche](08-moteur-recherche.md) | 07 | M | `searchOffers` conforme au §4, prouvé | ☑ |
 | 09 | [Interface de recherche](09-interface-recherche.md) | 08 | M | filtres dynamiques + critères actifs | ☑ |
-| 10 | [Dossier candidat & CV privé](10-dossier-candidat-cv.md) | 05 | M | dépôt et téléchargement du CV privé | ☐ |
+| 10 | [Dossier candidat & CV privé](10-dossier-candidat-cv.md) | 05 | M | dépôt et téléchargement du CV privé | ☑ |
 | 11 | [Fiche offre & candidature](11-fiche-offre-candidature.md) | 06, 09, 10 | M | fiche « non précisé » + candidature directe | ☐ |
 | 12 | [Sauvegarde & suivi](12-sauvegarde-suivi.md) | 11 | S | « Mes offres », « J'ai postulé » | ☐ |
 | 13 | [Entreprise & vérification](13-entreprise-verification.md) | 07 | M | rattachement employeur + file de vérification | ☐ |
