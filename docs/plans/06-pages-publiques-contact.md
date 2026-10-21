@@ -87,9 +87,9 @@ Construire trois choses :
 
 ## Critères d'acceptation
 
-- [ ] Un visiteur non connecté voit l'accueil, les pages légales et le contact, mais jamais une offre.
-- [ ] Un message de contact est enregistré, notifié au fondateur (en console en local) et traitable dans `/admin/demandes`.
-- [ ] Les pages légales existent, sont signalées comme brouillons et ne décrivent que la V1.
+- [x] Un visiteur non connecté voit l'accueil, les pages légales et le contact, mais jamais une offre.
+- [x] Un message de contact est enregistré, notifié au fondateur (en console en local) et traitable dans `/admin/demandes`.
+- [x] Les pages légales existent, sont signalées comme brouillons et ne décrivent que la V1.
 
 ## Hors périmètre
 

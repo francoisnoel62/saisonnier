@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { site } from "@/config/site"
+import { env } from "@/lib/env"
 
 import "./globals.css"
 
@@ -18,6 +19,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+  // Base des URL relatives (Open Graph, canonical).
+  metadataBase: new URL(env.BETTER_AUTH_URL),
   title: {
     template: `%s · ${site.name}`,
     default: site.name,

@@ -5,6 +5,8 @@ import { env } from "@/lib/env"
 
 export type Email = {
   to: string
+  // Adresse de réponse (ex. l'expéditeur d'un message de contact).
+  replyTo?: string
   subject: string
   text: string
   html: string
@@ -13,7 +15,7 @@ export type Email = {
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null
 
 // Sans clé Resend (en local, en test), l'email s'affiche dans la console : liens compris.
-export async function sendEmail({ to, subject, text, html }: Email) {
+export async function sendEmail({ to, replyTo, subject, text, html }: Email) {
   if (!resend) {
     console.info(
       `\n──── Email (console) ────\nÀ : ${to}\nObjet : ${subject}\n\n${text}\n─────────────────────────\n`,
@@ -24,6 +26,7 @@ export async function sendEmail({ to, subject, text, html }: Email) {
   const { error } = await resend.emails.send({
     from: `${site.name} <${env.EMAIL_FROM}>`,
     to,
+    replyTo,
     subject,
     text,
     html,

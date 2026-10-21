@@ -5,6 +5,7 @@ import {
   FolderOpenIcon,
   InboxIcon,
   LayoutDashboardIcon,
+  LifeBuoyIcon,
   ListChecksIcon,
   type LucideIcon,
   MegaphoneIcon,
@@ -67,9 +68,10 @@ export const navigation: Record<Role, NavItem[]> = {
   ],
 }
 
-// Entrées communes à tous les rôles, en bas de la barre latérale (le plan 06 y ajoute Contact).
+// Entrées communes à tous les rôles, en bas de la barre latérale.
 export const secondaryNavigation: NavItem[] = [
   { title: "Mon compte", url: "/compte", icon: UserRoundIcon },
+  { title: "Contact", url: "/contact", icon: LifeBuoyIcon },
 ]
 
 // L'entrée la plus spécifique dont l'URL est celle de la page ou l'un de ses parents :

@@ -92,3 +92,42 @@ export function resetPasswordEmail({
     }),
   }
 }
+
+// Notification au fondateur : tout le contenu vient d'un visiteur, d'où l'échappement du gabarit.
+export function contactNotificationEmail({
+  topic,
+  name,
+  email,
+  companyName,
+  phone,
+  message,
+  url,
+}: {
+  topic: string
+  name: string
+  email: string
+  companyName?: string
+  phone?: string
+  message: string
+  url: string
+}): Template {
+  const greeting = "Nouveau message de contact."
+  const details = [
+    `Sujet : ${topic}`,
+    `De : ${name} <${email}>`,
+    ...(companyName ? [`Entreprise : ${companyName}`] : []),
+    ...(phone ? [`Téléphone : ${phone}`] : []),
+  ]
+  const footer = "Répondre à cet email écrit directement à l'expéditeur."
+
+  return {
+    subject: `Nouveau message — ${topic}`,
+    text: `${greeting}\n\n${details.join("\n")}\n\n${message}\n\n${url}\n\n${footer}`,
+    html: layout({
+      greeting,
+      paragraphs: [...details, message],
+      action: { label: "Ouvrir la boîte de réception", url },
+      footer,
+    }),
+  }
+}
