@@ -8,7 +8,13 @@ nextEnv.loadEnvConfig(process.cwd())
 
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Hors de Next, « server-only » refuse tout import : les tests importent les modules serveur.
+      "server-only": fileURLToPath(
+        new URL("./src/test/server-only.ts", import.meta.url),
+      ),
+    },
   },
   test: {
     environment: "node",

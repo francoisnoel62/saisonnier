@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm"
-import { check, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import {
+  check,
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core"
 
 import {
   APPLICATION_MESSAGE_MAX_LENGTH,
@@ -7,7 +16,8 @@ import {
 } from "@/domain/candidate-dossier"
 
 import { user } from "./auth"
-import { notBlank } from "./columns"
+import { notBlank, timestamps } from "./columns"
+import { offers } from "./offers"
 
 // Dossier du candidat (plan 10). Le nom vient de user.name et l'email du compte. Les documents
 // sont dans un stockage privé : la table n'en garde que le chemin, jamais une URL publique.
@@ -67,3 +77,31 @@ export const candidateProfiles = pgTable(
 )
 
 export type CandidateProfile = typeof candidateProfiles.$inferSelect
+
+// Suivi des offres par le candidat (plan 12) : sauvegardée, et « J'ai postulé » déclaré à la main.
+// Rien d'autre : ni statut de pipeline, ni note, ni rappel (§5). Une ligne sans aucun des deux
+// n'a pas de raison d'être : elle est supprimée.
+export const offerTracking = pgTable(
+  "offer_tracking",
+  {
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    offerId: uuid()
+      .notNull()
+      .references(() => offers.id, { onDelete: "cascade" }),
+    savedAt: timestamp({ withTimezone: true }),
+    appliedAt: timestamp({ withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.offerId] }),
+    check(
+      "offer_tracking_not_empty",
+      sql`${t.savedAt} is not null or ${t.appliedAt} is not null`,
+    ),
+    index().on(t.offerId),
+  ],
+)
+
+export type OfferTracking = typeof offerTracking.$inferSelect
