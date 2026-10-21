@@ -1,0 +1,23 @@
+# Postgres local (le projet Neon est en Postgres 18, défaut depuis juin 2026).
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: saisonnier
+      POSTGRES_PASSWORD: saisonnier
+      POSTGRES_DB: saisonnier
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18 range ses données sous /var/lib/postgresql/<version>/
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saisonnier -d saisonnier"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  pgdata:
