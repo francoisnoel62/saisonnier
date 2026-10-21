@@ -35,3 +35,7 @@ export async function getOfferWithRelations(id: string) {
     },
   })
 }
+
+export type OfferWithRelations = NonNullable<
+  Awaited<ReturnType<typeof getOfferWithRelations>>
+>

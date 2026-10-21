@@ -1,5 +1,10 @@
 import { site } from "@/config/site"
 
+import {
+  findBlockedTargets,
+  hostOf,
+  type BlockedTarget,
+} from "./blocked-domains"
 import type { ApplicationChannel } from "./offer"
 
 // Mode de candidature et identité publique de l'entreprise (§3, §7).
@@ -62,4 +67,107 @@ export function applicationModeExplanation(offer: ApplicationFields) {
     ? `par ${direct.join(", ")} ou sur son site officiel`
     : `par ${direct.join(" ou ")}`
   return `Candidature directe auprès de l'employeur ${means}. Vous envoyez vous-même votre CV.`
+}
+
+// Canal « chargé de recrutement » : qui reçoit la candidature, et pour quelle entreprise (§7).
+export function recruiterIntroduction(offer: ApplicationFields) {
+  const name =
+    offer.recruiterName?.trim() || "La personne chargée du recrutement"
+  const company = offer.hideCompanyIdentity
+    ? "une entreprise qui souhaite rester confidentielle"
+    : publicCompanyName(offer)
+  return `${name}, chargé·e de recrutement de ${site.name} pour le compte de ${company}`
+}
+
+// Lien mailto: d'une candidature : l'objet nomme l'offre et le candidat, le corps reprend le
+// message d'accompagnement du dossier. Le candidat joint lui-même son CV.
+export function applicationMailto({
+  to,
+  title,
+  candidateName,
+  message,
+}: {
+  to: string
+  title: string
+  candidateName: string
+  message?: string | null
+}) {
+  const params = [
+    `subject=${encodeURIComponent(`Candidature – ${title} – ${candidateName}`)}`,
+    message?.trim() ? `body=${encodeURIComponent(message.trim())}` : null,
+  ].filter((param) => param !== null)
+  return `mailto:${to.trim()}?${params.join("&")}`
+}
+
+// Lien tel: : chiffres et « + » initial ; le « (0) » des numéros internationaux ne se compose pas.
+export function telHref(phone: string) {
+  const digits = phone.replace(/\(0\)/g, "").replace(/[^\d+]/g, "")
+  return `tel:${digits.startsWith("+") ? "+" : ""}${digits.replace(/\+/g, "")}`
+}
+
+// Lien web ouvrable : http(s), ou une adresse sans protocole lue en https ; tout autre protocole
+// (javascript:, data:…) est écarté.
+function webHref(url: string) {
+  if (/^https?:\/\//i.test(url)) return url
+  if (/^[a-z][a-z\d+.-]*:/i.test(url)) return null
+  return `https://${url}`
+}
+
+type Link = { label: string; href: string }
+
+export type ApplicationContacts = {
+  // null : moyen absent ; "unavailable" : il mène à un domaine exclu (ou n'est pas un lien web)
+  // et n'est pas affiché.
+  email: Link | "unavailable" | null
+  phone: Link | null
+  url: (Link & { domain: string }) | "unavailable" | null
+  // Destinations exclues, à journaliser.
+  blocked: BlockedTarget[]
+}
+
+// Coordonnées affichées à un dossier complet. Un lien ou un email dont le domaine est (ou est
+// devenu) exclu n'est jamais affiché (§2, §9).
+export function applicationContacts(
+  offer: ApplicationFields & { title: string },
+  context: {
+    blockedDomains: readonly string[]
+    candidateName: string
+    message?: string | null
+  },
+): ApplicationContacts {
+  const blocked = findBlockedTargets(
+    { applyEmail: offer.applyEmail, applyUrl: offer.applyUrl },
+    context.blockedDomains,
+  )
+  const isBlocked = (field: BlockedTarget["field"]) =>
+    blocked.some((target) => target.field === field)
+
+  const email = offer.applyEmail?.trim()
+  const phone = offer.applyPhone?.trim()
+  const url = offer.applyUrl?.trim()
+  const href = url ? webHref(url) : null
+  const urlDomain = href ? hostOf(href) : null
+
+  return {
+    email: !email
+      ? null
+      : isBlocked("applyEmail")
+        ? "unavailable"
+        : {
+            label: email,
+            href: applicationMailto({
+              to: email,
+              title: offer.title,
+              candidateName: context.candidateName,
+              message: context.message,
+            }),
+          },
+    phone: phone ? { label: phone, href: telHref(phone) } : null,
+    url: !url
+      ? null
+      : isBlocked("applyUrl") || !href || !urlDomain
+        ? "unavailable"
+        : { label: urlDomain, href, domain: urlDomain },
+    blocked,
+  }
 }

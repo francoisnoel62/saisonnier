@@ -18,3 +18,13 @@ export function formatFileSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} Ko`
   return `${decimal.format(bytes / (1024 * 1024))} Mo`
 }
+
+const longDate = new Intl.DateTimeFormat(site.locale, {
+  dateStyle: "long",
+  timeZone: "Europe/Paris",
+})
+
+// Jour d'un horodatage, à Paris : « 21 octobre 2026 ».
+export function formatDate(value: Date | string) {
+  return longDate.format(new Date(value))
+}
