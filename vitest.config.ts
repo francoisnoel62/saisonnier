@@ -1,5 +1,10 @@
 import { fileURLToPath } from "node:url"
+// Import par défaut : Vite charge ce fichier en ESM natif (@next/env est en CommonJS).
+import nextEnv from "@next/env"
 import { defineConfig } from "vitest/config"
+
+// Vitest fixe NODE_ENV à "test" : Next charge alors .env.test.local (base saisonnier_test).
+nextEnv.loadEnvConfig(process.cwd())
 
 export default defineConfig({
   resolve: {
@@ -7,6 +12,25 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          include: ["src/**/*.test.ts"],
+          exclude: ["src/**/*.int.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "integration",
+          include: ["src/**/*.int.test.ts"],
+          globalSetup: ["./src/test/integration-setup.ts"],
+          // Une seule base partagée : les fichiers s'exécutent l'un après l'autre.
+          fileParallelism: false,
+        },
+      },
+    ],
   },
 })

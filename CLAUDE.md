@@ -17,9 +17,21 @@
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | tests unitaires Vitest (`src/**/*.test.ts`) |
+| `npm run test:int` | tests d'intégration (`src/**/*.int.test.ts`) sur `saisonnier_test`, migrations appliquées au démarrage |
 | `npm run format` | Prettier (+ tri des classes Tailwind) |
+| `npm run db:up` / `db:down` | Postgres 18 local (Docker) : bases `saisonnier` et `saisonnier_test` |
+| `npm run db:generate` | migration SQL depuis `src/lib/db/schema` (`--custom` pour une migration de données) |
+| `npm run db:migrate` / `db:check` / `db:studio` | appliquer, vérifier, explorer |
 
-Le plan 02 ajoute les scripts `db:*` ; le plan 05 ajoute `e2e`.
+Le plan 05 ajoute `e2e`.
+
+## Base de données
+
+- Drizzle ORM 0.45 (rester sur la branche stable), `casing: "snake_case"` : propriétés en camelCase, colonnes en snake_case.
+- Client unique : `db` de `src/lib/db`. Variables serveur validées par `src/lib/env.ts` ; toute nouvelle variable y est déclarée et ajoutée à `.env.example`.
+- Local : `.env.development.local` et `.env.test.local` (non versionnés). Vercel : Neon (Postgres 18) injecte `DATABASE_URL` (poolée) et `DATABASE_URL_UNPOOLED` (migrations).
+- Les migrations versionnées dans `drizzle/` s'appliquent au build Vercel (`vercel.json`) ; chaque preview migre sa branche Neon.
+- Les référentiels (régions, départements, métiers, domaines exclus) sont insérés par migration SQL en `ON CONFLICT DO NOTHING`, jamais par un script manuel.
 
 ## Conventions
 
