@@ -1,0 +1,11 @@
+# Composants générés par la CLI shadcn : ne pas les retoucher
+src/components/ui
+
+package-lock.json
+drizzle/meta
+.next
+next-env.d.ts
+
+# Documents rédigés à la main
+docs
+*.md
