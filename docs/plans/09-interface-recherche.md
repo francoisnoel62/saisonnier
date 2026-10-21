@@ -69,9 +69,9 @@ Les critères actifs restent visibles et se retirent un par un.
 
 ## Critères d'acceptation
 
-- [ ] §4 : les filtres se combinent, et les résultats comme leur nombre se mettent à jour immédiatement.
-- [ ] §4 : les critères actifs sont visibles et se retirent individuellement.
-- [ ] La page est utilisable au doigt à 375 px.
+- [x] §4 : les filtres se combinent, et les résultats comme leur nombre se mettent à jour immédiatement.
+- [x] §4 : les critères actifs sont visibles et se retirent individuellement.
+- [x] La page est utilisable au doigt à 375 px.
 
 ## Hors périmètre
 

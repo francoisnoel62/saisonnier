@@ -1,3 +1,5 @@
+import { NuqsAdapter } from "nuqs/adapters/next/app"
+
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -25,7 +27,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <SidebarInset className="min-w-0">
         <SiteHeader role={user.role} />
         {/* SidebarInset rend déjà l'élément <main> */}
-        <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">{children}</div>
+        <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+          {/* Filtres de recherche dans l'URL (nuqs) */}
+          <NuqsAdapter>{children}</NuqsAdapter>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )
