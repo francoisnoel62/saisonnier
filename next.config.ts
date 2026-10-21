@@ -1,7 +1,9 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // L'E2E lance son propre `next dev` (port 3100) : Next refuse deux serveurs de développement
+  // dans un même distDir.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   turbopack: {
     rules: {
       "*.css": {
