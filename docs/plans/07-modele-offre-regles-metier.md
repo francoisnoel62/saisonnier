@@ -191,9 +191,9 @@ Fichier `src/server/offers/queries.ts`.
 
 ## Critères d'acceptation
 
-- [ ] Les migrations sont appliquées en local, en test et en preview.
-- [ ] Toutes les règles du §3 et du §6 sont couvertes par des tests verts.
-- [ ] `npm run db:seed:demo` remplit la base de développement de façon reproductible.
+- [x] Les migrations sont appliquées en local, en test et en preview.
+- [x] Toutes les règles du §3 et du §6 sont couvertes par des tests verts.
+- [x] `npm run db:seed:demo` remplit la base de développement de façon reproductible.
 
 ## Hors périmètre
 
