@@ -7,6 +7,19 @@ const serverEnvSchema = z.object({
     .default("development"),
   // Poolée sur Vercel (Neon) ; Docker en local.
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+
+  // Better Auth : secret de signature (openssl rand -base64 32) et URL publique de l'application.
+  BETTER_AUTH_SECRET: z.string().min(32),
+  BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }),
+  // Injectées par Vercel (sans protocole) : hôtes de la preview, acceptés en plus de BETTER_AUTH_URL.
+  VERCEL_URL: z.string().optional(),
+  VERCEL_BRANCH_URL: z.string().optional(),
+
+  // Emails : sans clé Resend (en local), ils s'affichent dans la console.
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.email(),
+  // Boîte du fondateur, destinataire des notifications du service.
+  ADMIN_NOTIFICATION_EMAIL: z.email(),
 })
 
 function parseServerEnv() {
