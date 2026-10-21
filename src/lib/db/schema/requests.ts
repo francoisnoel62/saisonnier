@@ -11,6 +11,8 @@ import {
 
 import { MESSAGE_MAX_LENGTH } from "@/domain/contact"
 
+import { offers } from "./offers"
+
 // Demandes adressées au service : messages au fondateur ici, prestations au plan 17.
 
 export const contactTopic = pgEnum("contact_topic", [
@@ -27,8 +29,8 @@ export const contactMessages = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
     topic: contactTopic().notNull(),
-    // Annonce concernée ; la clé étrangère vers `offers` est ajoutée au plan 07.
-    offerId: uuid(),
+    // Annonce concernée ; le message reste si l'annonce est supprimée.
+    offerId: uuid().references(() => offers.id, { onDelete: "set null" }),
     name: text().notNull(),
     email: text().notNull(),
     companyName: text(),

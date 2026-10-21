@@ -1,3 +1,5 @@
 export * from "./auth"
+export * from "./companies"
+export * from "./offers"
 export * from "./reference"
 export * from "./requests"

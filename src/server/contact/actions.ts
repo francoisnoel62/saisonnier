@@ -18,7 +18,7 @@ import { sendEmail } from "@/lib/email/send"
 import { contactNotificationEmail } from "@/lib/email/templates"
 import { env } from "@/lib/env"
 
-import { countRecentMessages } from "./messages"
+import { countRecentMessages, knownOfferId } from "./messages"
 
 export type ContactField =
   "topic" | "name" | "email" | "companyName" | "phone" | "message"
@@ -69,10 +69,13 @@ export async function sendContactMessage(
     }
   }
 
-  const session = await getSession()
+  const [session, offerId] = await Promise.all([
+    getSession(),
+    knownOfferId(input.offerId),
+  ])
   const [saved] = await db
     .insert(contactMessages)
-    .values({ ...input, userId: session?.user.id })
+    .values({ ...input, offerId, userId: session?.user.id })
     .returning({ id: contactMessages.id })
 
   // Le message est enregistré : un échec d'envoi ne doit pas le faire perdre à l'expéditeur.

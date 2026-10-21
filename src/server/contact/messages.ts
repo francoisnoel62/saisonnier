@@ -1,7 +1,7 @@
 import { and, count, desc, eq, gte } from "drizzle-orm"
 
 import { db } from "@/lib/db"
-import { contactMessages } from "@/lib/db/schema"
+import { contactMessages, offers } from "@/lib/db/schema"
 
 const HOUR_MS = 60 * 60 * 1000
 
@@ -17,6 +17,17 @@ export async function countRecentMessages(email: string, now = new Date()) {
       ),
     )
   return row.value
+}
+
+// Annonce à rattacher au message : un identifiant inconnu (annonce supprimée, lien retouché)
+// est ignoré, pour que le message parte quand même.
+export async function knownOfferId(offerId: string | undefined) {
+  if (!offerId) return undefined
+  const [offer] = await db
+    .select({ id: offers.id })
+    .from(offers)
+    .where(eq(offers.id, offerId))
+  return offer?.id
 }
 
 export async function listContactMessages() {

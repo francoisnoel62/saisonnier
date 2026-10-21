@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test"
 
 import { homePaths } from "./accounts"
 import { expect, test } from "./fixtures"
+import { insertCollectedOffer } from "./helpers/offers"
 import { expectNoHorizontalScroll, openMenu } from "./helpers/shell"
 
 // Les deux projets (chromium, mobile) partagent la base : chaque test a ses propres adresses.
@@ -274,7 +275,7 @@ test("§9 — un message lié à une annonce collectée présélectionne le suje
   asCandidate,
   db,
 }, testInfo) => {
-  const offerId = "0b0c8f7e-5d8e-4c53-9f0e-2f2b3b6f7a10"
+  const offerId = await insertCollectedOffer(db)
   await openContact(asCandidate, `?motif=annonce-collectee&offre=${offerId}`)
 
   // Connecté : nom et email sont préremplis.
@@ -301,6 +302,28 @@ test("§9 — un message lié à une annonce collectée présélectionne le suje
   expect(rows).toEqual([
     { topic: "collected_offer", offer_id: offerId, has_user: true },
   ])
+})
+
+test("contact — une annonce inconnue n'empêche pas l'envoi du message", async ({
+  page,
+  db,
+}, testInfo) => {
+  const sender = visitor("annonce-inconnue", testInfo.project.name)
+  await openContact(
+    page,
+    `?motif=annonce-collectee&offre=${crypto.randomUUID()}`,
+  )
+  await fillAndSend(page, sender)
+  await expect(
+    page.getByRole("heading", { name: "Message envoyé" }),
+  ).toBeVisible()
+
+  // Le message est enregistré, sans rattachement à une annonce qui n'existe pas.
+  const { rows } = await db.query(
+    "select topic, offer_id from contact_messages where email = $1",
+    [sender.email],
+  )
+  expect(rows).toEqual([{ topic: "collected_offer", offer_id: null }])
 })
 
 test("contact — l'entrée « Contact » du menu mène au formulaire", async ({
