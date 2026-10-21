@@ -29,6 +29,7 @@
 - L'E2E lance son propre `next dev -p 3100` (dossier `.next-e2e`) : il tourne en même temps que `npm run dev`.
 - Il vide la base de test à chaque exécution, référentiels exceptés : tout nouveau référentiel s'ajoute à `REFERENCE_TABLES` (`e2e/helpers/db.ts`). Il refuse toute base dont le nom ne finit pas par `_test`.
 - `seedDemoCatalog(db)` (`e2e/helpers/catalog.ts`) remplace toutes les offres par le jeu de démonstration et calcule les compteurs attendus avec l'oracle `matchesCriteria`.
+- `newCandidate(label)` crée un candidat connecté, sans dossier, propre au test ; `completeDossier(page, label)` (`e2e/helpers/dossier.ts`) lui ajoute téléphone et CV. Les comptes partagés (`asCandidate`…) ne doivent pas être modifiés.
 - Chaque plan ajoute son `e2e/<sujet>.spec.ts` ; chaque test porte le nom du point de contrôle qu'il couvre (ex. `§9 — CV privé`). Fixtures `asCandidate`, `asEmployer`, `asAdmin` et `db` dans `e2e/fixtures.ts`.
 - La CI (`.github/workflows/ci.yml`) enchaîne lint, typecheck, tests, intégration et E2E.
 
@@ -46,6 +47,7 @@
   - une offre `published` a un `publishedAt` ; une offre collectée a `sourceUrl` et `sourceCheckedAt` ;
   - une date de début peut accompagner une durée sans date de fin.
 - Toute lecture d'offres côté candidat filtre par `activeOfferConditions(today)` (`src/server/offers/queries.ts`), avec `today = todayInParis(new Date())` : c'est la règle `isActive` en SQL.
+- Dossier candidat : table `candidate_profiles` (`src/server/candidates/dossier.ts`), complétude `dossierStatus` (H3, `src/domain/candidate-dossier.ts`). Documents dans un stockage privé (`src/server/storage/documents.ts`) : Vercel Blob `saisonnier-documents` (fra1), ou disque `.storage/` avec `STORAGE_DRIVER=local` (E2E). Seul le chemin est en base ; seul le propriétaire télécharge (`/api/dossier/documents/[type]`), ni l'admin ni un employeur (H11).
 - Recherche : `searchOffers(criteria, { page, pageSize, today })` (`src/server/search/`), critères validés par `searchCriteriaSchema` (`src/domain/search-criteria.ts`). Toute règle de correspondance s'écrit deux fois, dans `matchesCriteria` (`src/domain/offer-matching.ts`, l'oracle) et dans `build-conditions.ts` : le test d'intégration exige qu'elles retiennent les mêmes offres du jeu de démonstration.
 - Page `/offres` : l'URL est la seule source de vérité. Parseurs nuqs et clés françaises (`metier`, `dept`, `base`…) dans `src/server/search/search-params.ts`, partagés par la page (`loadSearch`) et les filtres (`useSearch()`, `src/components/search/search-provider.tsx`) ; ce module n'accède pas à la base. Un nouveau critère s'ajoute au schéma, aux parseurs, à `activeCriteriaChips` (`src/domain/search-chips.ts`) et aux contrôles.
 
@@ -56,6 +58,7 @@
 - Pages : `getSession` / `requireUser` / `requireRole` de `src/lib/dal.ts`. Accueil de chaque rôle : `homePathFor` (`src/domain/roles.ts`).
 - La limitation de débit de Better Auth ne s'applique qu'aux requêtes vers `/api/auth` : connexion, renvois de liens et mots de passe passent par `authClient`. Une Server Action (`auth.api.*`) n'est utilisée que si le serveur doit décider (ex. rôle employeur à l'inscription).
 - Sans `RESEND_API_KEY`, les emails s'affichent dans la console du serveur, liens compris.
+- Routes d'API : `authorizeRoute(...roles)` (`src/lib/dal.ts`) répond 401 ou 403 au lieu de rediriger.
 
 ## Conventions
 

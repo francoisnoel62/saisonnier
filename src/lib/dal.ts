@@ -37,3 +37,21 @@ export async function requireRole(...allowed: Role[]) {
   }
   return session
 }
+
+// Pour une route d'API : un refus est une réponse HTTP (401, 403), pas une redirection.
+export async function authorizeRoute(...allowed: Role[]) {
+  const session = await getSession()
+  if (!session) {
+    return {
+      session: null,
+      denied: Response.json({ error: "Connexion requise." }, { status: 401 }),
+    }
+  }
+  if (!allowed.includes(session.user.role)) {
+    return {
+      session: null,
+      denied: Response.json({ error: "Accès refusé." }, { status: 403 }),
+    }
+  }
+  return { session, denied: null }
+}

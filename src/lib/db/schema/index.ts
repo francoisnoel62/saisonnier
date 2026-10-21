@@ -1,4 +1,5 @@
 export * from "./auth"
+export * from "./candidates"
 export * from "./companies"
 export * from "./offers"
 export * from "./reference"

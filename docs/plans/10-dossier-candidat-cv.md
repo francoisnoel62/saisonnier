@@ -71,9 +71,9 @@ Les documents sont stockés de façon **privée**, et une règle de complétude 
 
 ## Critères d'acceptation
 
-- [ ] §9 : un inscrit peut rechercher sans CV.
-- [ ] §9 : les CV restent privés ; l'URL de stockage n'est pas publique et le téléchargement est réservé au propriétaire.
-- [ ] Aucune CVthèque ni aucun envoi de document n'existe.
+- [x] §9 : un inscrit peut rechercher sans CV.
+- [x] §9 : les CV restent privés ; l'URL de stockage n'est pas publique et le téléchargement est réservé au propriétaire.
+- [x] Aucune CVthèque ni aucun envoi de document n'existe.
 
 ## Hors périmètre
 
