@@ -64,7 +64,7 @@ Après le plan 07, deux pistes peuvent avancer en parallèle :
 |---|---|---|---|---|---|
 | 01 | [Socle projet & premier déploiement](01-socle-projet.md) | — | S | dashboard-01 en ligne sur Vercel | ☑ |
 | 02 | [Base de données & référentiels](02-base-de-donnees.md) | 01 | M | Postgres local + Neon, migrations, régions/départements/métiers | ☑ |
-| 03 | [Authentification & rôles](03-authentification-roles.md) | 02 | M | inscription candidat / employeur, vérification d'email | ☐ |
+| 03 | [Authentification & rôles](03-authentification-roles.md) | 02 | M | inscription candidat / employeur, vérification d'email | ☑ |
 | 04 | [Shell applicatif par rôle](04-shell-dashboard.md) | 03 | S | sidebar adaptée au rôle | ☐ |
 | 05 | [Harnais E2E & CI](05-harnais-tests-e2e.md) | 04 | S | Playwright par rôle + GitHub Actions | ☐ |
 | 06 | [Pages publiques, contact & légal](06-pages-publiques-contact.md) | 04 | M | accueil, contact du fondateur, pages légales | ☐ |
