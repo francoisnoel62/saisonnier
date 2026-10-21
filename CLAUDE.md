@@ -17,7 +17,7 @@
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `next typegen` (types des routes) puis `tsc --noEmit` |
 | `npm test` | tests unitaires Vitest (`src/**/*.test.ts`) |
-| `npm run test:int` | tests d'intégration (`src/**/*.int.test.ts`) sur `saisonnier_test`, migrations appliquées au démarrage |
+| `npm run test:int` | tests d'intégration (`src/**/*.int.test.ts`) sur `saisonnier_test`, migrations appliquées au démarrage ; `server-only` y est neutralisé (`vitest.config.ts`) |
 | `npm run format` | Prettier (+ tri des classes Tailwind) |
 | `npm run db:up` / `db:down` | Postgres 18 local (Docker) : bases `saisonnier` et `saisonnier_test` |
 | `npm run db:generate` | migration SQL depuis `src/lib/db/schema` (`--custom` pour une migration de données) |
@@ -49,6 +49,7 @@
 - Toute lecture d'offres côté candidat filtre par `activeOfferConditions(today)` (`src/server/offers/queries.ts`), avec `today = todayInParis(new Date())` : c'est la règle `isActive` en SQL.
 - Dossier candidat : table `candidate_profiles` (`src/server/candidates/dossier.ts`), complétude `dossierStatus` (H3, `src/domain/candidate-dossier.ts`). Documents dans un stockage privé (`src/server/storage/documents.ts`) : Vercel Blob `saisonnier-documents` (fra1), ou disque `.storage/` avec `STORAGE_DRIVER=local` (E2E). Seul le chemin est en base ; seul le propriétaire télécharge (`/api/dossier/documents/[type]`), ni l'admin ni un employeur (H11).
 - Recherche : `searchOffers(criteria, { page, pageSize, today })` (`src/server/search/`), critères validés par `searchCriteriaSchema` (`src/domain/search-criteria.ts`). Toute règle de correspondance s'écrit deux fois, dans `matchesCriteria` (`src/domain/offer-matching.ts`, l'oracle) et dans `build-conditions.ts` : le test d'intégration exige qu'elles retiennent les mêmes offres du jeu de démonstration.
+- Suivi candidat : table `offer_tracking` (`savedAt`, `appliedAt`, une ligne vide est supprimée), écritures idempotentes `setMark` (`src/server/candidates/tracking.ts`) derrière `toggleSaved` / `declareApplied` / `undoApplied`. Rien d'autre (§5) : ni statut, ni note, ni rappel ; un clic sur un contact n'est jamais une candidature.
 - Fiche `/offres/[id]` : `OfferDetails` (`src/components/offers/offer-details.tsx`) est purement présentationnel et ne reçoit que `toOfferDetailsData(offer)`, sans contact ni entreprise. Les coordonnées viennent de `getApplicationDetails` (`src/server/offers/application.ts`) : dossier complet ou admin seulement, domaines exclus masqués et journalisés. Un composant client ne reçoit jamais l'offre entière (anonymat).
 - Page `/offres` : l'URL est la seule source de vérité. Parseurs nuqs et clés françaises (`metier`, `dept`, `base`…) dans `src/server/search/search-params.ts`, partagés par la page (`loadSearch`) et les filtres (`useSearch()`, `src/components/search/search-provider.tsx`) ; ce module n'accède pas à la base. Un nouveau critère s'ajoute au schéma, aux parseurs, à `activeCriteriaChips` (`src/domain/search-chips.ts`) et aux contrôles.
 

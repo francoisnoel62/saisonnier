@@ -10,8 +10,10 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -24,16 +26,39 @@ import { formatSalary } from "@/domain/salary"
 import type { OfferListItem } from "@/server/search/search-offers"
 
 import { InfoValue } from "./info-value"
+import { SaveOfferButton } from "./tracking-buttons"
 
 // Carte d'une offre dans les résultats. Logement et repas restent affichés même inconnus ; le
-// nom de l'entreprise est déjà son nom public (publicCompanyName).
-export function OfferCard({ offer }: { offer: OfferListItem }) {
+// nom de l'entreprise est déjà son nom public (publicCompanyName). `saved` (candidat seulement)
+// affiche le bouton de sauvegarde ; `expired` signale une offre suivie qui n'est plus active.
+export function OfferCard({
+  offer,
+  saved,
+  expired = false,
+  footer,
+}: {
+  offer: OfferListItem
+  saved?: boolean
+  expired?: boolean
+  footer?: React.ReactNode
+}) {
   return (
     <Card className="relative h-full gap-3 has-[a:focus-visible]:ring-3 has-[a:focus-visible]:ring-ring/50">
       <CardHeader className="gap-1.5">
-        <Badge variant="outline" className="mb-1">
-          {originLabels[offer.origin]}
-        </Badge>
+        <div className="mb-1 flex flex-wrap gap-1.5">
+          <Badge variant="outline">{originLabels[offer.origin]}</Badge>
+          {expired && <Badge variant="destructive">Offre expirée</Badge>}
+        </div>
+        {saved !== undefined && (
+          // Au-dessus du lien qui couvre la carte.
+          <CardAction className="relative z-10 -mt-1 -mr-1">
+            <SaveOfferButton
+              offerId={offer.id}
+              title={offer.title}
+              saved={saved}
+            />
+          </CardAction>
+        )}
         <CardTitle>
           <h3>
             <Link
@@ -84,6 +109,11 @@ export function OfferCard({ offer }: { offer: OfferListItem }) {
           </div>
         </dl>
       </CardContent>
+      {footer && (
+        <CardFooter className="relative z-10 flex-wrap gap-2">
+          {footer}
+        </CardFooter>
+      )}
     </Card>
   )
 }

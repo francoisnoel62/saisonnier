@@ -24,6 +24,7 @@ import {
 import { dossierStatus } from "@/domain/candidate-dossier"
 import { requireRole } from "@/lib/dal"
 import { getDossier } from "@/server/candidates/dossier"
+import { getTracking } from "@/server/candidates/tracking"
 import { getSearchReferentials } from "@/server/search/referentials"
 import { loadSearch, searchHref } from "@/server/search/search-params"
 import { DEFAULT_PAGE_SIZE, searchOffers } from "@/server/search/search-offers"
@@ -42,6 +43,14 @@ export default async function OffersPage({
     // Seul un candidat a un dossier ; l'admin consulte le catalogue.
     user.role === "candidate" ? getDossier(user.id) : null,
   ])
+  // Offres déjà sauvegardées par le candidat, pour l'état de leur bouton.
+  const tracking =
+    user.role === "candidate"
+      ? await getTracking(
+          user.id,
+          items.map((offer) => offer.id),
+        )
+      : null
   const pageCount = Math.ceil(total / DEFAULT_PAGE_SIZE)
   const hasCriteria = Object.keys(criteria).length > 0
 
@@ -68,7 +77,12 @@ export default async function OffersPage({
             <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {items.map((offer) => (
                 <li key={offer.id}>
-                  <OfferCard offer={offer} />
+                  <OfferCard
+                    offer={offer}
+                    saved={
+                      tracking ? !!tracking.get(offer.id)?.savedAt : undefined
+                    }
+                  />
                 </li>
               ))}
             </ul>

@@ -13,6 +13,7 @@ import {
   toOfferDetailsData,
 } from "@/components/offers/offer-details"
 import { OfferProvenance } from "@/components/offers/offer-provenance"
+import { SaveOfferButton } from "@/components/offers/tracking-buttons"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ import {
 import { expiryReason, isActive, todayInParis } from "@/domain/offer-activity"
 import { seasonLabels } from "@/domain/offer-display"
 import { requireRole } from "@/lib/dal"
+import { getTracking } from "@/server/candidates/tracking"
 import { getApplicationDetails } from "@/server/offers/application"
 import {
   getOfferWithRelations,
@@ -114,7 +116,13 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
     )
   }
 
-  const application = await getApplicationDetails(offer.id, user)
+  const [application, tracking] = await Promise.all([
+    getApplicationDetails(offer.id, user),
+    // L'admin ne suit pas d'offres.
+    isAdmin
+      ? null
+      : getTracking(user.id, [offer.id]).then((map) => map.get(offer.id)),
+  ])
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
@@ -132,7 +140,19 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
 
       <header className="flex flex-col gap-2">
         <Badge variant="secondary">{seasonLabels[offer.season]}</Badge>
-        <h2 className="text-2xl font-semibold tracking-tight">{offer.title}</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {offer.title}
+          </h2>
+          {!isAdmin && (
+            <SaveOfferButton
+              offerId={offer.id}
+              title={offer.title}
+              saved={!!tracking?.savedAt}
+              withLabel
+            />
+          )}
+        </div>
         <p className="text-lg text-muted-foreground">{companyName}</p>
         <OfferProvenance
           offerId={offer.id}
@@ -147,7 +167,11 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
         <aside className="flex flex-col gap-4 lg:sticky lg:top-4 lg:order-2">
           <HowToApply explanation={applicationModeExplanation(offer)} />
           {application.status !== "inactive" && (
-            <ApplicationPanel offerId={offer.id} details={application} />
+            <ApplicationPanel
+              offerId={offer.id}
+              details={application}
+              appliedAt={tracking?.appliedAt ?? null}
+            />
           )}
         </aside>
         <OfferDetails offer={toOfferDetailsData(offer)} />

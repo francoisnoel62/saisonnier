@@ -42,8 +42,8 @@ Permettre au candidat de sauvegarder des offres et de déclarer « J'ai postulé
 
 ## Critères d'acceptation
 
-- [ ] §5 : le candidat dispose d'une liste d'offres sauvegardées et d'une déclaration manuelle ; un clic sur un contact ne vaut pas candidature.
-- [ ] §9 : la sauvegarde et le suivi restent simples.
+- [x] §5 : le candidat dispose d'une liste d'offres sauvegardées et d'une déclaration manuelle ; un clic sur un contact ne vaut pas candidature.
+- [x] §9 : la sauvegarde et le suivi restent simples.
 
 ## Hors périmètre
 

@@ -21,6 +21,8 @@ import { dossierRequirementLabels } from "@/domain/candidate-dossier"
 import { cn } from "@/lib/utils"
 import type { ApplicationDetails } from "@/server/offers/application"
 
+import { AppliedButton } from "./tracking-buttons"
+
 // « Comment postuler » : toujours visible, même sans dossier (§7).
 export function HowToApply({ explanation }: { explanation: string }) {
   return (
@@ -55,9 +57,12 @@ function Unavailable({ what }: { what: string }) {
 export function ApplicationPanel({
   offerId,
   details,
+  appliedAt = null,
 }: {
   offerId: string
   details: Exclude<ApplicationDetails, { status: "inactive" }>
+  // Déclaration « J'ai postulé » du candidat (plan 12).
+  appliedAt?: Date | null
 }) {
   if (details.status === "incomplete") {
     return (
@@ -174,6 +179,8 @@ export function ApplicationPanel({
               Joignez vous-même votre CV : {site.name} ne l&rsquo;envoie jamais
               à votre place.
             </p>
+            {/* Un clic sur un contact n'est pas une candidature : le candidat la déclare. */}
+            <AppliedButton offerId={offerId} appliedAt={appliedAt} />
           </>
         )}
       </CardContent>

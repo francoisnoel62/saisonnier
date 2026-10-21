@@ -33,6 +33,63 @@ export type OfferListItem = {
   origin: OfferOrigin
 }
 
+// Colonnes lues pour une carte, à joindre à companies et departments ; toOfferListItem les réduit
+// à ce que la carte affiche. Réutilisées par « Mes offres » (plan 12).
+export const offerListColumns = {
+  id: offers.id,
+  title: offers.title,
+  hideCompanyIdentity: offers.hideCompanyIdentity,
+  company: {
+    legalName: companies.legalName,
+    displayName: companies.displayName,
+  },
+  communeName: offers.communeName,
+  department: { code: departments.code, name: departments.name },
+  season: offers.season,
+  startDate: offers.startDate,
+  endDate: offers.endDate,
+  durationValue: offers.durationValue,
+  durationUnit: offers.durationUnit,
+  salaryNetMinCents: offers.salaryNetMinCents,
+  salaryNetMaxCents: offers.salaryNetMaxCents,
+  salaryNetUnit: offers.salaryNetUnit,
+  salaryGrossMinCents: offers.salaryGrossMinCents,
+  salaryGrossMaxCents: offers.salaryGrossMaxCents,
+  salaryGrossUnit: offers.salaryGrossUnit,
+  housing: offers.housing,
+  meals: offers.meals,
+  origin: offers.origin,
+}
+
+// Une ligne lue avec offerListColumns (et éventuellement d'autres colonnes).
+function offerListQuery() {
+  return db
+    .select(offerListColumns)
+    .from(offers)
+    .innerJoin(companies, eq(companies.id, offers.companyId))
+    .innerJoin(departments, eq(departments.code, offers.departmentCode))
+}
+type OfferListRow = Awaited<ReturnType<typeof offerListQuery>>[number]
+
+export function toOfferListItem(row: OfferListRow): OfferListItem {
+  return {
+    id: row.id,
+    title: row.title,
+    companyName: publicCompanyName(row),
+    communeName: row.communeName,
+    department: row.department,
+    season: row.season,
+    startDate: row.startDate,
+    endDate: row.endDate,
+    durationValue: row.durationValue,
+    durationUnit: row.durationUnit,
+    salary: displayedSalary(row),
+    housing: row.housing,
+    meals: row.meals,
+    origin: row.origin,
+  }
+}
+
 export const DEFAULT_PAGE_SIZE = 20
 
 export type SearchOptions = {
@@ -64,35 +121,7 @@ export async function searchOffers(
   const where = searchConditions(criteria, today)
 
   const [rows, total] = await Promise.all([
-    db
-      .select({
-        id: offers.id,
-        title: offers.title,
-        hideCompanyIdentity: offers.hideCompanyIdentity,
-        company: {
-          legalName: companies.legalName,
-          displayName: companies.displayName,
-        },
-        communeName: offers.communeName,
-        department: { code: departments.code, name: departments.name },
-        season: offers.season,
-        startDate: offers.startDate,
-        endDate: offers.endDate,
-        durationValue: offers.durationValue,
-        durationUnit: offers.durationUnit,
-        salaryNetMinCents: offers.salaryNetMinCents,
-        salaryNetMaxCents: offers.salaryNetMaxCents,
-        salaryNetUnit: offers.salaryNetUnit,
-        salaryGrossMinCents: offers.salaryGrossMinCents,
-        salaryGrossMaxCents: offers.salaryGrossMaxCents,
-        salaryGrossUnit: offers.salaryGrossUnit,
-        housing: offers.housing,
-        meals: offers.meals,
-        origin: offers.origin,
-      })
-      .from(offers)
-      .innerJoin(companies, eq(companies.id, offers.companyId))
-      .innerJoin(departments, eq(departments.code, offers.departmentCode))
+    offerListQuery()
       .where(where)
       .orderBy(desc(offers.publishedAt), asc(offers.id))
       .limit(pageSize)
@@ -100,23 +129,5 @@ export async function searchOffers(
     db.$count(offers, where),
   ])
 
-  return {
-    items: rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      companyName: publicCompanyName(row),
-      communeName: row.communeName,
-      department: row.department,
-      season: row.season,
-      startDate: row.startDate,
-      endDate: row.endDate,
-      durationValue: row.durationValue,
-      durationUnit: row.durationUnit,
-      salary: displayedSalary(row),
-      housing: row.housing,
-      meals: row.meals,
-      origin: row.origin,
-    })),
-    total,
-  }
+  return { items: rows.map(toOfferListItem), total }
 }
