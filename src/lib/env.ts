@@ -20,6 +20,11 @@ const serverEnvSchema = z.object({
   EMAIL_FROM: z.email(),
   // Boîte du fondateur, destinataire des notifications du service.
   ADMIN_NOTIFICATION_EMAIL: z.email(),
+
+  // Documents des candidats : Vercel Blob privé, ou disque local (.storage/) pour l'E2E.
+  STORAGE_DRIVER: z.enum(["vercel-blob", "local"]).default("vercel-blob"),
+  // Injecté par Vercel une fois le store connecté ; lu directement par @vercel/blob.
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
 })
 
 function parseServerEnv() {

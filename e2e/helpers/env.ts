@@ -33,5 +33,7 @@ export function serverEnv() {
     RESEND_API_KEY: "",
     // Distinct de celui du `next dev` habituel (port 3000), qui peut tourner en même temps.
     NEXT_DIST_DIR: ".next-e2e",
+    // Documents des candidats sur disque (.storage/), jamais dans le store Vercel Blob.
+    STORAGE_DRIVER: "local",
   }
 }

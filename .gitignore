@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+# Documents écrits par STORAGE_DRIVER=local (E2E)
+/.storage
 /playwright-report
 /test-results
 /blob-report

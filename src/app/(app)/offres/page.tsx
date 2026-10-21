@@ -2,6 +2,7 @@ import { SearchXIcon } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { DossierBanner } from "@/components/dossier/dossier-banner"
 import { OfferCard } from "@/components/offers/offer-card"
 import {
   ActiveFilters,
@@ -20,7 +21,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { dossierStatus } from "@/domain/candidate-dossier"
 import { requireRole } from "@/lib/dal"
+import { getDossier } from "@/server/candidates/dossier"
 import { getSearchReferentials } from "@/server/search/referentials"
 import { loadSearch, searchHref } from "@/server/search/search-params"
 import { DEFAULT_PAGE_SIZE, searchOffers } from "@/server/search/search-offers"
@@ -31,11 +34,13 @@ export const metadata: Metadata = { title: "Rechercher des offres" }
 export default async function OffersPage({
   searchParams,
 }: PageProps<"/offres">) {
-  await requireRole("candidate", "admin")
+  const { user } = await requireRole("candidate", "admin")
   const { criteria, page } = loadSearch(await searchParams)
-  const [{ items, total }, referentials] = await Promise.all([
+  const [{ items, total }, referentials, dossier] = await Promise.all([
     searchOffers(criteria, { page }),
     getSearchReferentials(),
+    // Seul un candidat a un dossier ; l'admin consulte le catalogue.
+    user.role === "candidate" ? getDossier(user.id) : null,
   ])
   const pageCount = Math.ceil(total / DEFAULT_PAGE_SIZE)
   const hasCriteria = Object.keys(criteria).length > 0
@@ -43,6 +48,18 @@ export default async function OffersPage({
   return (
     <SearchProvider>
       <div className="flex flex-col gap-4">
+        {/* Un dossier incomplet n'empêche pas de rechercher (§9). */}
+        {dossier && (
+          <DossierBanner
+            missing={
+              dossierStatus({
+                name: dossier.name,
+                phone: dossier.phone,
+                cvPathname: dossier.cv?.pathname,
+              }).missing
+            }
+          />
+        )}
         <SearchFilters referentials={referentials} total={total} />
         <ActiveFilters referentials={referentials} />
         <ResultsHeader total={total} />
