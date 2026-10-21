@@ -45,6 +45,7 @@
   - une offre `published` a un `publishedAt` ; une offre collectée a `sourceUrl` et `sourceCheckedAt` ;
   - une date de début peut accompagner une durée sans date de fin.
 - Toute lecture d'offres côté candidat filtre par `activeOfferConditions(today)` (`src/server/offers/queries.ts`), avec `today = todayInParis(new Date())` : c'est la règle `isActive` en SQL.
+- Recherche : `searchOffers(criteria, { page, pageSize, today })` (`src/server/search/`), critères validés par `searchCriteriaSchema` (`src/domain/search-criteria.ts`). Toute règle de correspondance s'écrit deux fois, dans `matchesCriteria` (`src/domain/offer-matching.ts`, l'oracle) et dans `build-conditions.ts` : le test d'intégration exige qu'elles retiennent les mêmes offres du jeu de démonstration.
 
 ## Authentification
 

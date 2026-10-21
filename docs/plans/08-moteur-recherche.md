@@ -78,9 +78,9 @@ Dans `src/server/search/` :
 
 ## Critères d'acceptation
 
-- [ ] Chaque règle du §4 a ses tests unitaires, cas inconnus compris.
-- [ ] La requête SQL donne le même résultat que l'oracle sur toutes les combinaisons testées.
-- [ ] En local, une recherche sur la base de démonstration répond en moins de 100 ms.
+- [x] Chaque règle du §4 a ses tests unitaires, cas inconnus compris.
+- [x] La requête SQL donne le même résultat que l'oracle sur toutes les combinaisons testées.
+- [x] En local, une recherche sur la base de démonstration répond en moins de 100 ms.
 
 ## Hors périmètre
 
