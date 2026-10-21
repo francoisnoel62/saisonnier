@@ -15,6 +15,7 @@ Il y applique les demandes des employeurs et y maintient les référentiels.
    - Déduplication par `sourceUrl`.
    - Validation du minimum de publication et des domaines exclus, sur la source **et** sur la destination.
    - Valeurs fixées : `origin = collected`, `status = published`, `sourceCheckedAt = maintenant`.
+   - Un refus renvoie ses motifs : éléments manquants (`checkPublicationMinimum`) et domaines exclus. Le futur scan les conservera, avec les données brutes, dans une file de revue du back-office (H16).
    - Le futur scan nocturne appellera cette fonction. **Ce plan ne contient aucun scraping** (§6, §8).
 2. **Page `/admin/annonces`** : un tableau de toutes les annonces.
    - **Filtres** : origine, statut, entreprise, recherche dans l'intitulé.

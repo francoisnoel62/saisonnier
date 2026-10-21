@@ -118,6 +118,7 @@ Le cahier des charges laisse ces points ouverts. Les plans appliquent les choix 
 | H13 | L'intitulé du poste est obligatoire au dépôt ; le métier choisi dans le référentiel reste facultatif. | 07, 14 |
 | H14 | Le nom du service n'est pas décidé. Le nom provisoire est centralisé dans `src/config/site.ts`. | 01, 18 |
 | H15 | Prestations : les demandes sont enregistrées puis traitées à la main. Ni tarif, ni paiement, ni questionnaire en ligne. | 17 |
+| H16 | Une annonce refusée par la collecte automatique (minimum non atteint, domaine exclu) est conservée avec ses motifs dans une file de revue du back-office : aucune n'est écartée en silence. Les contraintes de la table des offres valant pour toute ligne, cette file a sa propre table. | 15 |
 
 ## Glossaire : cahier des charges → code
 
