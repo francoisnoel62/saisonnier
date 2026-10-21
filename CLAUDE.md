@@ -5,7 +5,7 @@
 ## Projet
 
 - Besoin : [cahier des charges](docs/cahier-des-charges-job-board-saisonnier-v1.md).
-- Réalisation : [plans, hypothèses H1–H15 et glossaire](docs/plans/README.md). Une branche par plan (`plan/NN-slug`), une PR, une preview Vercel vérifiée avant le merge.
+- Réalisation : [plans, hypothèses H1–H16 et glossaire](docs/plans/README.md). Une branche par plan (`plan/NN-slug`), une PR, une preview Vercel vérifiée avant le merge.
 - Déploiement : projet Vercel `saisonnier` (équipe `francois-noels-projects`), production sur `main`.
 
 ## Commandes
