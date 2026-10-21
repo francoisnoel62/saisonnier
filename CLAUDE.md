@@ -66,6 +66,8 @@
   - le layout `src/app/(app)/layout.tsx` pose la sidebar ; sa navigation vient de `src/config/navigation.ts`, par rôle. Une nouvelle page de menu s'y déclare, avec son titre d'en-tête ;
   - les layouts `employeur/` et `admin/` appellent `requireRole` ; les pages candidat l'appellent elles-mêmes ;
   - `error.tsx` reçoit `retry` (Next 16.3+), plus `reset`.
+- Pages publiques (accueil, `/contact`, pages légales) dans `src/app/(public)/`, sans appel à `requireUser` ; elles ne montrent jamais d'offre (H12). Tout nouveau chemin public s'ajoute à `src/app/sitemap.ts`, tout nouveau chemin de l'application à `src/app/robots.ts`.
+- Messages au fondateur : table `contact_messages`, Server Action `sendContactMessage` (zod, champ piège, 3 messages par email et par heure), boîte dans `/admin/demandes`. Réutiliser ce formulaire (`/contact?motif=…&offre=<id>`) plutôt que d'en créer un autre.
 - Nom du service : uniquement dans `src/config/site.ts` (H14).
 - Une information absente vaut « Non précisé » (`unknown`). Ne jamais la convertir en « Non », ne jamais l'inventer.
 - Montants stockés en centimes. Jamais de conversion brut ↔ net, ni horaire ↔ mensuel.
