@@ -58,6 +58,10 @@ Le plan 05 ajoute `e2e`.
   - règles métier pures dans `src/domain/`, sans accès réseau ni base, et testées ;
   - accès aux données dans `src/server/<module>/` ;
   - chaque Server Action et chaque route vérifie la session et le rôle via `src/lib/dal.ts`. Le proxy ne fait que des redirections optimistes.
+- Shell authentifié :
+  - le layout `src/app/(app)/layout.tsx` pose la sidebar ; sa navigation vient de `src/config/navigation.ts`, par rôle. Une nouvelle page de menu s'y déclare, avec son titre d'en-tête ;
+  - les layouts `employeur/` et `admin/` appellent `requireRole` ; les pages candidat l'appellent elles-mêmes ;
+  - `error.tsx` reçoit `retry` (Next 16.3+), plus `reset`.
 - Nom du service : uniquement dans `src/config/site.ts` (H14).
 - Une information absente vaut « Non précisé » (`unknown`). Ne jamais la convertir en « Non », ne jamais l'inventer.
 - Montants stockés en centimes. Jamais de conversion brut ↔ net, ni horaire ↔ mensuel.
