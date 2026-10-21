@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm"
+import { relations, sql } from "drizzle-orm"
 import {
   boolean,
   check,
@@ -30,6 +30,13 @@ export const departments = pgTable(
   },
   (t) => [index().on(t.regionCode)],
 )
+
+export const departmentsRelations = relations(departments, ({ one }) => ({
+  region: one(regions, {
+    fields: [departments.regionCode],
+    references: [regions.code],
+  }),
+}))
 
 export const occupations = pgTable("occupations", {
   id: uuid().primaryKey().defaultRandom(),

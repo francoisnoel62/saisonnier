@@ -23,6 +23,7 @@
 | `npm run db:generate` | migration SQL depuis `src/lib/db/schema` (`--custom` pour une migration de données) |
 | `npm run db:migrate` / `db:check` / `db:studio` | appliquer, vérifier, explorer |
 | `npm run admin:grant -- <email>` | passer en `admin` un compte existant et vérifié (autre base : préfixer `DATABASE_URL=…`) |
+| `npm run db:seed:demo` | jeu de démonstration dans la base de développement : 8 entreprises fictives et 40 offres datées par rapport à aujourd'hui ; relancer le remet à l'état initial ; refusé si `VERCEL_ENV=production` |
 | `npm run e2e` / `e2e:ui` | tests Playwright (`e2e/*.spec.ts`), projets `chromium` et `mobile` (Pixel 7), sur `saisonnier_test` |
 
 - L'E2E lance son propre `next dev -p 3100` (dossier `.next-e2e`) : il tourne en même temps que `npm run dev`.
@@ -37,6 +38,13 @@
 - Local : `.env.development.local` et `.env.test.local` (non versionnés). Vercel : Neon (Postgres 18) injecte `DATABASE_URL` (poolée) et `DATABASE_URL_UNPOOLED` (migrations).
 - Les migrations versionnées dans `drizzle/` s'appliquent au build Vercel (`vercel.json`) ; chaque preview migre sa branche Neon.
 - Les référentiels (régions, départements, métiers, domaines exclus) sont insérés par migration SQL en `ON CONFLICT DO NOTHING`, jamais par un script manuel.
+- Entreprises et offres : `src/lib/db/schema/companies.ts` et `offers.ts`. Les valeurs des enums sont définies une seule fois, dans `src/domain/` (`offer.ts`, `tri-state.ts`, `salary.ts`, `membership.ts`).
+- Les invariants des offres sont des contraintes `CHECK`, commentées dans le schéma. Les schémas zod des formulaires les reprennent toutes, pour qu'aucune erreur SQL n'atteigne l'utilisateur. En particulier :
+  - un texte absent s'écrit `NULL`, jamais `''` ;
+  - `languages` (codes ISO 639-1) n'est rempli que si `languagesRequired = 'yes'`, et l'est alors toujours ;
+  - une offre `published` a un `publishedAt` ; une offre collectée a `sourceUrl` et `sourceCheckedAt` ;
+  - une date de début peut accompagner une durée sans date de fin.
+- Toute lecture d'offres côté candidat filtre par `activeOfferConditions(today)` (`src/server/offers/queries.ts`), avec `today = todayInParis(new Date())` : c'est la règle `isActive` en SQL.
 
 ## Authentification
 
@@ -57,7 +65,7 @@
 - shadcn/ui (base Radix, preset Nova, icônes `lucide-react`) :
   - les composants s'ajoutent par la CLI (`npx shadcn@latest add …`) ; ne jamais réécrire `src/components/ui` à la main ;
   - `cn()` vient du package `cn` (réexporté par `src/lib/utils.ts`).
-- Tableaux en **TanStack Table v9** : suivre le modèle de `src/components/data-table.tsx` (`useTable`, `tableFeatures`, `createSortedRowModel`…). Ne pas utiliser l'API v8 `useReactTable`.
+- Tableaux en **TanStack Table v9** : suivre le modèle de `src/components/dashboard/data-table.tsx` (`useTable`, `tableFeatures`, `createSortedRowModel`…). Ne pas utiliser l'API v8 `useReactTable`.
 - Répartition du code :
   - règles métier pures dans `src/domain/`, sans accès réseau ni base, et testées ;
   - accès aux données dans `src/server/<module>/` ;
@@ -71,6 +79,8 @@
 - Nom du service : uniquement dans `src/config/site.ts` (H14).
 - Une information absente vaut « Non précisé » (`unknown`). Ne jamais la convertir en « Non », ne jamais l'inventer.
 - Montants stockés en centimes. Jamais de conversion brut ↔ net, ni horaire ↔ mensuel.
+- Règles de l'offre, à réutiliser plutôt qu'à réécrire (`src/domain/`) : `triLabel`, `displayedSalary` et `formatSalary`, `isActive` et `expiryReason`, `findBlockedTargets`, `checkPublicationMinimum`, `applicationModeExplanation`, et `publicCompanyName` partout où une entreprise est nommée aux candidats.
+- Données de démonstration et de test : contacts fictifs uniquement (domaines `.example`, numéros des tranches réservées à la fiction : 01 99 00, 02 61 91, 03 53 01, 04 65 71, 05 36 49, 06 39 98). Le jeu `demoOffers(today)` (`src/lib/db/seed/demo-data.ts`) sert d'oracle aux tests de la recherche.
 - Dates :
   - les dates de contrat sont de type `date` ;
   - « aujourd'hui » s'évalue dans le fuseau `Europe/Paris` ;
