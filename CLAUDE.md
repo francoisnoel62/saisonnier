@@ -5,7 +5,7 @@
 ## Projet
 
 - Besoin : [cahier des charges](docs/cahier-des-charges-job-board-saisonnier-v1.md).
-- Réalisation : [plans, hypothèses H1–H19 et glossaire](docs/plans/README.md). Une branche par plan (`plan/NN-slug`), une PR, une preview Vercel vérifiée avant le merge.
+- Réalisation : [plans, hypothèses H1–H20 et glossaire](docs/plans/README.md). Une branche par plan (`plan/NN-slug`), une PR, une preview Vercel vérifiée avant le merge.
 - Déploiement : projet Vercel `saisonnier` (équipe `francois-noels-projects`), production sur `main`.
 
 ## Commandes
@@ -87,6 +87,7 @@
   - les composants s'ajoutent par la CLI (`npx shadcn@latest add …`) ; ne jamais réécrire `src/components/ui` à la main ;
   - `cn()` vient du package `cn` (réexporté par `src/lib/utils.ts`).
 - Tableaux en **TanStack Table v9** : suivre le modèle de `src/components/dashboard/data-table.tsx` (`useTable`, `tableFeatures`, `createSortedRowModel`…). Ne pas utiliser l'API v8 `useReactTable`. `row.getVisibleCells()` exige `columnVisibilityFeature`.
+- Formulaire à cases à cocher ou listes Radix : l'envoyer par `onSubmit` + `startTransition(() => formAction(formData))`, pas par `<form action>`, que React 19 réinitialise après chaque envoi (les choix seraient perdus après une erreur).
 - Un panneau (`Sheet`) ouvert depuis un menu : `DropdownMenu modal={false}`, et `onCloseAutoFocus` rend le focus au bouton du menu (`employer-offers-table.tsx`). Indicateurs de tableau de bord : `SectionCards({ cards })` (`src/components/dashboard/section-cards.tsx`).
 - Répartition du code :
   - règles métier pures dans `src/domain/`, sans accès réseau ni base, et testées ;
@@ -97,6 +98,7 @@
   - les layouts `employeur/` et `admin/` appellent `requireRole` ; les pages candidat l'appellent elles-mêmes ;
   - `error.tsx` reçoit `retry` (Next 16.3+), plus `reset`.
 - Pages publiques (accueil, `/contact`, pages légales) dans `src/app/(public)/`, sans appel à `requireUser` ; elles ne montrent jamais d'offre (H12). Tout nouveau chemin public s'ajoute à `src/app/sitemap.ts`, tout nouveau chemin de l'application à `src/app/robots.ts`.
+- Prestations (plan 17, H15, H20) : table `service_requests`, vocabulaire et schémas dans `src/domain/service-request.ts`, données dans `src/server/services/requests.ts`, Server Actions `requestServices` (email au fondateur) et `updateServiceRequestAction`. Boîte de l'admin : onglet « Prestations » de `/admin/demandes` (`?onglet=prestations`). Aucune prestation n'est exigée pour publier ; la note interne n'est jamais montrée à l'employeur.
 - Messages au fondateur : table `contact_messages`, Server Action `sendContactMessage` (zod, champ piège, 3 messages par email et par heure), boîte dans `/admin/demandes`. Réutiliser ce formulaire (`/contact?motif=…&offre=<id>`) plutôt que d'en créer un autre.
 - Nom du service : uniquement dans `src/config/site.ts` (H14).
 - Une information absente vaut « Non précisé » (`unknown`). Ne jamais la convertir en « Non », ne jamais l'inventer.

@@ -54,6 +54,12 @@ export default async function AdminHomePage() {
             href: "/admin/demandes",
           },
           {
+            label: "Prestations demandées",
+            value: indicators.newServiceRequests,
+            description: "Nouvelles demandes à traiter",
+            href: "/admin/demandes?onglet=prestations",
+          },
+          {
             label: "Candidats inscrits",
             value: indicators.candidates,
             description: "Comptes candidats créés",
