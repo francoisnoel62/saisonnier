@@ -19,6 +19,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import {
+  canConfirmValidity,
   canEditOffer,
   canUnpublishOffer,
   employerOfferState,
@@ -27,6 +28,7 @@ import {
 } from "@/domain/employer-offer"
 import { expiryReason, todayInParis } from "@/domain/offer-activity"
 import { contractPeriod, seasonLabels } from "@/domain/offer-display"
+import { awaitsValidityAnswer } from "@/domain/validity-reminder"
 import { requireRole } from "@/lib/dal"
 import { getMembership } from "@/server/companies/membership"
 import { getBlockedDomains } from "@/server/offers/application"
@@ -76,6 +78,8 @@ function toRow(
     season: seasonLabels[offer.season],
     period: contractPeriod(offer),
     validityConfirmedAt: offer.validityConfirmedAt?.toISOString() ?? null,
+    awaitsValidity:
+      awaitsValidityAnswer(offer) && canConfirmValidity(manager, offer),
     canEdit,
     // Une annonce publiée mais échue n'est déjà plus visible : on corrige ses dates.
     canUnpublish: canUnpublishOffer(manager, offer) && state === "online",

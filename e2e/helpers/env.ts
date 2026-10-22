@@ -15,6 +15,8 @@ const serverVariables = [
   "BETTER_AUTH_SECRET",
   "EMAIL_FROM",
   "ADMIN_NOTIFICATION_EMAIL",
+  "CRON_SECRET",
+  "VALIDITY_TOKEN_SECRET",
 ] as const
 
 export function serverEnv() {

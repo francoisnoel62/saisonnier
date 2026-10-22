@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
         "/mot-de-passe-oublie",
         "/reinitialiser-mot-de-passe",
         "/verification-email",
+        "/annonce/",
       ],
     },
     sitemap: `${env.BETTER_AUTH_URL}/sitemap.xml`,

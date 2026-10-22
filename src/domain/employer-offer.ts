@@ -97,6 +97,15 @@ export function canUnpublishOffer(
   )
 }
 
+// Répondre au rappel de validité (plan 16) : « Oui, toujours valable » ou « Non, retirer ». Mêmes
+// droits que la mise hors ligne : une annonce publiée, par un déposant vérifié.
+export function canConfirmValidity(
+  manager: OfferManager,
+  offer: ManagedOfferFields,
+) {
+  return canUnpublishOffer(manager, offer)
+}
+
 // Remettre en ligne : une annonce retirée ou expirée, par un déposant vérifié, et seulement si
 // aucune échéance n'est dépassée (§6). Renvoie le motif du refus, ou null.
 export function republishRefusal(

@@ -28,6 +28,11 @@ const serverEnvSchema = z.object({
   STORAGE_DRIVER: z.enum(["vercel-blob", "local"]).default("vercel-blob"),
   // Injecté par Vercel une fois le store connecté ; lu directement par @vercel/blob.
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
+
+  // Tâches quotidiennes (plan 16) : Vercel Cron envoie « Authorization: Bearer <CRON_SECRET> ».
+  CRON_SECRET: z.string().min(32),
+  // Signature des liens du rappel de validité (HMAC-SHA256).
+  VALIDITY_TOKEN_SECRET: z.string().min(32),
 })
 
 function parseServerEnv() {

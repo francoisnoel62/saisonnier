@@ -64,6 +64,7 @@ import {
 } from "@/domain/employer-offer"
 import { formatDate } from "@/lib/format"
 import {
+  confirmOfferValidity,
   republishOffer,
   unpublishOffer,
   type OfferStatusResult,
@@ -80,6 +81,8 @@ export type EmployerOfferRow = {
   season: string
   period: string
   validityConfirmedAt: string | null
+  // Rappel de validité sans réponse (plan 16) : « Toujours valable ? ».
+  awaitsValidity: boolean
   canEdit: boolean
   canUnpublish: boolean
   canRepublish: boolean
@@ -129,6 +132,7 @@ const columns = columnHelper.columns([
             {row.original.note}
           </span>
         )}
+        {row.original.awaitsValidity && <ValidityQuestion row={row.original} />}
       </div>
     ),
   }),
@@ -276,19 +280,16 @@ export function EmployerOffersTable({ rows }: { rows: EmployerOfferRow[] }) {
   )
 }
 
-// Aperçu, modification, mise hors ligne ou remise en ligne d'une annonce. Le serveur revérifie
-// chaque droit ; un refus (échéance dépassée, par exemple) s'affiche tel qu'il le formule.
-function RowActions({ row }: { row: EmployerOfferRow }) {
-  const [previewOpen, setPreviewOpen] = useState(false)
+// Change le statut d'une annonce, une action à la fois. Le serveur revérifie chaque droit ; un
+// refus (échéance dépassée, par exemple) s'affiche tel qu'il le formule.
+function useStatusChange(row: EmployerOfferRow) {
   const [pending, startTransition] = useTransition()
-  const triggerRef = useRef<HTMLButtonElement>(null)
 
   function change(
     action: (offerId: string) => Promise<OfferStatusResult>,
     success: string,
   ) {
-    // Une action à la fois. Le bouton du menu reste actif : désactivé, il perdrait le focus
-    // clavier pendant l'action.
+    // Les boutons restent actifs pendant l'action : désactivés, ils perdraient le focus clavier.
     if (pending) return
     startTransition(async () => {
       try {
@@ -303,6 +304,54 @@ function RowActions({ row }: { row: EmployerOfferRow }) {
       }
     })
   }
+
+  return { pending, change }
+}
+
+const offlineMessage = (title: string) =>
+  `« ${title} » est hors ligne : les candidats ne la voient plus.`
+
+// Rappel de validité sans réponse (§6, plan 16) : les deux réponses du lien envoyé par email.
+function ValidityQuestion({ row }: { row: EmployerOfferRow }) {
+  const { pending, change } = useStatusChange(row)
+  return (
+    <div
+      role="group"
+      aria-label={`Toujours valable ? « ${row.title} »`}
+      className="flex flex-col gap-1.5 rounded-md border p-2"
+    >
+      <span className="text-xs font-medium">Toujours valable ?</span>
+      <div className="flex flex-wrap gap-1.5">
+        <Button
+          size="xs"
+          aria-busy={pending}
+          onClick={() =>
+            change(
+              confirmOfferValidity,
+              `« ${row.title} » reste en ligne : merci de l'avoir confirmée.`,
+            )
+          }
+        >
+          Oui, toujours valable
+        </Button>
+        <Button
+          size="xs"
+          variant="outline"
+          aria-busy={pending}
+          onClick={() => change(unpublishOffer, offlineMessage(row.title))}
+        >
+          Non, retirer l&rsquo;annonce
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// Aperçu, modification, mise hors ligne ou remise en ligne d'une annonce.
+function RowActions({ row }: { row: EmployerOfferRow }) {
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const { pending, change } = useStatusChange(row)
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
   return (
     <div className="flex justify-end">
@@ -339,12 +388,7 @@ function RowActions({ row }: { row: EmployerOfferRow }) {
           )}
           {row.canUnpublish && (
             <DropdownMenuItem
-              onSelect={() =>
-                change(
-                  unpublishOffer,
-                  `« ${row.title} » est hors ligne : les candidats ne la voient plus.`,
-                )
-              }
+              onSelect={() => change(unpublishOffer, offlineMessage(row.title))}
             >
               <EyeOffIcon aria-hidden />
               Mettre hors ligne
