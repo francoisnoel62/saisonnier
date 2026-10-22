@@ -148,3 +148,54 @@ test("§6 — un lien altéré n'agit pas et propose de se connecter", async ({
     page.getByRole("button", { name: /toujours valable/ }),
   ).toHaveCount(0)
 })
+
+test("§6 — l'admin désactive la tâche quotidienne : la route ne fait rien ; réactivée, elle s'exécute et son passage s'affiche", async ({
+  asAdmin: page,
+  request,
+  db,
+}) => {
+  const cron = () =>
+    request.get(CRON, {
+      headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+    })
+  const toggle = page.getByRole("switch", { name: "Tâche quotidienne activée" })
+
+  try {
+    await page.goto("/admin", { waitUntil: "networkidle" })
+    await expect(toggle).toBeChecked()
+    await toggle.click()
+    await expect(
+      page.getByText(
+        "Tâche quotidienne désactivée : plus rien ne s'exécute la nuit.",
+      ),
+    ).toBeVisible()
+    await expect(toggle).not.toBeChecked()
+
+    const skipped = await cron()
+    expect(skipped.ok()).toBe(true)
+    expect(await skipped.json()).toMatchObject({ skipped: "disabled" })
+
+    await toggle.click()
+    await expect(
+      page.getByText(
+        "Tâche quotidienne activée : elle s'exécutera cette nuit.",
+      ),
+    ).toBeVisible()
+    const run = await cron()
+    expect(await run.json()).toMatchObject({
+      expired: expect.any(Number),
+      reminders: { sent: expect.any(Number), failed: 0 },
+    })
+
+    await page.reload()
+    await expect(toggle).toBeChecked()
+    await expect(
+      page.getByText(/^Dernier passage : .*annonces? expirées?/),
+    ).toBeVisible()
+  } finally {
+    // Les autres tests appellent la route : la tâche reste active.
+    await db.query(
+      "update scheduled_jobs set enabled = true where name = 'daily'",
+    )
+  }
+})

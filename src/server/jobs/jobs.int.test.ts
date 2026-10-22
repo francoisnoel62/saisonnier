@@ -10,12 +10,23 @@ import {
 } from "vitest"
 
 import { db } from "@/lib/db"
-import { companies, offers, user, type NewOffer } from "@/lib/db/schema"
+import {
+  companies,
+  offers,
+  scheduledJobs,
+  user,
+  type NewOffer,
+} from "@/lib/db/schema"
 import type { Email } from "@/lib/email/send"
 import { env } from "@/lib/env"
 import { verifyOfferToken } from "@/lib/signed-token"
 
 import { expireOffers } from "./expire-offers"
+import {
+  getScheduledJob,
+  recordDailyJobRun,
+  setScheduledJobEnabled,
+} from "./settings"
 import { sendValidityReminders } from "./validity-reminders"
 
 // Les emails sont interceptés : le test lit ce qui serait envoyé.
@@ -73,6 +84,7 @@ async function cleanUp() {
     await db.delete(offers).where(inArray(offers.companyId, ids))
     await db.delete(companies).where(inArray(companies.id, ids))
   }
+  await db.delete(scheduledJobs).where(eq(scheduledJobs.name, "daily"))
   await db.delete(user).where(eq(user.id, DEPOSITOR))
 }
 
@@ -225,5 +237,41 @@ describe("sendValidityReminders", () => {
     expect(
       sent.filter((item) => /Collectée|Hors ligne/.test(item.subject)),
     ).toEqual([])
+  })
+})
+
+describe("tâche quotidienne activable depuis l'admin", () => {
+  it("est active tant que personne ne l'a désactivée", async () => {
+    await db.delete(scheduledJobs).where(eq(scheduledJobs.name, "daily"))
+    expect(await getScheduledJob("daily")).toMatchObject({
+      enabled: true,
+      lastRunAt: null,
+      enabledChangedAt: null,
+    })
+  })
+
+  it("garde l'auteur et la date du changement, puis le dernier passage", async () => {
+    await setScheduledJobEnabled("daily", false, DEPOSITOR, now)
+    expect(await getScheduledJob("daily")).toMatchObject({
+      enabled: false,
+      enabledChangedAt: now,
+      updatedByName: "Dominique Déposant",
+    })
+
+    const later = new Date(now.getTime() + DAY_MS)
+    await setScheduledJobEnabled("daily", true, DEPOSITOR, later)
+    const summary = {
+      date: "2026-10-23",
+      expired: 2,
+      reminders: { sent: 1, failed: 0 },
+    }
+    await recordDailyJobRun(summary, later)
+    expect(await getScheduledJob("daily")).toMatchObject({
+      enabled: true,
+      // Un passage ne change pas la date du dernier changement d'état.
+      enabledChangedAt: later,
+      lastRunAt: later,
+      lastSummary: summary,
+    })
   })
 })

@@ -2,19 +2,23 @@ import { FilePlusIcon } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { DailyJobCard } from "@/components/admin/daily-job-card"
 import { ChartAreaInteractive } from "@/components/dashboard/chart-area-interactive"
 import { SectionCards } from "@/components/dashboard/section-cards"
 import { Button } from "@/components/ui/button"
 import { todayInParis } from "@/domain/offer-activity"
+import { dailyJobSummaryLabel } from "@/domain/scheduled-job"
 import { getAdminIndicators, getDailyActivity } from "@/server/admin/dashboard"
+import { getScheduledJob } from "@/server/jobs/settings"
 
 export const metadata: Metadata = { title: "Tableau de bord" }
 
 export default async function AdminHomePage() {
   const today = todayInParis(new Date())
-  const [indicators, activity] = await Promise.all([
+  const [indicators, activity, dailyJob] = await Promise.all([
     getAdminIndicators(today),
     getDailyActivity(today),
+    getScheduledJob("daily"),
   ])
 
   return (
@@ -67,6 +71,25 @@ export default async function AdminHomePage() {
         ]}
       />
       <ChartAreaInteractive data={activity} />
+      <DailyJobCard
+        enabled={dailyJob.enabled}
+        lastRun={
+          dailyJob.lastRunAt && dailyJob.lastSummary
+            ? {
+                at: dailyJob.lastRunAt.toISOString(),
+                summary: dailyJobSummaryLabel(dailyJob.lastSummary),
+              }
+            : null
+        }
+        updated={
+          dailyJob.enabledChangedAt
+            ? {
+                at: dailyJob.enabledChangedAt.toISOString(),
+                by: dailyJob.updatedByName,
+              }
+            : null
+        }
+      />
     </div>
   )
 }
