@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 // Job-boards et agrégateurs exclus (§2, H9) : aucune destination de candidature ni aucune source
 // d'annonce ne doit y mener. La liste vient de la table `blocked_domains`.
 
@@ -85,3 +87,41 @@ export function findBlockedTargets(
     return host && domain ? [{ field, host, domain }] : []
   })
 }
+
+// Domaine saisi par l'admin : un domaine, l'adresse d'une page ou un email, réduit à l'hôte en
+// minuscules et sans « www. » ("https://www.Indeed.fr/emploi" → "indeed.fr"). Renvoie null si la
+// valeur n'est pas un nom de domaine.
+export function normalizeBlockedDomain(value: string) {
+  const host = hostOf(value)
+  return host && /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host) ? host : null
+}
+
+export const BLOCKED_DOMAIN_REASON_MAX_LENGTH = 200
+
+// Ajout d'un domaine exclu par l'admin : le domaine, et le motif de son exclusion.
+export const blockedDomainSchema = z.object({
+  domain: z
+    .string()
+    .trim()
+    .min(1, "Indiquez le domaine à exclure.")
+    .max(500, "Cette adresse est trop longue.")
+    .transform((value, ctx) => {
+      const domain = normalizeBlockedDomain(value)
+      if (!domain) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Saisissez un nom de domaine, par exemple jobboard.fr.",
+        })
+        return z.NEVER
+      }
+      return domain
+    }),
+  reason: z
+    .string()
+    .trim()
+    .min(1, "Indiquez le motif de l'exclusion.")
+    .max(
+      BLOCKED_DOMAIN_REASON_MAX_LENGTH,
+      `Le motif ne doit pas dépasser ${BLOCKED_DOMAIN_REASON_MAX_LENGTH} caractères.`,
+    ),
+})

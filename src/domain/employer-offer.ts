@@ -111,6 +111,11 @@ export function republishRefusal(
   ) {
     return "Cette annonce ne peut pas être remise en ligne."
   }
+  return expiryRefusal(offer, today)
+}
+
+// Échéance qui empêche la remise en ligne d'une annonce, ou null (§6, H18).
+export function expiryRefusal(offer: OfferStateFields, today: string) {
   switch (expiryReason(offer, today)) {
     case "deadline":
       return "La date limite de candidature est passée : modifiez-la avant de remettre l'annonce en ligne."

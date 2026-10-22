@@ -1,6 +1,6 @@
 "use client"
 
-import { BadgeCheckIcon, CircleAlertIcon, XIcon } from "lucide-react"
+import { BadgeCheckIcon, CircleAlertIcon, GlobeIcon, XIcon } from "lucide-react"
 
 import { HowToApply } from "@/components/offers/application-panel"
 import {
@@ -19,12 +19,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import type { OfferOrigin } from "@/domain/offer"
 import { seasonLabels } from "@/domain/offer-display"
 
 // Ce que voit un candidat : l'en-tête et la fiche (OfferDetails, plan 11), plus les coordonnées
 // de candidature, que la fiche ne montre qu'aux dossiers complets (H3).
 export type OfferPreviewData = {
   title: string
+  // Provenance (§6) : déposée par l'employeur, ou collectée sur son site officiel.
+  origin: OfferOrigin
   companyName: string
   details: OfferDetailsData
   applicationExplanation: string
@@ -95,10 +98,17 @@ export function OfferPreview({
           )}
         </h2>
         <p className="text-lg text-muted-foreground">{preview.companyName}</p>
-        <p className="flex items-start gap-2 text-sm text-muted-foreground">
-          <BadgeCheckIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-          Annonce déposée par l&rsquo;employeur
-        </p>
+        {preview.origin === "deposited" ? (
+          <p className="flex items-start gap-2 text-sm text-muted-foreground">
+            <BadgeCheckIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+            Annonce déposée par l&rsquo;employeur
+          </p>
+        ) : (
+          <p className="flex items-start gap-2 text-sm text-muted-foreground">
+            <GlobeIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+            Annonce publiée sur le site officiel de {preview.companyName}
+          </p>
+        )}
       </header>
 
       <HowToApply explanation={preview.applicationExplanation} />
