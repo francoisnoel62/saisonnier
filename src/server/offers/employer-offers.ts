@@ -3,6 +3,7 @@ import "server-only"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 
 import {
+  canConfirmValidity,
   canEditOffer,
   canUnpublishOffer,
   canViewOffer,
@@ -268,6 +269,31 @@ export async function unpublishEmployerOffer(
       .set({ status: "unpublished", unpublishedAt: now })
       .where(eq(offers.id, offer.id))
     return { ok: true, id: offer.id, status: "unpublished" }
+  })
+}
+
+// « Oui, toujours valable » (plan 16) : l'annonce reste en ligne, le prochain rappel part dans
+// 30 jours.
+export async function confirmEmployerOfferValidity(
+  userId: string,
+  offerId: string,
+  now = new Date(),
+): Promise<OfferWriteResult> {
+  if (!isUuid(offerId)) return { ok: false, message: offerMessages.notFound }
+  return db.transaction(async (tx) => {
+    const manager = await lockManager(tx, userId)
+    const offer = await lockOffer(tx, offerId)
+    if (!manager || !offer || !canViewOffer(manager, offer)) {
+      return { ok: false, message: offerMessages.notFound }
+    }
+    if (!canConfirmValidity(manager, offer)) {
+      return { ok: false, message: offerMessages.notOnline }
+    }
+    await tx
+      .update(offers)
+      .set({ validityConfirmedAt: now })
+      .where(eq(offers.id, offer.id))
+    return { ok: true, id: offer.id, status: offer.status }
   })
 }
 

@@ -61,9 +61,9 @@ Chaque nuit, deux traitements :
 
 ## Critères d'acceptation
 
-- [ ] §6 / §9 : les échéances dépassées sont retirées des résultats actifs ; une date de début dépassée ne suffit pas.
-- [ ] Le rappel part tous les 30 jours, sans retrait automatique.
-- [ ] La route cron refuse tout appel sans le secret.
+- [x] §6 / §9 : les échéances dépassées sont retirées des résultats actifs ; une date de début dépassée ne suffit pas.
+- [x] Le rappel part tous les 30 jours, sans retrait automatique.
+- [x] La route cron refuse tout appel sans le secret.
 
 ## Hors périmètre
 

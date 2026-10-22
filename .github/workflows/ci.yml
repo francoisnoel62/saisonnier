@@ -43,8 +43,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Secret propre à chaque exécution, jamais versionné.
-      - run: echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+      # Secrets propres à chaque exécution, jamais versionnés.
+      - run: |
+          echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+          echo "CRON_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "VALIDITY_TOKEN_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v7
         with:

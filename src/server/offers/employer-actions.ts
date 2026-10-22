@@ -15,6 +15,7 @@ import { requireRole } from "@/lib/dal"
 import { getMembership } from "@/server/companies/membership"
 
 import {
+  confirmEmployerOfferValidity,
   createEmployerOffer,
   getEmployerOffer,
   getOfferFormReferentials,
@@ -141,6 +142,14 @@ export async function unpublishOffer(
   const { user } = await requireRole("employer")
   if (!isUuid(offerId)) return { ok: false, message: offerMessages.notFound }
   return toStatusResult(await unpublishEmployerOffer(user.id, offerId))
+}
+
+export async function confirmOfferValidity(
+  offerId: string,
+): Promise<OfferStatusResult> {
+  const { user } = await requireRole("employer")
+  if (!isUuid(offerId)) return { ok: false, message: offerMessages.notFound }
+  return toStatusResult(await confirmEmployerOfferValidity(user.id, offerId))
 }
 
 export async function republishOffer(

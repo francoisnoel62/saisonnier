@@ -177,6 +177,34 @@ export function membershipRequestEmail({
   }
 }
 
+// Rappel de validité (§6, plan 16), tous les 30 jours : le lien signé permet de répondre sans se
+// connecter. Sans réponse, l'annonce reste en ligne.
+export function validityReminderEmail({
+  name,
+  title,
+  url,
+}: {
+  name: string
+  title: string
+  url: string
+}): Template {
+  const greeting = `Bonjour ${name},`
+  const body = `Votre annonce « ${title} » est en ligne depuis un mois ou plus. Est-elle toujours valable ? Un clic suffit pour la confirmer, ou pour la retirer si le poste est pourvu.`
+  const footer =
+    "Le lien est valable 30 jours. Sans réponse, l'annonce reste en ligne jusqu'à son échéance ; vous pouvez aussi la gérer depuis votre espace."
+
+  return {
+    subject: `Votre annonce « ${title} » est-elle toujours valable ?`,
+    text: `${greeting}\n\n${body}\n\n${url}\n\n${footer}`,
+    html: layout({
+      greeting,
+      paragraphs: [body],
+      action: { label: "Répondre", url },
+      footer,
+    }),
+  }
+}
+
 // Décision de l'admin, envoyée à l'employeur ; un refus en donne toujours le motif.
 export function membershipDecisionEmail({
   name,
