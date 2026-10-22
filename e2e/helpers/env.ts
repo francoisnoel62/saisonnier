@@ -6,7 +6,7 @@ try {
   // Pas de fichier (CI) : tout vient de l'environnement.
 }
 
-export const E2E_PORT = 3100
+export const E2E_PORT = Number(process.env.E2E_PORT ?? 3100)
 export const E2E_URL = `http://localhost:${E2E_PORT}`
 
 // Transmises au serveur de test ; elles priment sur les fichiers .env* chargés par Next.

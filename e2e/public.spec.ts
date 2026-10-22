@@ -39,19 +39,29 @@ test("§1/§5 — l'accueil ne montre aucune offre ni aucun lien vers une fiche"
 }) => {
   await page.goto("/")
   await expect(
-    page.getByRole("heading", { level: 1, name: /explicitement saisonniers/ }),
+    page.getByRole("heading", { level: 1, name: /Un job. Un lieu./ }),
   ).toBeVisible()
 
   // Les offres sont réservées aux comptes : aucun lien vers le catalogue ni vers une fiche.
   await expect(page.locator('a[href^="/offres"]')).toHaveCount(0)
-  await expect(
-    page.getByRole("link", { name: "Se connecter" }).first(),
-  ).toBeVisible()
+  if (await page.getByRole("button", { name: "Ouvrir le menu" }).isVisible()) {
+    await page.getByRole("button", { name: "Ouvrir le menu" }).click()
+    await expect(
+      page
+        .getByRole("navigation", { name: "Navigation mobile" })
+        .getByRole("link", { name: "Se connecter" }),
+    ).toBeVisible()
+    await page.getByRole("button", { name: "Fermer le menu" }).click()
+  } else {
+    await expect(
+      page.getByRole("link", { name: "Se connecter" }).first(),
+    ).toBeVisible()
+  }
   await expect(
     page.getByRole("link", { name: "Créer un compte" }).first(),
   ).toBeVisible()
   await expect(
-    page.getByRole("link", { name: "Employeurs : publier une offre" }).first(),
+    page.getByRole("link", { name: "Publier une offre", exact: true }).first(),
   ).toBeVisible()
   await expectNoHorizontalScroll(page)
 })
@@ -340,4 +350,79 @@ test("contact — l'entrée « Contact » du menu mène au formulaire", async ({
     }),
   ).toBeVisible()
   await expectNoHorizontalScroll(asEmployer)
+})
+
+test("accueil — la recherche conserve les critères jusqu’à la connexion", async ({
+  page,
+}) => {
+  await page.goto("/")
+  await page
+    .getByRole("combobox", { name: "Métier", exact: true })
+    .selectOption("serveur")
+  await page
+    .getByRole("combobox", { name: "Région", exact: true })
+    .selectOption("84")
+  await page.getByRole("checkbox", { name: "Avec logement" }).check()
+  await page.getByRole("button", { name: "Trouver ma saison" }).click()
+  await expect(page).toHaveURL(/\/connexion\?next=/)
+  const next = new URL(
+    new URL(page.url()).searchParams.get("next")!,
+    "http://localhost",
+  )
+  expect(next.pathname).toBe("/offres")
+  expect(next.searchParams.get("metier")).toBe("serveur")
+  expect(next.searchParams.get("region")).toBe("84")
+  expect(next.searchParams.get("logement")).toBe("oui")
+})
+
+test("accueil — une destination conserve son filtre géographique", async ({
+  page,
+}) => {
+  await page.goto("/")
+  await page
+    .getByRole("link", { name: "Explorer les départements de montagne" })
+    .click()
+  await expect(page).toHaveURL(/\/connexion\?next=/)
+  const next = new URL(
+    new URL(page.url()).searchParams.get("next")!,
+    "http://localhost",
+  )
+  expect(next.searchParams.get("dept")?.split(",")).toContain("74")
+})
+
+test("accueil — la recherche connectée rejoint le catalogue filtré", async ({
+  asCandidate,
+}) => {
+  await asCandidate.goto("/")
+  await asCandidate
+    .getByRole("combobox", { name: "Métier", exact: true })
+    .selectOption("serveur")
+  await asCandidate.getByRole("checkbox", { name: "Avec logement" }).check()
+  await asCandidate.getByRole("button", { name: "Trouver ma saison" }).click()
+  await expect(asCandidate).toHaveURL(/\/offres\?/)
+  const url = new URL(asCandidate.url())
+  expect(url.searchParams.get("metier")).toBe("serveur")
+  expect(url.searchParams.get("logement")).toBe("oui")
+})
+
+test("accueil — les réponses sont accessibles au clavier", async ({ page }) => {
+  await page.goto("/")
+  const question = page
+    .locator("summary")
+    .filter({ hasText: "Est-ce gratuit pour les candidats ?" })
+  await question.focus()
+  await page.keyboard.press("Enter")
+  await expect(
+    page.getByText(
+      "Oui. La création du compte, la recherche d’offres et la candidature sont gratuites.",
+      { exact: false },
+    ),
+  ).toBeVisible()
+  await page.keyboard.press("Enter")
+  await expect(
+    page.getByText(
+      "Oui. La création du compte, la recherche d’offres et la candidature sont gratuites.",
+      { exact: false },
+    ),
+  ).not.toBeVisible()
 })
