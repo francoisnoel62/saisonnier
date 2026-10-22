@@ -2,33 +2,65 @@ import "server-only"
 
 import { eq } from "drizzle-orm"
 
-import type { DailyJobSummary, ScheduledJobName } from "@/domain/scheduled-job"
+import {
+  scheduledJobNames,
+  type ScheduledJobName,
+  type ScheduledJobSummaries,
+} from "@/domain/scheduled-job"
 import { db } from "@/lib/db"
 import { scheduledJobs, user } from "@/lib/db/schema"
 
-// État des tâches planifiées (plan 16). Une tâche sans ligne en base est active.
+// État des tâches planifiées (plan 16). Une tâche du registre sans ligne en base est active.
 
-export async function getScheduledJob(name: ScheduledJobName) {
+const stateColumns = {
+  name: scheduledJobs.name,
+  enabled: scheduledJobs.enabled,
+  enabledChangedAt: scheduledJobs.enabledChangedAt,
+  updatedByName: user.name,
+  lastRunAt: scheduledJobs.lastRunAt,
+  lastSummary: scheduledJobs.lastSummary,
+}
+
+export type ScheduledJobState = {
+  name: ScheduledJobName
+  enabled: boolean
+  // Dernier changement d'état par un admin.
+  enabledChangedAt: Date | null
+  updatedByName: string | null
+  // Dernier passage exécuté.
+  lastRunAt: Date | null
+  lastSummary: ScheduledJobSummaries[ScheduledJobName] | null
+}
+
+const defaultState = (name: ScheduledJobName): ScheduledJobState => ({
+  name,
+  enabled: true,
+  enabledChangedAt: null,
+  updatedByName: null,
+  lastRunAt: null,
+  lastSummary: null,
+})
+
+// Toutes les tâches du registre, dans son ordre, avec leur état.
+export async function listScheduledJobs(): Promise<ScheduledJobState[]> {
+  const rows = await db
+    .select(stateColumns)
+    .from(scheduledJobs)
+    .leftJoin(user, eq(user.id, scheduledJobs.updatedByUserId))
+  return scheduledJobNames.map(
+    (name) => rows.find((row) => row.name === name) ?? defaultState(name),
+  )
+}
+
+export async function getScheduledJob(
+  name: ScheduledJobName,
+): Promise<ScheduledJobState> {
   const [row] = await db
-    .select({
-      enabled: scheduledJobs.enabled,
-      lastRunAt: scheduledJobs.lastRunAt,
-      lastSummary: scheduledJobs.lastSummary,
-      enabledChangedAt: scheduledJobs.enabledChangedAt,
-      updatedByName: user.name,
-    })
+    .select(stateColumns)
     .from(scheduledJobs)
     .leftJoin(user, eq(user.id, scheduledJobs.updatedByUserId))
     .where(eq(scheduledJobs.name, name))
-  return (
-    row ?? {
-      enabled: true,
-      lastRunAt: null,
-      lastSummary: null,
-      enabledChangedAt: null,
-      updatedByName: null,
-    }
-  )
+  return row ?? defaultState(name)
 }
 
 export async function setScheduledJobEnabled(
@@ -45,12 +77,14 @@ export async function setScheduledJobEnabled(
 }
 
 // Passage exécuté : sa date et son résumé s'affichent dans le tableau de bord de l'admin.
-export async function recordDailyJobRun(summary: DailyJobSummary, now: Date) {
+export async function recordScheduledJobRun<Name extends ScheduledJobName>(
+  name: Name,
+  summary: ScheduledJobSummaries[Name],
+  now: Date,
+) {
+  const run = { lastRunAt: now, lastSummary: summary }
   await db
     .insert(scheduledJobs)
-    .values({ name: "daily", lastRunAt: now, lastSummary: summary })
-    .onConflictDoUpdate({
-      target: scheduledJobs.name,
-      set: { lastRunAt: now, lastSummary: summary },
-    })
+    .values({ name, ...run })
+    .onConflictDoUpdate({ target: scheduledJobs.name, set: run })
 }

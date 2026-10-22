@@ -165,9 +165,7 @@ test("§6 — l'admin désactive la tâche quotidienne : la route ne fait rien ;
     await expect(toggle).toBeChecked()
     await toggle.click()
     await expect(
-      page.getByText(
-        "Tâche quotidienne désactivée : plus rien ne s'exécute la nuit.",
-      ),
+      page.getByText("Tâche quotidienne désactivée : elle ne s'exécute plus."),
     ).toBeVisible()
     await expect(toggle).not.toBeChecked()
 
@@ -178,7 +176,7 @@ test("§6 — l'admin désactive la tâche quotidienne : la route ne fait rien ;
     await toggle.click()
     await expect(
       page.getByText(
-        "Tâche quotidienne activée : elle s'exécutera cette nuit.",
+        "Tâche quotidienne activée : elle s'exécutera au prochain passage.",
       ),
     ).toBeVisible()
     const run = await cron()

@@ -22,9 +22,10 @@ import { env } from "@/lib/env"
 import { verifyOfferToken } from "@/lib/signed-token"
 
 import { expireOffers } from "./expire-offers"
+import { runScheduledJob } from "./run"
 import {
   getScheduledJob,
-  recordDailyJobRun,
+  listScheduledJobs,
   setScheduledJobEnabled,
 } from "./settings"
 import { sendValidityReminders } from "./validity-reminders"
@@ -240,13 +241,47 @@ describe("sendValidityReminders", () => {
   })
 })
 
-describe("tâche quotidienne activable depuis l'admin", () => {
-  it("est active tant que personne ne l'a désactivée", async () => {
+describe("tâches planifiées activables depuis l'admin", () => {
+  it("une tâche du registre est active tant que personne ne l'a désactivée", async () => {
     await db.delete(scheduledJobs).where(eq(scheduledJobs.name, "daily"))
+    expect(await listScheduledJobs()).toEqual([
+      {
+        name: "daily",
+        enabled: true,
+        enabledChangedAt: null,
+        updatedByName: null,
+        lastRunAt: null,
+        lastSummary: null,
+      },
+    ])
+  })
+
+  it("désactivée, runScheduledJob n'exécute rien ; réactivée, il exécute et enregistre le passage", async () => {
+    const summary = {
+      date: "2026-10-22",
+      expired: 0,
+      reminders: { sent: 0, failed: 0 },
+    }
+    let runs = 0
+    const job = async () => {
+      runs += 1
+      return summary
+    }
+
+    await setScheduledJobEnabled("daily", false, DEPOSITOR, now)
+    expect(await runScheduledJob("daily", job, now)).toEqual({ ran: false })
+    expect(runs).toBe(0)
+    expect((await getScheduledJob("daily")).lastRunAt).toBeNull()
+
+    await setScheduledJobEnabled("daily", true, DEPOSITOR, now)
+    expect(await runScheduledJob("daily", job, now)).toEqual({
+      ran: true,
+      summary,
+    })
+    expect(runs).toBe(1)
     expect(await getScheduledJob("daily")).toMatchObject({
-      enabled: true,
-      lastRunAt: null,
-      enabledChangedAt: null,
+      lastRunAt: now,
+      lastSummary: summary,
     })
   })
 
@@ -265,7 +300,7 @@ describe("tâche quotidienne activable depuis l'admin", () => {
       expired: 2,
       reminders: { sent: 1, failed: 0 },
     }
-    await recordDailyJobRun(summary, later)
+    await runScheduledJob("daily", async () => summary, later)
     expect(await getScheduledJob("daily")).toMatchObject({
       enabled: true,
       // Un passage ne change pas la date du dernier changement d'état.

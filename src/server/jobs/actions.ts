@@ -2,15 +2,21 @@
 
 import { revalidatePath } from "next/cache"
 
+import { isScheduledJobName } from "@/domain/scheduled-job"
 import { requireRole } from "@/lib/dal"
 
 import { setScheduledJobEnabled } from "./settings"
 
-// Active ou désactive la tâche quotidienne (expiration et rappels de validité) : désactivée, la
-// route du cron répond sans rien exécuter.
-export async function setDailyJobEnabled(enabled: boolean) {
+// Active ou désactive une tâche planifiée : désactivée, sa route répond sans rien exécuter.
+export async function setScheduledJobEnabledAction(
+  name: string,
+  enabled: boolean,
+) {
   const { user } = await requireRole("admin")
-  await setScheduledJobEnabled("daily", enabled === true, user.id)
+  if (!isScheduledJobName(name)) {
+    return { ok: false, message: "Cette tâche n'existe pas." } as const
+  }
+  await setScheduledJobEnabled(name, enabled === true, user.id)
   revalidatePath("/admin")
-  return { ok: true, enabled: enabled === true } as const
+  return { ok: true } as const
 }
