@@ -417,7 +417,7 @@ describe("clés étrangères", () => {
       userId: employer.id,
       companyId,
       jobTitle: "Gérante",
-      relationship: "Dirigeant·e",
+      relationship: "executive",
       status: "verified",
       reviewedBy: admin.id,
       reviewedAt: new Date(),
@@ -428,7 +428,7 @@ describe("clés étrangères", () => {
         userId: (await insertUser("collegue")).id,
         companyId,
         jobTitle: "Responsable RH",
-        relationship: "RH / recrutement",
+        relationship: "hr",
         reviewedBy: admin.id,
       })
       .returning()

@@ -35,5 +35,7 @@ export function serverEnv() {
     NEXT_DIST_DIR: ".next-e2e",
     // Documents des candidats sur disque (.storage/), jamais dans le store Vercel Blob.
     STORAGE_DRIVER: "local",
+    // Copie des emails affichés en console, lue par les tests (helpers/outbox.ts).
+    EMAIL_OUTBOX_DIR: ".e2e-outbox",
   }
 }

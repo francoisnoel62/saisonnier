@@ -131,3 +131,95 @@ export function contactNotificationEmail({
     }),
   }
 }
+
+// Nouveau rattachement à vérifier : prévient le fondateur (H2). Tout vient de l'employeur.
+export function membershipRequestEmail({
+  name,
+  email,
+  jobTitle,
+  relationship,
+  companyName,
+  siren,
+  activity,
+  website,
+  url,
+}: {
+  name: string
+  email: string
+  jobTitle: string
+  relationship: string
+  companyName: string
+  siren: string
+  activity: string
+  website: string | null
+  url: string
+}): Template {
+  const greeting = "Un employeur demande à être rattaché à son entreprise."
+  const details = [
+    `Déposant : ${name} <${email}>`,
+    `Fonction : ${jobTitle} (${relationship})`,
+    `Entreprise : ${companyName} — SIREN ${siren}`,
+    `Activité : ${activity}`,
+    `Site : ${website ?? "non renseigné"}`,
+  ]
+  const footer =
+    "Ses annonces resteront en attente, invisibles des candidats, jusqu'à votre décision."
+
+  return {
+    subject: `Rattachement à vérifier — ${companyName}`,
+    text: `${greeting}\n\n${details.join("\n")}\n\n${url}\n\n${footer}`,
+    html: layout({
+      greeting,
+      paragraphs: details,
+      action: { label: "Ouvrir la file de vérification", url },
+      footer,
+    }),
+  }
+}
+
+// Décision de l'admin, envoyée à l'employeur ; un refus en donne toujours le motif.
+export function membershipDecisionEmail({
+  name,
+  companyName,
+  decision,
+  reviewNote,
+  url,
+}: {
+  name: string
+  companyName: string
+  decision: "verify" | "reject"
+  reviewNote?: string
+  url: string
+}): Template {
+  const greeting = `Bonjour ${name},`
+
+  if (decision === "verify") {
+    const body = `Votre rattachement à ${companyName} est vérifié. Vos annonces en attente sont publiées, et les prochaines le seront dès leur dépôt.`
+    const footer = `Merci de votre confiance. — ${site.name}`
+    return {
+      subject: `Votre rattachement est vérifié — ${site.name}`,
+      text: `${greeting}\n\n${body}\n\n${url}\n\n${footer}`,
+      html: layout({
+        greeting,
+        paragraphs: [body],
+        action: { label: "Voir mes annonces", url },
+        footer,
+      }),
+    }
+  }
+
+  const body = `Nous n'avons pas pu vérifier votre rattachement à ${companyName}. Vos annonces ne seront pas publiées.`
+  const motive = `Motif : ${reviewNote}`
+  const footer =
+    "Une erreur ? Répondez-nous par le formulaire de contact, avec les éléments qui permettent de vérifier votre lien avec l'entreprise."
+  return {
+    subject: `Votre rattachement n'a pas été validé — ${site.name}`,
+    text: `${greeting}\n\n${body}\n\n${motive}\n\n${url}\n\n${footer}`,
+    html: layout({
+      greeting,
+      paragraphs: [body, motive],
+      action: { label: "Nous contacter", url },
+      footer,
+    }),
+  }
+}
