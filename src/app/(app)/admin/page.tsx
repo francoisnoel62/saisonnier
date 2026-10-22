@@ -2,19 +2,23 @@ import { FilePlusIcon } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { ScheduledJobsCard } from "@/components/admin/scheduled-jobs-card"
 import { ChartAreaInteractive } from "@/components/dashboard/chart-area-interactive"
 import { SectionCards } from "@/components/dashboard/section-cards"
 import { Button } from "@/components/ui/button"
 import { todayInParis } from "@/domain/offer-activity"
+import { scheduledJobSummaryLabel } from "@/domain/scheduled-job"
 import { getAdminIndicators, getDailyActivity } from "@/server/admin/dashboard"
+import { listScheduledJobs } from "@/server/jobs/settings"
 
 export const metadata: Metadata = { title: "Tableau de bord" }
 
 export default async function AdminHomePage() {
   const today = todayInParis(new Date())
-  const [indicators, activity] = await Promise.all([
+  const [indicators, activity, jobs] = await Promise.all([
     getAdminIndicators(today),
     getDailyActivity(today),
+    listScheduledJobs(),
   ])
 
   return (
@@ -67,6 +71,22 @@ export default async function AdminHomePage() {
         ]}
       />
       <ChartAreaInteractive data={activity} />
+      <ScheduledJobsCard
+        jobs={jobs.map((job) => ({
+          name: job.name,
+          enabled: job.enabled,
+          changed: job.enabledChangedAt
+            ? { at: job.enabledChangedAt.toISOString(), by: job.updatedByName }
+            : null,
+          lastRun:
+            job.lastRunAt && job.lastSummary
+              ? {
+                  at: job.lastRunAt.toISOString(),
+                  summary: scheduledJobSummaryLabel(job.name, job.lastSummary),
+                }
+              : null,
+        }))}
+      />
     </div>
   )
 }

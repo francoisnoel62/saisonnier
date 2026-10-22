@@ -39,6 +39,10 @@ Chaque nuit, deux traitements :
    - Dans `vercel.json` : `"crons": [{ "path": "/api/cron/quotidien", "schedule": "0 3 * * *" }]`. L'heure est en UTC.
    - L'offre Hobby limite chaque cron à une exécution par jour, à l'heure près, ce qui suffit ici.
 7. **Variables.** Ajouter `CRON_SECRET` et `VALIDITY_TOKEN_SECRET` à `env.ts`, à `.env.example` et sur Vercel.
+8. **Activation depuis l'admin** (ajout demandé par le fondateur, prévu pour plusieurs crons).
+   - Registre des tâches `scheduledJobDefinitions` (`src/domain/scheduled-job.ts`) et table `scheduled_jobs` : une ligne par tâche, active par défaut.
+   - Sur `/admin`, la carte « Tâches planifiées » active ou désactive chaque tâche, et montre son dernier passage avec son résumé.
+   - Une route de cron vérifie toujours le secret, puis exécute sa tâche par `runScheduledJob` ; désactivée, elle répond `{ skipped: "disabled" }` sans rien exécuter.
 
 ## Tests
 
