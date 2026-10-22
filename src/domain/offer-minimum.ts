@@ -54,7 +54,8 @@ const labels = {
   recruiter: "Le nom de la personne chargée du recrutement",
 } as const
 
-function blockedLabel({ field, domain }: BlockedTarget) {
+// Refus d'un lien, d'un email ou d'une source vers un domaine exclu, nommé tel quel au déposant.
+export function blockedTargetMessage({ field, domain }: BlockedTarget) {
   const advice = "indiquez un contact direct de l'entreprise."
   switch (field) {
     case "applyEmail":
@@ -116,7 +117,7 @@ export function checkPublicationMinimum(
   }
 
   for (const target of blocked) {
-    addMissing("blocked_domain", blockedLabel(target))
+    addMissing("blocked_domain", blockedTargetMessage(target))
   }
 
   return { ok: missing.length === 0, missing }

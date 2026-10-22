@@ -26,7 +26,9 @@ test("shell — le titre de l'en-tête suit la page", async ({ asEmployer }) => 
   await expect(
     asEmployer.getByRole("heading", { level: 1, name: "Déposer une annonce" }),
   ).toBeVisible()
-  await expect(asEmployer.getByText("Bientôt disponible")).toBeVisible()
+  await expect(
+    asEmployer.getByRole("heading", { name: "Minimum de publication" }),
+  ).toBeVisible()
 })
 
 test("compte — nom et email sont en lecture seule", async ({ asEmployer }) => {

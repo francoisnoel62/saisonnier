@@ -11,8 +11,12 @@ export function randomSiren() {
   throw new Error("Clé de Luhn introuvable")
 }
 
-// Compte employeur déjà rattaché à une entreprise vérifiée : il accède à tout son espace.
-export async function insertVerifiedMembership(db: Pool, email: string) {
+// Compte employeur rattaché à sa propre entreprise, avec le statut voulu. Renvoie l'entreprise.
+export async function insertMembership(
+  db: Pool,
+  email: string,
+  status: "pending" | "verified" | "rejected",
+) {
   const {
     rows: [company],
   } = await db.query<{ id: string }>(
@@ -23,12 +27,20 @@ export async function insertVerifiedMembership(db: Pool, email: string) {
   )
   const { rowCount } = await db.query(
     `insert into company_members (user_id, company_id, job_title, relationship, phone,
-       status, reviewed_at)
-     select id, $2, 'Gérant', 'executive', '04 65 71 00 01', 'verified', now()
+       status, reviewed_at, review_note)
+     select id, $2, 'Gérant', 'executive', '04 65 71 00 01', $3::membership_status,
+       case when $3 = 'pending' then null else now() end,
+       case when $3 = 'rejected' then 'Lien non vérifiable.' end
      from "user" where email = $1`,
-    [email, company.id],
+    [email, company.id, status],
   )
   if (rowCount !== 1) throw new Error(`Compte introuvable : ${email}`)
+  return company.id
+}
+
+// Compte employeur déjà rattaché à une entreprise vérifiée : il accède à tout son espace.
+export async function insertVerifiedMembership(db: Pool, email: string) {
+  return insertMembership(db, email, "verified")
 }
 
 // Annonce déposée par cet employeur, en attente de vérification de son rattachement (H2).

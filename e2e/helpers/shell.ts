@@ -14,8 +14,12 @@ export async function openMenu(page: Page) {
   }
 }
 
+// Entrée de la barre latérale (panneau sur mobile) : une page peut avoir un lien du même nom,
+// comme le bouton « Déposer une annonce » du tableau de bord employeur.
 export function navLink(page: Page, title: string) {
-  return page.getByRole("link", { name: title, exact: true })
+  return page
+    .locator('[data-sidebar="sidebar"]')
+    .getByRole("link", { name: title, exact: true })
 }
 
 export async function expectNoHorizontalScroll(page: Page) {

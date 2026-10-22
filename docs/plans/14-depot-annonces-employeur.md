@@ -72,9 +72,9 @@ Le plan ajoute aussi la gestion des annonces par l'employeur.
 
 ## Critères d'acceptation
 
-- [ ] §3 : une annonce est publiable dès que le minimum est satisfait, et « non précisé » est préservé de bout en bout.
-- [ ] §2 / §9 : aucune destination de candidature ne mène à un job-board exclu.
-- [ ] §6 : une annonce reste en ligne tant que le déposant la maintient, sauf échéance dépassée.
+- [x] §3 : une annonce est publiable dès que le minimum est satisfait, et « non précisé » est préservé de bout en bout.
+- [x] §2 / §9 : aucune destination de candidature ne mène à un job-board exclu.
+- [x] §6 : une annonce reste en ligne tant que le déposant la maintient, sauf échéance dépassée.
 
 ## Hors périmètre
 

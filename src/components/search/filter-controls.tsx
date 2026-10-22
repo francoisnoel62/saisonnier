@@ -28,6 +28,7 @@ import {
   type SearchSwitch,
 } from "@/domain/search-chips"
 import type { SearchWorkTime } from "@/domain/search-criteria"
+import { dateFromIso, isoFromDate } from "@/lib/calendar-dates"
 
 import { useSearch } from "./search-provider"
 
@@ -166,16 +167,6 @@ export function LocationPicker({
       </CommandList>
     </Command>
   )
-}
-
-// Date locale du calendrier ↔ date de calendrier AAAA-MM-JJ.
-function isoFromDate(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-function dateFromIso(value: string) {
-  const [year, month, day] = value.split("-").map(Number)
-  return new Date(year, month - 1, day)
 }
 
 function availabilitySummary(from: string | null, to: string | null) {
