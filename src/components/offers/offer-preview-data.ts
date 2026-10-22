@@ -1,0 +1,110 @@
+import {
+  applicationModeExplanation,
+  publicCompanyName,
+  type ApplicationFields,
+} from "@/domain/application"
+import { findBlockedTargets } from "@/domain/blocked-domains"
+import {
+  previewOfferInput,
+  type OfferFormReferentials,
+  type OfferFormValues,
+} from "@/domain/offer-input"
+
+import {
+  offerDetailsFields,
+  toOfferDetailsData,
+  type OfferDetailsData,
+} from "./offer-details"
+import type { OfferPreviewData } from "./offer-preview"
+
+// Données de l'aperçu candidat (OfferPreview) : une annonce enregistrée, ou une saisie en cours.
+
+// Lien et email qu'un candidat verrait : ceux qui mènent à un domaine exclu sont écartés, même
+// devenu exclu après la publication (§9).
+function withoutBlocked<
+  T extends { applyEmail: string | null; applyUrl: string | null },
+>(offer: T, blockedDomains: readonly string[]): T {
+  const blocked = findBlockedTargets(offer, blockedDomains)
+  const isBlocked = (field: "applyEmail" | "applyUrl") =>
+    blocked.some((target) => target.field === field)
+  return {
+    ...offer,
+    applyEmail: isBlocked("applyEmail") ? null : offer.applyEmail,
+    applyUrl: isBlocked("applyUrl") ? null : offer.applyUrl,
+  }
+}
+
+// Annonce enregistrée, lue avec son entreprise, son métier et son département.
+export function savedOfferPreview(
+  saved: Parameters<typeof toOfferDetailsData>[0] &
+    ApplicationFields & {
+      title: string
+      applyEmail: string | null
+      applyUrl: string | null
+    },
+  blockedDomains: readonly string[],
+): OfferPreviewData {
+  const offer = withoutBlocked(saved, blockedDomains)
+  return {
+    title: offer.title,
+    companyName: publicCompanyName(offer),
+    details: toOfferDetailsData(offer),
+    applicationExplanation: applicationModeExplanation(offer),
+    contacts: {
+      email: offer.applyEmail,
+      phone: offer.applyPhone ?? null,
+      url: offer.applyUrl,
+    },
+  }
+}
+
+// Saisie du formulaire : chaque champ tel qu'il serait enregistré ; un champ invalide reste vide,
+// comme un lien ou un email vers un domaine exclu, qu'aucun candidat ne verrait (§9).
+export function draftOfferPreview(
+  values: OfferFormValues,
+  referentials: OfferFormReferentials,
+  company: { legalName: string; displayName: string | null },
+): OfferPreviewData {
+  const draft = withoutBlocked(
+    previewOfferInput(values),
+    referentials.blockedDomains,
+  )
+  const occupation = referentials.occupations.find(
+    (item) => item.id === draft.occupationId,
+  )
+  const department = referentials.departments.find(
+    (item) => item.code === draft.departmentCode,
+  )
+  const fields = Object.fromEntries(
+    offerDetailsFields.map((field) => [field, draft[field]]),
+  ) as Omit<OfferDetailsData, "occupationLabel" | "department" | "regionName">
+  // L'employeur dépose pour sa propre entreprise et reçoit lui-même les candidatures.
+  const application: ApplicationFields = {
+    applicationChannel: "employer",
+    applyEmail: draft.applyEmail,
+    applyPhone: draft.applyPhone,
+    applyUrl: draft.applyUrl,
+    recruiterName: null,
+    hideCompanyIdentity: false,
+    company,
+  }
+
+  return {
+    title: draft.title,
+    companyName: publicCompanyName(application),
+    details: {
+      ...fields,
+      occupationLabel: occupation?.label ?? null,
+      department: department
+        ? { code: department.code, name: department.name }
+        : null,
+      regionName: department?.regionName ?? null,
+    },
+    applicationExplanation: applicationModeExplanation(application),
+    contacts: {
+      email: draft.applyEmail,
+      phone: draft.applyPhone,
+      url: draft.applyUrl,
+    },
+  }
+}

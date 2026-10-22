@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { isPhoneNumber } from "./phone"
+
 // Rattachement d'un employeur à son entreprise, vérifié par l'admin avant toute publication (H2).
 export const membershipStatuses = ["pending", "verified", "rejected"] as const
 export type MembershipStatus = (typeof membershipStatuses)[number]
@@ -123,18 +125,12 @@ const requiredText = (max: number, empty: string, tooLong: string) =>
 // Espaces et points retirés : « 844 190 652 » vaut « 844190652 ».
 const digits = (value: string) => value.replace(/[\s.]/g, "")
 
-// Chiffres, espaces et « + . - ( ) », au moins 9 chiffres : les numéros français comme étrangers.
-const PHONE = /^\+?[\d\s.()-]+$/
-
 const phone = z
   .string()
   .trim()
   .min(1, "Indiquez un téléphone professionnel.")
   .max(30, "Le téléphone ne doit pas dépasser 30 caractères.")
-  .refine(
-    (value) => PHONE.test(value) && value.replace(/\D/g, "").length >= 9,
-    "Saisissez un numéro de téléphone valide.",
-  )
+  .refine(isPhoneNumber, "Saisissez un numéro de téléphone valide.")
 
 // Adresse du site, complétée en https:// si le protocole manque.
 const website = optionalText(

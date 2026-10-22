@@ -5,7 +5,7 @@
 ## Projet
 
 - Besoin : [cahier des charges](docs/cahier-des-charges-job-board-saisonnier-v1.md).
-- Réalisation : [plans, hypothèses H1–H16 et glossaire](docs/plans/README.md). Une branche par plan (`plan/NN-slug`), une PR, une preview Vercel vérifiée avant le merge.
+- Réalisation : [plans, hypothèses H1–H18 et glossaire](docs/plans/README.md). Une branche par plan (`plan/NN-slug`), une PR, une preview Vercel vérifiée avant le merge.
 - Déploiement : projet Vercel `saisonnier` (équipe `francois-noels-projects`), production sur `main`.
 
 ## Commandes
@@ -29,7 +29,8 @@
 - L'E2E lance son propre `next dev -p 3100` (dossier `.next-e2e`) : il tourne en même temps que `npm run dev`.
 - Il vide la base de test à chaque exécution, référentiels exceptés : tout nouveau référentiel s'ajoute à `REFERENCE_TABLES` (`e2e/helpers/db.ts`). Il refuse toute base dont le nom ne finit pas par `_test`.
 - `seedDemoCatalog(db)` (`e2e/helpers/catalog.ts`) remplace toutes les offres par le jeu de démonstration et calcule les compteurs attendus avec l'oracle `matchesCriteria`.
-- `newCandidate(label)` crée un candidat connecté, sans dossier, propre au test ; `completeDossier(page, label)` (`e2e/helpers/dossier.ts`) lui ajoute téléphone et CV. `newEmployer(label)` crée un employeur sans entreprise ; le compte partagé `asEmployer` est rattaché à une entreprise vérifiée (`e2e/helpers/company.ts`). Les comptes partagés (`asCandidate`…) ne doivent pas être modifiés.
+- `newCandidate(label)` crée un candidat connecté, sans dossier, propre au test ; `completeDossier(page, label)` (`e2e/helpers/dossier.ts`) lui ajoute téléphone et CV. `newEmployer(label)` crée un employeur sans entreprise ; `insertMembership(db, email, status)` le rattache à sa propre entreprise ; le compte partagé `asEmployer` est rattaché à une entreprise vérifiée (`e2e/helpers/company.ts`). Les comptes partagés (`asCandidate`…) ne doivent pas être modifiés.
+- Dépôt d'annonce (`e2e/helpers/offer-form.ts`) : `openNewOfferForm`, `fillMinimalOffer`, `offerAction(page, intitulé, action)`. `stubCommuneSearch(page)` sert la recherche de communes (geo.api.gouv.fr) : l'E2E ne dépend pas du réseau.
 - Emails : le serveur de test en dépose une copie dans `.e2e-outbox/` (`EMAIL_OUTBOX_DIR`) ; `expectEmail(to, subject)` (`e2e/helpers/outbox.ts`) attend et renvoie le dernier reçu.
 - Chaque plan ajoute son `e2e/<sujet>.spec.ts` ; chaque test porte le nom du point de contrôle qu'il couvre (ex. `§9 — CV privé`). Fixtures `asCandidate`, `asEmployer`, `asAdmin` et `db` dans `e2e/fixtures.ts`.
 - La CI (`.github/workflows/ci.yml`) enchaîne lint, typecheck, tests, intégration et E2E.
@@ -53,6 +54,9 @@
 - Suivi candidat : table `offer_tracking` (`savedAt`, `appliedAt`, une ligne vide est supprimée), écritures idempotentes `setMark` (`src/server/candidates/tracking.ts`) derrière `toggleSaved` / `declareApplied` / `undoApplied`. Rien d'autre (§5) : ni statut, ni note, ni rappel ; un clic sur un contact n'est jamais une candidature.
 - Entreprise et rattachement (H2) : `companies` (SIREN unique) et `company_members` (un compte = une entreprise, `status` `pending` / `verified` / `rejected`), dans `src/server/companies/membership.ts`. `/employeur` renvoie vers l'onboarding `/employeur/entreprise` tant qu'aucun rattachement n'existe ; un SIREN déjà connu rattache à l'entreprise existante sans la modifier. `decideMembership` applique la décision de l'admin (`/admin/verifications`) et publie ou refuse les annonces `pending_review` du déposant dans la même transaction. Règles : `canPublishDirectly`, `emailMatchesWebsite`, `isValidSiren` (`src/domain/membership.ts`).
 - API Recherche d'entreprises : `searchCompanyDirectory` (`src/server/companies/directory.ts`), côté serveur, 5 s au plus ; `{ ok: false }` laisse place à la saisie manuelle. Elle ne donne que le code NAF : les libellés viennent de `tourismNafLabels` (`src/domain/naf.ts`), limité au tourisme et aux loisirs (§2), qui signale aussi le secteur à l'admin.
+- Dépôt employeur (plan 14) : un seul schéma, `offerInputSchema(context)` (`src/domain/offer-input.ts`), pour le formulaire (react-hook-form, `zodResolver` en mode `raw`) et les Server Actions (`src/server/offers/employer-actions.ts`), qui le réappliquent avec les domaines exclus, métiers et départements lus en base (`getOfferFormReferentials`). Le formulaire manipule des textes : montants en euros (`eurosToCents`), réponse vide → `unknown`, texte vide → `NULL`. Une règle qui lie plusieurs champs va dans `checkOfferInput` et lit les textes saisis (elle s'exécute même si un champ est invalide).
+- Annonces de l'employeur : écritures dans `src/server/offers/employer-offers.ts`, en transaction avec le rattachement verrouillé (`for share`) pour qu'une décision de l'admin ne s'intercale pas. Droits et états : `canViewOffer`, `canEditOffer`, `canUnpublishOffer`, `republishRefusal`, `employerOfferState` (`src/domain/employer-offer.ts`, H17, H18). Une annonce collectée n'y apparaît jamais.
+- Communes : `CommuneField` interroge geo.api.gouv.fr depuis le navigateur et ne garde que les réponses bien formées d'un département connu ; si le service ne répond pas, la commune se saisit à la main avec son département (sans code INSEE).
 - Fiche `/offres/[id]` : `OfferDetails` (`src/components/offers/offer-details.tsx`) est purement présentationnel et ne reçoit que `toOfferDetailsData(offer)`, sans contact ni entreprise. Les coordonnées viennent de `getApplicationDetails` (`src/server/offers/application.ts`) : dossier complet ou admin seulement, domaines exclus masqués et journalisés. Un composant client ne reçoit jamais l'offre entière (anonymat).
 - Page `/offres` : l'URL est la seule source de vérité. Parseurs nuqs et clés françaises (`metier`, `dept`, `base`…) dans `src/server/search/search-params.ts`, partagés par la page (`loadSearch`) et les filtres (`useSearch()`, `src/components/search/search-provider.tsx`) ; ce module n'accède pas à la base. Un nouveau critère s'ajoute au schéma, aux parseurs, à `activeCriteriaChips` (`src/domain/search-chips.ts`) et aux contrôles.
 
@@ -76,7 +80,8 @@
 - shadcn/ui (base Radix, preset Nova, icônes `lucide-react`) :
   - les composants s'ajoutent par la CLI (`npx shadcn@latest add …`) ; ne jamais réécrire `src/components/ui` à la main ;
   - `cn()` vient du package `cn` (réexporté par `src/lib/utils.ts`).
-- Tableaux en **TanStack Table v9** : suivre le modèle de `src/components/dashboard/data-table.tsx` (`useTable`, `tableFeatures`, `createSortedRowModel`…). Ne pas utiliser l'API v8 `useReactTable`.
+- Tableaux en **TanStack Table v9** : suivre le modèle de `src/components/dashboard/data-table.tsx` (`useTable`, `tableFeatures`, `createSortedRowModel`…). Ne pas utiliser l'API v8 `useReactTable`. `row.getVisibleCells()` exige `columnVisibilityFeature`.
+- Un panneau (`Sheet`) ouvert depuis un menu : `DropdownMenu modal={false}`, et `onCloseAutoFocus` rend le focus au bouton du menu (`employer-offers-table.tsx`). Indicateurs de tableau de bord : `SectionCards({ cards })` (`src/components/dashboard/section-cards.tsx`).
 - Répartition du code :
   - règles métier pures dans `src/domain/`, sans accès réseau ni base, et testées ;
   - accès aux données dans `src/server/<module>/` ;

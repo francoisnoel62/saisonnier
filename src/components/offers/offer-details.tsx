@@ -55,12 +55,15 @@ export const offerDetailsFields = [
   "otherConstraints",
 ] as const satisfies readonly (keyof Offer)[]
 
-export type OfferDetailsData = Pick<
-  Offer,
-  (typeof offerDetailsFields)[number]
+// L'aperçu du dépôt (plan 14) montre aussi une saisie incomplète : saison et département peuvent
+// encore manquer. Une offre enregistrée a toujours les deux.
+export type OfferDetailsData = Omit<
+  Pick<Offer, (typeof offerDetailsFields)[number]>,
+  "season"
 > & {
+  season: Offer["season"] | null
   occupationLabel: string | null
-  department: { code: string; name: string }
+  department: { code: string; name: string } | null
   regionName: string | null
 }
 
@@ -175,7 +178,13 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
       </Section>
 
       <Section title="Contrat">
-        <Row label="Saison">{seasonLabels[offer.season]}</Row>
+        <Row label="Saison">
+          {offer.season ? (
+            seasonLabels[offer.season]
+          ) : (
+            <NotSpecified>Non précisée</NotSpecified>
+          )}
+        </Row>
         <Row label="Période">{contractPeriod(offer)}</Row>
         <Row label="Date limite de candidature">
           {offer.applicationDeadline ? (
@@ -188,12 +197,20 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
 
       <Section title="Lieu">
         <Row label="Commune">
-          {offer.postalCode
-            ? `${offer.communeName} (${offer.postalCode})`
-            : offer.communeName}
+          {!offer.communeName.trim() ? (
+            <NotSpecified>Non précisée</NotSpecified>
+          ) : offer.postalCode ? (
+            `${offer.communeName} (${offer.postalCode})`
+          ) : (
+            offer.communeName
+          )}
         </Row>
         <Row label="Département">
-          {`${offer.department.name} (${offer.department.code})`}
+          {offer.department ? (
+            `${offer.department.name} (${offer.department.code})`
+          ) : (
+            <NotSpecified />
+          )}
         </Row>
         <Row label="Région">
           <Text value={offer.regionName} />

@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { isPhoneNumber } from "./phone"
+
 // Dossier du candidat (§5) : coordonnées, CV, lettre et message facultatifs. Les documents sont
 // privés (§7, H11) : seul leur propriétaire les télécharge, aucun n'est envoyé à sa place.
 
@@ -91,9 +93,6 @@ const optionalText = (max: number, message: string) =>
     .max(max, message)
     .transform((value) => value || null)
 
-// Chiffres, espaces et « + . - ( ) », au moins 9 chiffres : les numéros français comme étrangers.
-const PHONE = /^\+?[\d\s.()-]+$/
-
 export const contactDetailsSchema = z.object({
   name: z
     .string()
@@ -104,9 +103,7 @@ export const contactDetailsSchema = z.object({
     30,
     "Le téléphone ne doit pas dépasser 30 caractères.",
   ).refine(
-    (phone) =>
-      phone === null ||
-      (PHONE.test(phone) && phone.replace(/\D/g, "").length >= 9),
+    (phone) => phone === null || isPhoneNumber(phone),
     "Saisissez un numéro de téléphone valide.",
   ),
   city: optionalText(100, "La ville ne doit pas dépasser 100 caractères."),

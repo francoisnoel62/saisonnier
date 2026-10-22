@@ -22,10 +22,14 @@ export function activeOfferConditions(today: string) {
 // Forme acceptée par une colonne uuid : un identifiant mal formé ne doit pas faire échouer la requête.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+export function isUuid(id: unknown): id is string {
+  return typeof id === "string" && UUID.test(id)
+}
+
 // L'offre, active ou non, avec son entreprise, son métier, son département et sa région.
 // Coordonnées comprises : c'est à l'appelant de décider ce qu'il en montre.
 export async function getOfferWithRelations(id: string) {
-  if (!UUID.test(id)) return undefined
+  if (!isUuid(id)) return undefined
   return db.query.offers.findFirst({
     where: eq(offers.id, id),
     with: {
