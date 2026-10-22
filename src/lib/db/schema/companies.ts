@@ -9,7 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core"
 
-import { membershipStatuses } from "@/domain/membership"
+import { memberRelationships, membershipStatuses } from "@/domain/membership"
 
 import { user } from "./auth"
 import { notBlank, timestamps } from "./columns"
@@ -19,6 +19,10 @@ import { notBlank, timestamps } from "./columns"
 export const membershipStatusEnum = pgEnum(
   "membership_status",
   membershipStatuses,
+)
+export const memberRelationshipEnum = pgEnum(
+  "member_relationship",
+  memberRelationships,
 )
 
 export const companies = pgTable(
@@ -35,11 +39,22 @@ export const companies = pgTable(
     // que l'entreprise relève du tourisme ou de l'hôtellerie de loisirs (§2).
     nafCode: text(),
     nafLabel: text(),
+    // Commune du siège ou de l'établissement déclaré.
+    communeName: text(),
     website: text(),
     ...timestamps,
   },
   (t) => [
-    check("companies_text_not_blank", notBlank(t.legalName, t.displayName)),
+    check(
+      "companies_text_not_blank",
+      notBlank(
+        t.legalName,
+        t.displayName,
+        t.nafLabel,
+        t.communeName,
+        t.website,
+      ),
+    ),
     check("companies_siren_format", sql`${t.siren} ~ '^[0-9]{9}$'`),
     // Un SIRET (14 chiffres) commence par le SIREN de son entreprise.
     check(
@@ -61,8 +76,12 @@ export const companyMembers = pgTable(
       .references(() => companies.id),
     // Fonction et lien avec l'entreprise : ce que l'admin vérifie avant toute publication (H2).
     jobTitle: text().notNull(),
-    relationship: text().notNull(),
+    relationship: memberRelationshipEnum().notNull(),
+    // Précision du lien « autre ».
+    relationshipDetails: text(),
     phone: text(),
+    // Case « Je certifie être habilité·e à publier des offres pour cette entreprise ».
+    certifiedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     status: membershipStatusEnum().notNull().default("pending"),
     // Décision de l'admin.
     reviewNote: text(),
@@ -73,7 +92,20 @@ export const companyMembers = pgTable(
   (t) => [
     check(
       "company_members_text_not_blank",
-      notBlank(t.jobTitle, t.relationship, t.phone),
+      notBlank(t.jobTitle, t.relationshipDetails, t.phone, t.reviewNote),
+    ),
+    check(
+      "company_members_relationship_details",
+      sql`(${t.relationship} = 'other') = (${t.relationshipDetails} is not null)`,
+    ),
+    // Une décision est datée ; un refus est toujours motivé (le motif est envoyé à l'employeur).
+    check(
+      "company_members_reviewed",
+      sql`(${t.status} = 'pending') = (${t.reviewedAt} is null)`,
+    ),
+    check(
+      "company_members_rejection_motivated",
+      sql`${t.status} <> 'rejected' or ${t.reviewNote} is not null`,
     ),
     index().on(t.companyId),
   ],

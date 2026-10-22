@@ -50,6 +50,13 @@
       "when": 1792604212538,
       "tag": "0006_offer_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792643301305,
+      "tag": "0007_company_verification",
+      "breakpoints": true
     }
   ]
 }

@@ -60,8 +60,8 @@ Un second test couvre le refus avec motif.
 
 ## Critères d'acceptation
 
-- [ ] §6 : aucun déposant non vérifié ne peut publier.
-- [ ] L'admin dispose des éléments nécessaires pour vérifier l'entreprise, son secteur et le lien du déposant.
+- [x] §6 : aucun déposant non vérifié ne peut publier.
+- [x] L'admin dispose des éléments nécessaires pour vérifier l'entreprise, son secteur et le lien du déposant.
 
 ## Hors périmètre
 

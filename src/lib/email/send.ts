@@ -1,3 +1,7 @@
+import { randomUUID } from "node:crypto"
+import { mkdir, writeFile } from "node:fs/promises"
+import path from "node:path"
+
 import { Resend } from "resend"
 
 import { site } from "@/config/site"
@@ -20,6 +24,13 @@ export async function sendEmail({ to, replyTo, subject, text, html }: Email) {
     console.info(
       `\n──── Email (console) ────\nÀ : ${to}\nObjet : ${subject}\n\n${text}\n─────────────────────────\n`,
     )
+    if (env.EMAIL_OUTBOX_DIR) {
+      await mkdir(env.EMAIL_OUTBOX_DIR, { recursive: true })
+      await writeFile(
+        path.join(env.EMAIL_OUTBOX_DIR, `${Date.now()}-${randomUUID()}.json`),
+        JSON.stringify({ to, replyTo, subject, text }),
+      )
+    }
     return
   }
 

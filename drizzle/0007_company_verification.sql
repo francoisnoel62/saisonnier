@@ -1,0 +1,12 @@
+CREATE TYPE "public"."member_relationship" AS ENUM('executive', 'hr', 'site_manager', 'other');--> statement-breakpoint
+ALTER TABLE "companies" DROP CONSTRAINT "companies_text_not_blank";--> statement-breakpoint
+ALTER TABLE "company_members" DROP CONSTRAINT "company_members_text_not_blank";--> statement-breakpoint
+ALTER TABLE "company_members" ALTER COLUMN "relationship" SET DATA TYPE "public"."member_relationship" USING "relationship"::"public"."member_relationship";--> statement-breakpoint
+ALTER TABLE "companies" ADD COLUMN "commune_name" text;--> statement-breakpoint
+ALTER TABLE "company_members" ADD COLUMN "relationship_details" text;--> statement-breakpoint
+ALTER TABLE "company_members" ADD COLUMN "certified_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "companies" ADD CONSTRAINT "companies_text_not_blank" CHECK (("companies"."legal_name" is null or "companies"."legal_name" ~ '[^[:space:]]') and ("companies"."display_name" is null or "companies"."display_name" ~ '[^[:space:]]') and ("companies"."naf_label" is null or "companies"."naf_label" ~ '[^[:space:]]') and ("companies"."commune_name" is null or "companies"."commune_name" ~ '[^[:space:]]') and ("companies"."website" is null or "companies"."website" ~ '[^[:space:]]'));--> statement-breakpoint
+ALTER TABLE "company_members" ADD CONSTRAINT "company_members_relationship_details" CHECK (("company_members"."relationship" = 'other') = ("company_members"."relationship_details" is not null));--> statement-breakpoint
+ALTER TABLE "company_members" ADD CONSTRAINT "company_members_reviewed" CHECK (("company_members"."status" = 'pending') = ("company_members"."reviewed_at" is null));--> statement-breakpoint
+ALTER TABLE "company_members" ADD CONSTRAINT "company_members_rejection_motivated" CHECK ("company_members"."status" <> 'rejected' or "company_members"."review_note" is not null);--> statement-breakpoint
+ALTER TABLE "company_members" ADD CONSTRAINT "company_members_text_not_blank" CHECK (("company_members"."job_title" is null or "company_members"."job_title" ~ '[^[:space:]]') and ("company_members"."relationship_details" is null or "company_members"."relationship_details" ~ '[^[:space:]]') and ("company_members"."phone" is null or "company_members"."phone" ~ '[^[:space:]]') and ("company_members"."review_note" is null or "company_members"."review_note" ~ '[^[:space:]]'));

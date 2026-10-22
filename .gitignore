@@ -14,6 +14,7 @@
 /coverage
 # Documents écrits par STORAGE_DRIVER=local (E2E)
 /.storage
+/.e2e-outbox
 /playwright-report
 /test-results
 /blob-report

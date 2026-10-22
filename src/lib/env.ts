@@ -20,6 +20,9 @@ const serverEnvSchema = z.object({
   EMAIL_FROM: z.email(),
   // Boîte du fondateur, destinataire des notifications du service.
   ADMIN_NOTIFICATION_EMAIL: z.email(),
+  // Sans clé Resend : copie de chaque email affiché en console dans ce dossier (un fichier JSON
+  // par email). L'E2E y lit les emails envoyés.
+  EMAIL_OUTBOX_DIR: z.string().optional(),
 
   // Documents des candidats : Vercel Blob privé, ou disque local (.storage/) pour l'E2E.
   STORAGE_DRIVER: z.enum(["vercel-blob", "local"]).default("vercel-blob"),
