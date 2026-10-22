@@ -34,15 +34,19 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { isIsoDate } from "@/domain/offer-activity"
 import { formatIsoDate } from "@/domain/offer-display"
-import type { OfferFormField, OfferFormValues } from "@/domain/offer-input"
+import type {
+  AdminOfferFormField,
+  AdminOfferFormValues,
+} from "@/domain/offer-input"
 import { dateFromIso, isoFromDate } from "@/lib/calendar-dates"
 
 // Champs du formulaire d'annonce, reliés à react-hook-form (useFormContext). Chaque champ a son
-// libellé, son aide et son erreur, annoncés par aria-describedby.
+// libellé, son aide et son erreur, annoncés par aria-describedby. Les champs de l'admin (plan 15)
+// s'ajoutent à ceux de l'employeur : le même typage sert aux deux formulaires.
 
 export type TextFieldName = Exclude<
-  OfferFormField,
-  "seasonalContract" | "languages"
+  AdminOfferFormField,
+  "seasonalContract" | "languages" | "hideCompanyIdentity"
 >
 
 // Identifiant unique sur la page, relié au libellé, à l'aide et à l'erreur.
@@ -81,7 +85,7 @@ export function TextField({
   React.ComponentProps<"input">,
   "type" | "inputMode" | "autoComplete" | "maxLength"
 >) {
-  const { control } = useFormContext<OfferFormValues>()
+  const { control } = useFormContext<AdminOfferFormValues>()
   const id = fieldId(name)
 
   return (
@@ -141,7 +145,7 @@ export function RadioField({
   hint?: string
   options: readonly Option[]
 }) {
-  const { control } = useFormContext<OfferFormValues>()
+  const { control } = useFormContext<AdminOfferFormValues>()
   const id = fieldId(name)
 
   return (
@@ -218,7 +222,7 @@ export function SelectField({
   emptyLabel?: string
   className?: string
 }) {
-  const { control } = useFormContext<OfferFormValues>()
+  const { control } = useFormContext<AdminOfferFormValues>()
   const id = fieldId(name)
   const item = (option: Option) => (
     <SelectItem key={option.value} value={option.value}>
@@ -290,7 +294,7 @@ export function DateField({
   minDate?: string
   clearable?: boolean
 }) {
-  const { control } = useFormContext<OfferFormValues>()
+  const { control } = useFormContext<AdminOfferFormValues>()
   const [open, setOpen] = useState(false)
   const id = fieldId(name)
 

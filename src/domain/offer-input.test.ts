@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import { checkPublicationMinimum } from "./offer-minimum"
 import {
+  adminOfferInputSchema,
+  adminOfferToFormValues,
+  adminPublicationInputOf,
   centsToEuros,
+  emptyAdminOfferFormValues,
   emptyOfferFormValues,
   eurosToCents,
   normalizeWebUrl,
@@ -10,6 +14,8 @@ import {
   offerToFormValues,
   previewOfferInput,
   publicationInputOf,
+  type AdminOfferFormField,
+  type AdminOfferFormValues,
   type OfferFormField,
   type OfferFormValues,
   type OfferInput,
@@ -702,5 +708,170 @@ describe("previewOfferInput", () => {
       workTime: "unknown",
     })
     expect(Object.values(preview)).not.toContain("no")
+  })
+})
+
+describe("adminOfferInputSchema (back-office, plan 15)", () => {
+  const COMPANY_ID = "8a6f1d2e-3b4c-4d5e-8f90-1a2b3c4d5e6f"
+  const adminSchema = adminOfferInputSchema(context)
+
+  // Annonce collectée minimale : la source, son nom, et le seul lien officiel de candidature.
+  const collected = (
+    values: Partial<AdminOfferFormValues> = {},
+  ): AdminOfferFormValues => ({
+    ...emptyAdminOfferFormValues(),
+    ...minimal({ applyEmail: "" }),
+    origin: "collected",
+    companyId: COMPANY_ID,
+    sourceUrl: "https://www.hotel-du-lac.example/emplois/serveur",
+    sourceName: "Site carrières de l'Hôtel du Lac",
+    applyUrl: "https://www.hotel-du-lac.example/candidature",
+    ...values,
+  })
+
+  function adminErrors(values: AdminOfferFormValues) {
+    const result = adminSchema.safeParse(values)
+    if (result.success) return {}
+    const errors: Partial<Record<AdminOfferFormField, string[]>> = {}
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as AdminOfferFormField
+      errors[field] = [...(errors[field] ?? []), issue.message]
+    }
+    return errors
+  }
+
+  it("accepte une annonce collectée qui ne renvoie qu'à son lien officiel", () => {
+    expect(adminSchema.parse(collected())).toMatchObject({
+      origin: "collected",
+      companyId: COMPANY_ID,
+      sourceUrl: "https://www.hotel-du-lac.example/emplois/serveur",
+      sourceName: "Site carrières de l'Hôtel du Lac",
+      applicationChannel: "employer",
+      recruiterName: null,
+      hideCompanyIdentity: false,
+      applyEmail: null,
+      applyPhone: null,
+      applyUrl: "https://www.hotel-du-lac.example/candidature",
+    })
+  })
+
+  it("exige l'entreprise, la source et son nom pour une annonce collectée", () => {
+    expect(
+      adminErrors(collected({ companyId: "", sourceUrl: "", sourceName: "" })),
+    ).toEqual({
+      companyId: ["Choisissez l'entreprise, ou créez sa fiche."],
+      sourceUrl: [
+        "Indiquez l'adresse de l'annonce sur le site officiel de l'employeur.",
+      ],
+      sourceName: [
+        "Indiquez le nom de la source, par exemple « Site carrières de l'Hôtel du Lac ».",
+      ],
+    })
+  })
+
+  it("refuse une source sur un job-board (§2)", () => {
+    expect(
+      adminErrors(
+        collected({ sourceUrl: "https://fr.indeed.com/viewjob?jk=1" }),
+      ),
+    ).toEqual({
+      sourceUrl: [
+        "La source indeed.com n'est pas acceptée : seuls les sites et portails officiels des employeurs le sont.",
+      ],
+    })
+  })
+
+  it("exige un moyen de candidature, et un contact direct pour une annonce transmise", () => {
+    expect(adminErrors(collected({ applyUrl: "" }))).toEqual({
+      applyEmail: [
+        "Indiquez un email, un téléphone ou le lien officiel de candidature.",
+      ],
+    })
+    expect(
+      adminErrors(collected({ origin: "deposited", applyEmail: "" })),
+    ).toEqual({
+      applyEmail: [
+        "Indiquez un email ou un téléphone : les candidats doivent pouvoir joindre l'employeur directement.",
+      ],
+    })
+  })
+
+  it("une annonce transmise n'enregistre pas de source", () => {
+    expect(
+      adminSchema.parse(
+        collected({ origin: "deposited", applyEmail: "rh@hotel.example" }),
+      ),
+    ).toMatchObject({ origin: "deposited", sourceUrl: null, sourceName: null })
+  })
+
+  it("le chargé de recrutement est nommé, et joignable par email ou téléphone (§7)", () => {
+    expect(adminErrors(collected({ applicationChannel: "recruiter" }))).toEqual(
+      {
+        applyEmail: [
+          "Indiquez l'email ou le téléphone du chargé de recrutement.",
+        ],
+        recruiterName: ["Indiquez le nom du chargé de recrutement."],
+      },
+    )
+    expect(
+      adminSchema.parse(
+        collected({
+          applicationChannel: "recruiter",
+          recruiterName: " Alix Martin ",
+          applyEmail: "alix@service.example",
+          hideCompanyIdentity: true,
+        }),
+      ),
+    ).toMatchObject({
+      applicationChannel: "recruiter",
+      recruiterName: "Alix Martin",
+      hideCompanyIdentity: true,
+    })
+  })
+
+  it("l'anonymat n'existe qu'avec l'intermédiation du service (§7)", () => {
+    expect(adminErrors(collected({ hideCompanyIdentity: true }))).toEqual({
+      hideCompanyIdentity: [
+        "L'identité de l'entreprise ne peut être masquée que si le service assure l'intermédiation.",
+      ],
+    })
+  })
+
+  it("le nom du chargé de recrutement n'est gardé qu'avec son canal", () => {
+    expect(
+      adminSchema.parse(collected({ recruiterName: "Alix Martin" })),
+    ).toMatchObject({ applicationChannel: "employer", recruiterName: null })
+  })
+
+  it("une annonce relue donne les mêmes valeurs", () => {
+    const input = adminSchema.parse(
+      collected({
+        applicationChannel: "recruiter",
+        recruiterName: "Alix Martin",
+        applyPhone: "04 65 71 12 34",
+        hideCompanyIdentity: true,
+      }),
+    )
+    expect(adminSchema.parse(adminOfferToFormValues(input))).toEqual(input)
+  })
+
+  it("le minimum en direct tient compte de l'entreprise, du canal et de la source", () => {
+    const blockedDomains = context.blockedDomains
+    const check = (values: AdminOfferFormValues) =>
+      checkPublicationMinimum(adminPublicationInputOf(values), {
+        origin: values.origin,
+        blockedDomains,
+      }).missing.map((item) => item.requirement)
+
+    expect(check(collected())).toEqual([])
+    expect(check(collected({ companyId: "" }))).toEqual(["company"])
+    expect(check(collected({ applicationChannel: "recruiter" }))).toEqual([
+      "recruiter",
+    ])
+    expect(
+      check(collected({ sourceUrl: "https://www.indeed.fr/emplois" })),
+    ).toEqual(["blocked_domain"])
+    // Transmise par l'employeur, le lien officiel ne suffit plus.
+    expect(check(collected({ origin: "deposited" }))).toEqual(["application"])
   })
 })

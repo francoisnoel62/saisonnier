@@ -11,6 +11,7 @@ import {
   useForm,
   useFormContext,
   useWatch,
+  type Resolver,
 } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -44,17 +45,25 @@ import { seasons, workTimes } from "@/domain/offer"
 import { todayInParis } from "@/domain/offer-activity"
 import { seasonLabels, workTimeLabels } from "@/domain/offer-display"
 import {
+  adminOfferInputSchema,
+  adminPublicationInputOf,
+  emptyAdminOfferFormValues,
   emptyOfferFormValues,
   offerInputContext,
   offerInputSchema,
   offerTextLimits,
   publicationInputOf,
-  type OfferFormField,
+  type AdminOfferFormField,
+  type AdminOfferFormValues,
   type OfferFormReferentials,
   type OfferFormValues,
 } from "@/domain/offer-input"
 import { checkPublicationMinimum } from "@/domain/offer-minimum"
+import type { CompanyOption } from "@/server/companies/companies"
+import type { AdminOfferFormResult } from "@/server/offers/admin-actions"
 import type { OfferFormResult } from "@/server/offers/employer-actions"
+
+import { AdminApplicationFields, AdminOriginFields } from "./admin-fields"
 
 import { CommuneField } from "./commune-field"
 import {
@@ -75,8 +84,15 @@ export type OfferFormAction = (
   values: OfferFormValues,
 ) => Promise<OfferFormResult>
 
+export type AdminOfferFormAction = (
+  values: AdminOfferFormValues,
+) => Promise<AdminOfferFormResult>
+
 // Ordre des champs dans le formulaire : la première erreur renvoyée par le serveur prend le focus.
-const fieldOrder = Object.keys(emptyOfferFormValues()) as OfferFormField[]
+const fieldOrder = {
+  employer: Object.keys(emptyOfferFormValues()) as AdminOfferFormField[],
+  admin: Object.keys(emptyAdminOfferFormValues()) as AdminOfferFormField[],
+}
 
 function Section({
   number,
@@ -112,7 +128,7 @@ function Section({
 }
 
 function SeasonalContractField() {
-  const { control } = useFormContext<OfferFormValues>()
+  const { control } = useFormContext<AdminOfferFormValues>()
   const id = fieldId("seasonalContract")
   return (
     <Controller
@@ -150,7 +166,7 @@ function SeasonalContractField() {
 
 // Les langues se cochent quand la réponse à « Langues exigées » est « Oui » (H6).
 function LanguagesField() {
-  const { control } = useFormContext<OfferFormValues>()
+  const { control } = useFormContext<AdminOfferFormValues>()
   const required = useWatch({ control, name: "languagesRequired" })
   const id = fieldId("languages")
   if (required !== "yes") return null
@@ -197,7 +213,7 @@ function LanguagesField() {
 }
 
 function PeriodFields({ today }: { today: string }) {
-  const { control } = useFormContext<OfferFormValues>()
+  const { control } = useFormContext<AdminOfferFormValues>()
   const [kind, startDate] = useWatch({
     control,
     name: ["periodKind", "startDate"],
@@ -243,76 +259,145 @@ function PeriodFields({ today }: { today: string }) {
   )
 }
 
+// Ce que le minimum de publication vérifie : la saisie de l'employeur, pour sa propre entreprise,
+// ou celle de l'admin, avec l'entreprise, l'origine et le canal choisis.
+type DraftSubject =
+  | { space: "employer"; company: Company }
+  | { space: "admin"; companies: CompanyOption[] }
+
+function draftMinimum(
+  values: AdminOfferFormValues,
+  subject: DraftSubject,
+  blockedDomains: readonly string[],
+) {
+  return subject.space === "admin"
+    ? checkPublicationMinimum(adminPublicationInputOf(values), {
+        origin: values.origin,
+        blockedDomains,
+      })
+    : checkPublicationMinimum(publicationInputOf(values, subject.company.id), {
+        origin: "deposited",
+        blockedDomains,
+      })
+}
+
 // Encart du minimum, recalculé à chaque saisie.
 function LiveMinimum({
-  companyId,
+  subject,
   blockedDomains,
 }: {
-  companyId: string
+  subject: DraftSubject
   blockedDomains: readonly string[]
 }) {
-  const { control } = useFormContext<OfferFormValues>()
+  const { control } = useFormContext<AdminOfferFormValues>()
   // Sans nom de champ, useWatch renvoie toutes les valeurs, valeurs initiales comprises.
-  const values = useWatch({ control }) as OfferFormValues
-  const { missing } = checkPublicationMinimum(
-    publicationInputOf(values, companyId),
-    { origin: "deposited", blockedDomains },
+  const values = useWatch({ control }) as AdminOfferFormValues
+  const { missing } = draftMinimum(values, subject, blockedDomains)
+  return subject.space === "admin" ? (
+    <PublicationMinimum
+      missing={missing}
+      origin={values.origin}
+      recruiter={values.applicationChannel === "recruiter"}
+    />
+  ) : (
+    <PublicationMinimum missing={missing} />
   )
-  return <PublicationMinimum missing={missing} />
 }
 
 // Aperçu candidat de la saisie, calculé à l'ouverture du panneau.
 function DraftPreview({
   referentials,
-  company,
+  subject,
 }: {
   referentials: OfferFormReferentials
-  company: Company
+  subject: DraftSubject
 }) {
-  const { getValues } = useFormContext<OfferFormValues>()
+  const { getValues } = useFormContext<AdminOfferFormValues>()
   const values = getValues()
-  const { missing } = checkPublicationMinimum(
-    publicationInputOf(values, company.id),
-    { origin: "deposited", blockedDomains: referentials.blockedDomains },
-  )
+  const { missing } = draftMinimum(values, subject, referentials.blockedDomains)
+  const preview =
+    subject.space === "admin"
+      ? draftOfferPreview(
+          values,
+          referentials,
+          subject.companies.find((item) => item.id === values.companyId) ??
+            null,
+          {
+            origin: values.origin,
+            applicationChannel: values.applicationChannel,
+            recruiterName: values.recruiterName,
+            hideCompanyIdentity: values.hideCompanyIdentity,
+          },
+        )
+      : draftOfferPreview(values, referentials, subject.company)
   return (
     <OfferPreview
-      preview={draftOfferPreview(values, referentials, company)}
+      preview={preview}
       missing={missing.map((item) => item.label)}
     />
   )
 }
 
-// Formulaire structuré du dépôt (§3, §6) : le minimum de publication, puis tout ce qui est
-// facultatif. Le même schéma valide la saisie ici et dans la Server Action.
-export function OfferForm({
-  mode,
-  action,
-  defaultValues,
-  referentials,
-  company,
-  publishesDirectly,
-}: {
-  mode: "create" | "edit"
+type EmployerFormProps = {
+  space: "employer"
   action: OfferFormAction
   defaultValues: OfferFormValues
-  referentials: OfferFormReferentials
   company: Company
   // Déposant vérifié : l'annonce créée est publiée aussitôt (H2).
   publishesDirectly: boolean
-}) {
+}
+
+// Back-office (plan 15) : toutes les annonces, collectées comme déposées.
+type AdminFormProps = {
+  space: "admin"
+  action: AdminOfferFormAction
+  defaultValues: AdminOfferFormValues
+  companies: CompanyOption[]
+  // Annonce modifiée : son origine ne change plus ; déposée, son entreprise non plus.
+  originLocked: boolean
+  companyLocked: boolean
+}
+
+const returnPaths = {
+  employer: "/employeur/annonces",
+  admin: "/admin/annonces",
+} as const
+
+// Formulaire structuré du dépôt (§3, §6) : le minimum de publication, puis tout ce qui est
+// facultatif. Le même schéma valide la saisie ici et dans la Server Action. L'admin y ajoute
+// l'origine, l'entreprise, la source et le canal de candidature (plan 15).
+export function OfferForm({
+  mode,
+  referentials,
+  ...props
+}: {
+  mode: "create" | "edit"
+  referentials: OfferFormReferentials
+} & (EmployerFormProps | AdminFormProps)) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [formError, setFormError] = useState<string | null>(null)
   const today = useMemo(() => todayInParis(new Date()), [])
-  const schema = useMemo(
-    () => offerInputSchema(offerInputContext(referentials, today)),
-    [referentials, today],
-  )
-  const form = useForm<OfferFormValues>({
-    resolver: zodResolver(schema, undefined, { raw: true }),
-    defaultValues,
+  const admin = props.space === "admin"
+  // Les champs de l'employeur sont un sous-ensemble de ceux de l'admin : un seul typage. Dans
+  // l'espace employeur, les champs de l'admin restent absents, et son schéma les ignore.
+  const resolver = useMemo(() => {
+    const context = offerInputContext(referentials, today)
+    return admin
+      ? zodResolver(adminOfferInputSchema(context), undefined, { raw: true })
+      : (zodResolver(offerInputSchema(context), undefined, {
+          raw: true,
+        }) as unknown as Resolver<AdminOfferFormValues>)
+  }, [admin, referentials, today])
+  const form = useForm<AdminOfferFormValues>({
+    resolver,
+    defaultValues: props.defaultValues as AdminOfferFormValues,
   })
+  const origin = useWatch({ control: form.control, name: "origin" })
+  const subject: DraftSubject =
+    props.space === "admin"
+      ? { space: "admin", companies: props.companies }
+      : { space: "employer", company: props.company }
 
   // Après un premier envoi, toutes les erreurs suivent la saisie : une règle qui lie plusieurs
   // champs (email ou téléphone, par exemple) se met à jour quel que soit le champ modifié.
@@ -330,9 +415,12 @@ export function OfferForm({
   const onSubmit = form.handleSubmit((values) => {
     setFormError(null)
     startTransition(async () => {
-      let result: OfferFormResult
+      let result: OfferFormResult | AdminOfferFormResult
       try {
-        result = await action(values)
+        result =
+          props.space === "admin"
+            ? await props.action(values)
+            : await props.action(values)
       } catch (error) {
         unstable_rethrow(error)
         setFormError(
@@ -342,8 +430,11 @@ export function OfferForm({
       }
 
       if (!result.ok) {
-        const errors = result.fieldErrors ?? {}
-        const fields = fieldOrder.filter((field) => errors[field]?.length)
+        const errors: Partial<Record<AdminOfferFormField, string[]>> =
+          result.fieldErrors ?? {}
+        const fields = fieldOrder[props.space].filter(
+          (field) => errors[field]?.length,
+        )
         for (const field of fields) {
           form.setError(field, { message: errors[field]![0] })
         }
@@ -364,10 +455,13 @@ export function OfferForm({
           "Annonce enregistrée : elle sera publiée après la vérification de votre rattachement.",
         )
       }
-      router.push("/employeur/annonces")
+      router.push(returnPaths[props.space])
     })
   })
 
+  const publishesDirectly = props.space === "admin" || props.publishesDirectly
+  // Les sections de l'admin commencent par l'origine et l'entreprise.
+  const first = admin ? 2 : 1
   const submitLabel =
     mode === "edit"
       ? "Enregistrer les modifications"
@@ -383,7 +477,16 @@ export function OfferForm({
         className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start"
       >
         <div className="flex min-w-0 flex-col gap-6">
-          <Section number={1} title="Poste" required>
+          {props.space === "admin" && (
+            <Section number={1} title="Origine et entreprise" required>
+              <AdminOriginFields
+                companies={props.companies}
+                originLocked={props.originLocked}
+                companyLocked={props.companyLocked}
+              />
+            </Section>
+          )}
+          <Section number={first} title="Poste" required>
             <TextField
               name="title"
               label="Intitulé du poste"
@@ -415,7 +518,7 @@ export function OfferForm({
             />
           </Section>
 
-          <Section number={2} title="Contrat" required>
+          <Section number={first + 1} title="Contrat" required>
             <SeasonalContractField />
             <RadioField
               name="season"
@@ -443,7 +546,7 @@ export function OfferForm({
             />
           </Section>
 
-          <Section number={3} title="Lieu" required>
+          <Section number={first + 2} title="Lieu" required>
             <CommuneField departments={referentials.departments} />
             <TextField
               name="locationDetails"
@@ -454,7 +557,7 @@ export function OfferForm({
           </Section>
 
           <Section
-            number={4}
+            number={first + 3}
             title="Rémunération"
             description="Si vous le connaissez, indiquez le salaire net mensuel avant impôt : c'est celui que les candidats comparent. Le brut, s'il est indiqué, reste distinct."
           >
@@ -469,7 +572,7 @@ export function OfferForm({
             />
           </Section>
 
-          <Section number={5} title="Conditions">
+          <Section number={first + 4} title="Conditions">
             <TriStateField name="housing" legend="Logement fourni" />
             <TextField
               name="housingDetails"
@@ -489,7 +592,7 @@ export function OfferForm({
             />
           </Section>
 
-          <Section number={6} title="Profil">
+          <Section number={first + 5} title="Profil">
             <TriStateField
               name="experienceRequired"
               legend="Expérience exigée"
@@ -512,7 +615,7 @@ export function OfferForm({
             />
           </Section>
 
-          <Section number={7} title="Organisation">
+          <Section number={first + 6} title="Organisation">
             <RadioField
               name="workTime"
               legend="Temps de travail"
@@ -539,7 +642,7 @@ export function OfferForm({
             />
           </Section>
 
-          <Section number={8} title="Vie pratique">
+          <Section number={first + 7} title="Vie pratique">
             <TriStateField name="couplesWelcome" legend="Couples acceptés" />
             <TriStateField name="petsAllowed" legend="Animaux acceptés" />
             <TextField
@@ -553,11 +656,18 @@ export function OfferForm({
           </Section>
 
           <Section
-            number={9}
+            number={first + 8}
             title="Candidature"
             required
-            description="Au moins un email ou un téléphone : les candidats vous contactent directement. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
+            description={
+              !admin
+                ? "Au moins un email ou un téléphone : les candidats vous contactent directement. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
+                : origin === "collected"
+                  ? "Un email, un téléphone ou le lien officiel de candidature. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
+                  : "Au moins un email ou un téléphone. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
+            }
           >
+            {admin && <AdminApplicationFields />}
             <TextField
               name="applyEmail"
               label="Email de candidature"
@@ -575,7 +685,11 @@ export function OfferForm({
             <TextField
               name="applyUrl"
               label="Lien officiel de candidature (facultatif)"
-              hint="La page emploi de votre site ou de votre portail de recrutement."
+              hint={
+                admin
+                  ? "La page emploi du site ou du portail de recrutement de l'employeur."
+                  : "La page emploi de votre site ou de votre portail de recrutement."
+              }
               type="url"
               inputMode="url"
               maxLength={offerTextLimits.applyUrl}
@@ -585,7 +699,7 @@ export function OfferForm({
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-4">
           <LiveMinimum
-            companyId={company.id}
+            subject={subject}
             blockedDomains={referentials.blockedDomains}
           />
           <OfferPreviewSheet
@@ -596,7 +710,7 @@ export function OfferForm({
               </Button>
             }
           >
-            <DraftPreview referentials={referentials} company={company} />
+            <DraftPreview referentials={referentials} subject={subject} />
           </OfferPreviewSheet>
           {formError && <FormAlert>{formError}</FormAlert>}
           <Button type="submit" disabled={pending} aria-busy={pending}>
@@ -610,7 +724,7 @@ export function OfferForm({
             </p>
           )}
           <Button asChild variant="ghost">
-            <Link href="/employeur/annonces">Annuler</Link>
+            <Link href={returnPaths[props.space]}>Annuler</Link>
           </Button>
         </aside>
       </form>

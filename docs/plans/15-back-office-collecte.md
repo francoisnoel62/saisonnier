@@ -53,9 +53,9 @@ Il y applique les demandes des employeurs et y maintient les référentiels.
 
 ## Critères d'acceptation
 
-- [ ] §6 / §9 : les modifications d'annonces collectées passent par le fondateur ; aucun écran employeur ne les modifie.
-- [ ] §7 : l'anonymat complet n'existe qu'avec intermédiation, et l'identité reste toujours connue du service.
-- [ ] Les référentiels se gèrent sans toucher au code.
+- [x] §6 / §9 : les modifications d'annonces collectées passent par le fondateur ; aucun écran employeur ne les modifie.
+- [x] §7 : l'anonymat complet n'existe qu'avec intermédiation, et l'identité reste toujours connue du service.
+- [x] Les référentiels se gèrent sans toucher au code.
 
 ## Hors périmètre
 

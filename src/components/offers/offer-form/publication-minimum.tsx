@@ -9,28 +9,53 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import type { OfferOrigin } from "@/domain/offer"
 import type { MinimumRequirement, MissingItem } from "@/domain/offer-minimum"
 
-// Les cinq éléments du minimum (§3), dans l'ordre du formulaire.
-const requirements: { requirement: MinimumRequirement; label: string }[] = [
-  { requirement: "company", label: "Une entreprise identifiable" },
-  {
-    requirement: "seasonal_contract",
-    label: "Un contrat saisonnier : case cochée et saison choisie",
-  },
-  { requirement: "location", label: "Un lieu précis : la commune" },
-  {
-    requirement: "period",
-    label: "Des dates de début et de fin, ou une durée",
-  },
-  {
-    requirement: "application",
-    label: "Un contact direct : email ou téléphone",
-  },
-]
+type Requirement = { requirement: MinimumRequirement; label: string }
+
+// Les cinq éléments du minimum (§3), dans l'ordre du formulaire. Une annonce collectée peut se
+// candidater par son lien officiel ; le canal « chargé de recrutement » le nomme (plan 15).
+function requirementsFor(origin: OfferOrigin, recruiter: boolean) {
+  const requirements: Requirement[] = [
+    { requirement: "company", label: "Une entreprise identifiable" },
+    {
+      requirement: "seasonal_contract",
+      label: "Un contrat saisonnier : case cochée et saison choisie",
+    },
+    { requirement: "location", label: "Un lieu précis : la commune" },
+    {
+      requirement: "period",
+      label: "Des dates de début et de fin, ou une durée",
+    },
+    {
+      requirement: "application",
+      label:
+        origin === "collected"
+          ? "Un moyen de candidature : email, téléphone ou lien officiel"
+          : "Un contact direct : email ou téléphone",
+    },
+  ]
+  if (recruiter) {
+    requirements.push({
+      requirement: "recruiter",
+      label: "Le nom du chargé de recrutement",
+    })
+  }
+  return requirements
+}
 
 // Encart « Minimum de publication », mis à jour à chaque saisie (checkPublicationMinimum).
-export function PublicationMinimum({ missing }: { missing: MissingItem[] }) {
+export function PublicationMinimum({
+  missing,
+  origin = "deposited",
+  recruiter = false,
+}: {
+  missing: MissingItem[]
+  origin?: OfferOrigin
+  recruiter?: boolean
+}) {
+  const requirements = requirementsFor(origin, recruiter)
   const isMissing = (requirement: MinimumRequirement) =>
     missing.some((item) => item.requirement === requirement)
   const blocked = missing.filter(

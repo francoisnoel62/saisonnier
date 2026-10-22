@@ -98,6 +98,7 @@ export default async function EditOfferPage({
     <div className="flex flex-col gap-6">
       {header}
       <OfferForm
+        space="employer"
         mode="edit"
         action={updateOffer.bind(null, offer.id)}
         defaultValues={offerToFormValues(offer)}

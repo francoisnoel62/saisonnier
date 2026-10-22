@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { findBlockedTargets, hostOf, isBlockedHost } from "./blocked-domains"
+import {
+  blockedDomainSchema,
+  findBlockedTargets,
+  hostOf,
+  isBlockedHost,
+  normalizeBlockedDomain,
+} from "./blocked-domains"
 
 // Extrait des domaines exclus initiaux (drizzle/0001_referentiels.sql).
 const blocked = ["indeed.com", "indeed.fr", "indeedemail.com", "linkedin.com"]
@@ -122,5 +128,42 @@ describe("findBlockedTargets", () => {
       findBlockedTargets({ applyUrl: null, applyEmail: "" }, blocked),
     ).toEqual([])
     expect(findBlockedTargets({}, blocked)).toEqual([])
+  })
+})
+
+describe("normalizeBlockedDomain", () => {
+  it("réduit un domaine, une adresse ou un email à l'hôte", () => {
+    expect(normalizeBlockedDomain("JobBoard.fr")).toBe("jobboard.fr")
+    expect(normalizeBlockedDomain("https://www.Indeed.fr/emploi?q=1")).toBe(
+      "indeed.fr",
+    )
+    expect(normalizeBlockedDomain("rh@mail.jobboard.example")).toBe(
+      "mail.jobboard.example",
+    )
+    expect(normalizeBlockedDomain("jobbörse.de")).toBe("xn--jobbrse-d1a.de")
+  })
+
+  it("refuse ce qui n'est pas un nom de domaine", () => {
+    expect(normalizeBlockedDomain("indeed")).toBeNull()
+    expect(normalizeBlockedDomain("")).toBeNull()
+    expect(normalizeBlockedDomain("http://")).toBeNull()
+  })
+})
+
+describe("blockedDomainSchema", () => {
+  it("normalise le domaine et exige un motif", () => {
+    expect(
+      blockedDomainSchema.parse({
+        domain: " https://www.agregateur.example/offres ",
+        reason: " Agrégateur ",
+      }),
+    ).toEqual({ domain: "agregateur.example", reason: "Agrégateur" })
+
+    const result = blockedDomainSchema.safeParse({ domain: "x", reason: "" })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues.map((issue) => issue.path[0])).toEqual([
+      "domain",
+      "reason",
+    ])
   })
 })

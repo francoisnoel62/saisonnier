@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   canPublishDirectly,
   companyDetailsSchema,
+  companyFileSchema,
   companyOnboardingSchema,
   emailMatchesWebsite,
   isValidSiren,
@@ -180,6 +181,50 @@ describe("membershipDecisionSchema", () => {
         decision: "reject",
         userId: "u1",
         reviewNote: "  ",
+      }).success,
+    ).toBe(false)
+  })
+})
+
+describe("companyFileSchema", () => {
+  it("crée la fiche d'une entreprise sans compte : la raison sociale suffit", () => {
+    expect(
+      companyFileSchema.parse({
+        legalName: " Hôtel du Lac ",
+        displayName: "",
+        siren: "",
+        communeName: "",
+        website: "",
+      }),
+    ).toEqual({
+      legalName: "Hôtel du Lac",
+      displayName: null,
+      siren: null,
+      communeName: null,
+      website: null,
+    })
+  })
+
+  it("vérifie le SIREN et complète le site", () => {
+    expect(
+      companyFileSchema.parse({
+        legalName: "Hôtel du Lac",
+        displayName: "Le Lac",
+        siren: "844 190 652",
+        communeName: "Annecy",
+        website: "www.hotel-du-lac.example",
+      }),
+    ).toMatchObject({
+      siren: "844190652",
+      website: "https://www.hotel-du-lac.example",
+    })
+    expect(
+      companyFileSchema.safeParse({
+        legalName: "Hôtel du Lac",
+        displayName: "",
+        siren: "123456789",
+        communeName: "",
+        website: "",
       }).success,
     ).toBe(false)
   })

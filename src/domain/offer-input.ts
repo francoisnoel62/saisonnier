@@ -3,10 +3,14 @@ import { z } from "zod"
 import { findBlockedTargets } from "./blocked-domains"
 import { languageCodes } from "./languages"
 import {
+  applicationChannels,
   durationUnits,
+  offerOrigins,
   seasons,
   workTimes,
+  type ApplicationChannel,
   type DurationUnit,
+  type OfferOrigin,
   type Season,
   type WorkTime,
 } from "./offer"
@@ -349,12 +353,27 @@ type RawOfferInput = z.output<ReturnType<typeof offerFields>>
 export type OfferFormValues = z.input<ReturnType<typeof offerFields>>
 export type OfferFormField = keyof OfferFormValues
 
+// Qui saisit l'annonce, et comment on y candidate : l'employeur dépose pour lui-même ; l'admin
+// saisit aussi les annonces collectées et le canal « chargé de recrutement » (plan 15).
+type ApplicationSetting = {
+  space: "employer" | "admin"
+  origin: OfferOrigin
+  channel: ApplicationChannel
+}
+
+const employerSetting: ApplicationSetting = {
+  space: "employer",
+  origin: "deposited",
+  channel: "employer",
+}
+
 // Règles qui portent sur plusieurs champs. Elles s'exécutent même si un champ est invalide, pour
 // que toutes les erreurs s'affichent ensemble : les valeurs sont donc encore les textes saisis.
 function checkOfferInput(
   input: RawOfferInput,
   ctx: z.RefinementCtx,
   context: OfferInputContext,
+  setting: ApplicationSetting = employerSetting,
 ) {
   const issue = (path: OfferFormField, message: string) =>
     ctx.addIssue({ code: "custom", path: [path], message })
@@ -469,10 +488,23 @@ function checkOfferInput(
   }
 
   // Candidature (H9) : un contact direct, et aucune destination vers un job-board exclu (§2, §9).
-  if (!input.applyEmail && !input.applyPhone) {
+  // Une annonce collectée peut ne renvoyer qu'à son lien officiel, sauf si le service recrute.
+  const urlSuffices =
+    setting.origin === "collected" && setting.channel === "employer"
+  if (
+    !input.applyEmail &&
+    !input.applyPhone &&
+    !(urlSuffices && input.applyUrl)
+  ) {
     issue(
       "applyEmail",
-      "Indiquez un email ou un téléphone : les candidats doivent pouvoir vous joindre directement.",
+      setting.channel === "recruiter"
+        ? "Indiquez l'email ou le téléphone du chargé de recrutement."
+        : urlSuffices
+          ? "Indiquez un email, un téléphone ou le lien officiel de candidature."
+          : setting.space === "admin"
+            ? "Indiquez un email ou un téléphone : les candidats doivent pouvoir joindre l'employeur directement."
+            : "Indiquez un email ou un téléphone : les candidats doivent pouvoir vous joindre directement.",
     )
   }
   const blocked = findBlockedTargets(
@@ -829,5 +861,179 @@ export function previewOfferInput(values: OfferFormValues): OfferPreview {
       ? values.applyPhone.trim()
       : null,
     applyUrl: normalizeWebUrl(values.applyUrl),
+  }
+}
+
+// Back-office (plan 15) : l'admin choisit aussi l'entreprise, l'origine de l'annonce et le canal
+// de candidature. Une annonce collectée indique sa source (§6) ; le canal « chargé de
+// recrutement » nomme la personne du service, seule à pouvoir rendre l'entreprise anonyme (§7).
+
+export const adminOfferTextLimits = {
+  sourceUrl: 500,
+  sourceName: 150,
+  recruiterName: 100,
+} as const
+
+function adminOfferFields(context: OfferInputContext) {
+  return offerFields(context).extend({
+    origin: z.enum(offerOrigins),
+    companyId: z.string(),
+    sourceUrl: text(
+      adminOfferTextLimits.sourceUrl,
+      tooLong("Le lien de la source", adminOfferTextLimits.sourceUrl),
+    ).refine(
+      (value) => value === "" || normalizeWebUrl(value) !== null,
+      "Saisissez l'adresse complète de l'annonce, par exemple https://www.mon-hotel.fr/emplois/serveur.",
+    ),
+    sourceName: text(
+      adminOfferTextLimits.sourceName,
+      tooLong("Le nom de la source", adminOfferTextLimits.sourceName),
+    ),
+    applicationChannel: z.enum(applicationChannels),
+    recruiterName: text(
+      adminOfferTextLimits.recruiterName,
+      tooLong("Le nom", adminOfferTextLimits.recruiterName),
+    ),
+    hideCompanyIdentity: z.boolean(),
+  })
+}
+
+type RawAdminOfferInput = z.output<ReturnType<typeof adminOfferFields>>
+
+export type AdminOfferFormValues = z.input<ReturnType<typeof adminOfferFields>>
+export type AdminOfferFormField = keyof AdminOfferFormValues
+
+// Règles propres à la saisie de l'admin, qui s'ajoutent à celles de l'annonce.
+function checkAdminOfferInput(
+  input: RawAdminOfferInput,
+  ctx: z.RefinementCtx,
+  context: OfferInputContext,
+) {
+  const issue = (path: AdminOfferFormField, message: string) =>
+    ctx.addIssue({ code: "custom", path: [path], message })
+
+  if (!input.companyId) {
+    issue("companyId", "Choisissez l'entreprise, ou créez sa fiche.")
+  }
+
+  // Une annonce collectée se suit à sa source, qui ne peut pas être un job-board (§2, §6).
+  if (input.origin === "collected") {
+    const sourceUrl = normalizeWebUrl(input.sourceUrl)
+    if (!input.sourceUrl) {
+      issue(
+        "sourceUrl",
+        "Indiquez l'adresse de l'annonce sur le site officiel de l'employeur.",
+      )
+    }
+    for (const target of findBlockedTargets(
+      { sourceUrl },
+      context.blockedDomains,
+    )) {
+      issue("sourceUrl", blockedTargetMessage(target))
+    }
+    if (!input.sourceName) {
+      issue(
+        "sourceName",
+        "Indiquez le nom de la source, par exemple « Site carrières de l'Hôtel du Lac ».",
+      )
+    }
+  }
+
+  // Intermédiation (§7) : une personne du service est nommée ; l'anonymat n'existe qu'avec elle.
+  if (input.applicationChannel === "recruiter" && !input.recruiterName) {
+    issue("recruiterName", "Indiquez le nom du chargé de recrutement.")
+  }
+  if (input.hideCompanyIdentity && input.applicationChannel !== "recruiter") {
+    issue(
+      "hideCompanyIdentity",
+      "L'identité de l'entreprise ne peut être masquée que si le service assure l'intermédiation.",
+    )
+  }
+}
+
+// Valeurs validées → colonnes de l'offre, plus l'entreprise, l'origine, la source et le canal.
+function toAdminOfferInput(input: RawAdminOfferInput) {
+  const collected = input.origin === "collected"
+  const recruiter = input.applicationChannel === "recruiter"
+  return {
+    ...toOfferInput(input),
+    origin: input.origin,
+    companyId: input.companyId,
+    sourceUrl: collected ? normalizeWebUrl(input.sourceUrl) : null,
+    sourceName: collected ? input.sourceName || null : null,
+    applicationChannel: input.applicationChannel,
+    recruiterName: recruiter ? input.recruiterName : null,
+    hideCompanyIdentity: recruiter && input.hideCompanyIdentity,
+  }
+}
+
+export function adminOfferInputSchema(context: OfferInputContext) {
+  return adminOfferFields(context)
+    .superRefine((input, ctx) => {
+      checkOfferInput(input, ctx, context, {
+        space: "admin",
+        origin: input.origin,
+        channel: input.applicationChannel,
+      })
+      checkAdminOfferInput(input, ctx, context)
+    })
+    .transform(toAdminOfferInput)
+}
+
+export type AdminOfferInput = ReturnType<typeof toAdminOfferInput>
+
+// Champs propres à l'admin, enregistrés avec l'annonce.
+export type AdminOfferFields = Pick<
+  AdminOfferInput,
+  | "origin"
+  | "companyId"
+  | "sourceUrl"
+  | "sourceName"
+  | "applicationChannel"
+  | "recruiterName"
+  | "hideCompanyIdentity"
+>
+
+// Saisie d'une annonce collectée, le cas le plus fréquent du back-office : les candidatures vont
+// à l'employeur, l'entreprise reste nommée. Les clés suivent l'ordre du formulaire.
+export function emptyAdminOfferFormValues(): AdminOfferFormValues {
+  return {
+    origin: "collected",
+    companyId: "",
+    sourceUrl: "",
+    sourceName: "",
+    ...emptyOfferFormValues(),
+    applicationChannel: "employer",
+    recruiterName: "",
+    hideCompanyIdentity: false,
+  }
+}
+
+export function adminOfferToFormValues(
+  offer: OfferInput & AdminOfferFields,
+): AdminOfferFormValues {
+  return {
+    origin: offer.origin,
+    companyId: offer.companyId,
+    sourceUrl: offer.sourceUrl ?? "",
+    sourceName: offer.sourceName ?? "",
+    ...offerToFormValues(offer),
+    applicationChannel: offer.applicationChannel,
+    recruiterName: offer.recruiterName ?? "",
+    hideCompanyIdentity: offer.hideCompanyIdentity,
+  }
+}
+
+// Saisie en cours de l'admin → entrée du minimum de publication : son entreprise, son canal et,
+// pour une annonce collectée, sa source, contrôlée comme les destinations (§2).
+export function adminPublicationInputOf(
+  values: AdminOfferFormValues,
+): PublicationInput {
+  return {
+    ...publicationInputOf(values, values.companyId || null),
+    applicationChannel: values.applicationChannel,
+    recruiterName: values.recruiterName,
+    sourceUrl:
+      values.origin === "collected" ? normalizeWebUrl(values.sourceUrl) : null,
   }
 }

@@ -241,6 +241,31 @@ export const companyDetailsSchema = z.object({ displayName, website, phone })
 
 export type CompanyDetails = z.infer<typeof companyDetailsSchema>
 
+// Fiche d'une entreprise sans compte, créée par l'admin pour une annonce collectée ou transmise
+// (plan 15). Le SIREN est facultatif ; s'il est donné, une entreprise déjà connue est reprise.
+export const companyFileSchema = z.object({
+  legalName: requiredText(
+    200,
+    "Indiquez la raison sociale.",
+    "La raison sociale ne doit pas dépasser 200 caractères.",
+  ),
+  displayName,
+  siren: z
+    .string()
+    .transform((value) => digits(value) || null)
+    .refine(
+      (value) => value === null || isValidSiren(value),
+      "Ce numéro SIREN (9 chiffres) n'est pas valide.",
+    ),
+  communeName: optionalText(
+    100,
+    "La commune ne doit pas dépasser 100 caractères.",
+  ),
+  website,
+})
+
+export type CompanyFile = z.infer<typeof companyFileSchema>
+
 export const REVIEW_NOTE_MAX_LENGTH = 1000
 
 // Décision de l'admin : un refus est toujours motivé, et ce motif est envoyé à l'employeur.

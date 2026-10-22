@@ -36,6 +36,7 @@ export default async function NewOfferPage() {
         précisé&nbsp;» aux candidats.
       </p>
       <OfferForm
+        space="employer"
         mode="create"
         action={createOffer}
         defaultValues={emptyOfferFormValues()}

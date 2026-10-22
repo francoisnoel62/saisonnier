@@ -13,7 +13,8 @@ import {
   useTable,
   type ColumnFiltersState,
 } from "@tanstack/react-table"
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
+import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from "lucide-react"
+import Link from "next/link"
 import { useActionState, useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -101,11 +102,18 @@ const columns = columnHelper.columns([
   columnHelper.accessor("email", { header: "Email" }),
   columnHelper.accessor("offerId", {
     header: "Annonce liée",
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">
-        {row.original.offerId?.slice(0, 8) ?? "—"}
-      </span>
-    ),
+    cell: ({ row }) =>
+      row.original.offerId ? (
+        <Link
+          href={`/admin/annonces/${row.original.offerId}/modifier`}
+          className="font-mono text-xs underline underline-offset-4"
+        >
+          {row.original.offerId.slice(0, 8)}
+          <span className="sr-only"> : modifier l&rsquo;annonce</span>
+        </Link>
+      ) : (
+        "—"
+      ),
   }),
   columnHelper.accessor("status", {
     header: "Statut",
@@ -297,6 +305,20 @@ function MessageViewer({ message }: { message: ContactMessageRow }) {
               </>
             )}
           </dl>
+          {/* Demande d'un employeur sur son annonce : la correction se fait dans le back-office. */}
+          {message.offerId && (
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline">
+                <Link href={`/admin/annonces/${message.offerId}/modifier`}>
+                  <PencilIcon data-icon="inline-start" aria-hidden />
+                  Modifier l&rsquo;annonce
+                </Link>
+              </Button>
+              <Button asChild variant="ghost">
+                <Link href={`/offres/${message.offerId}`}>Voir la fiche</Link>
+              </Button>
+            </div>
+          )}
           <p className="rounded-md bg-muted p-3 whitespace-pre-wrap">
             {message.message}
           </p>

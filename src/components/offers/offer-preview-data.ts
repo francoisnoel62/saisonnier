@@ -4,6 +4,7 @@ import {
   type ApplicationFields,
 } from "@/domain/application"
 import { findBlockedTargets } from "@/domain/blocked-domains"
+import type { OfferOrigin } from "@/domain/offer"
 import {
   previewOfferInput,
   type OfferFormReferentials,
@@ -39,6 +40,7 @@ export function savedOfferPreview(
   saved: Parameters<typeof toOfferDetailsData>[0] &
     ApplicationFields & {
       title: string
+      origin: OfferOrigin
       applyEmail: string | null
       applyUrl: string | null
     },
@@ -47,6 +49,7 @@ export function savedOfferPreview(
   const offer = withoutBlocked(saved, blockedDomains)
   return {
     title: offer.title,
+    origin: offer.origin,
     companyName: publicCompanyName(offer),
     details: toOfferDetailsData(offer),
     applicationExplanation: applicationModeExplanation(offer),
@@ -58,12 +61,28 @@ export function savedOfferPreview(
   }
 }
 
+// Origine et canal de la saisie : l'employeur dépose pour sa propre entreprise et reçoit lui-même
+// les candidatures ; l'admin choisit (plan 15).
+type DraftSetting = Pick<
+  ApplicationFields,
+  "applicationChannel" | "recruiterName" | "hideCompanyIdentity"
+> & { origin: OfferOrigin }
+
+const employerDraft: DraftSetting = {
+  origin: "deposited",
+  applicationChannel: "employer",
+  recruiterName: null,
+  hideCompanyIdentity: false,
+}
+
 // Saisie du formulaire : chaque champ tel qu'il serait enregistré ; un champ invalide reste vide,
-// comme un lien ou un email vers un domaine exclu, qu'aucun candidat ne verrait (§9).
+// comme un lien ou un email vers un domaine exclu, qu'aucun candidat ne verrait (§9). Sans
+// entreprise choisie (admin), l'aperçu l'annonce comme telle.
 export function draftOfferPreview(
   values: OfferFormValues,
   referentials: OfferFormReferentials,
-  company: { legalName: string; displayName: string | null },
+  company: { legalName: string; displayName: string | null } | null,
+  setting: DraftSetting = employerDraft,
 ): OfferPreviewData {
   const draft = withoutBlocked(
     previewOfferInput(values),
@@ -78,19 +97,20 @@ export function draftOfferPreview(
   const fields = Object.fromEntries(
     offerDetailsFields.map((field) => [field, draft[field]]),
   ) as Omit<OfferDetailsData, "occupationLabel" | "department" | "regionName">
-  // L'employeur dépose pour sa propre entreprise et reçoit lui-même les candidatures.
+  const recruiter = setting.applicationChannel === "recruiter"
   const application: ApplicationFields = {
-    applicationChannel: "employer",
+    applicationChannel: setting.applicationChannel,
     applyEmail: draft.applyEmail,
     applyPhone: draft.applyPhone,
     applyUrl: draft.applyUrl,
-    recruiterName: null,
-    hideCompanyIdentity: false,
-    company,
+    recruiterName: recruiter ? setting.recruiterName?.trim() || null : null,
+    hideCompanyIdentity: recruiter && setting.hideCompanyIdentity,
+    company: company ?? { legalName: "Entreprise à choisir" },
   }
 
   return {
     title: draft.title,
+    origin: setting.origin,
     companyName: publicCompanyName(application),
     details: {
       ...fields,
