@@ -5,27 +5,47 @@ import type { AnyPgColumn } from "drizzle-orm/pg-core"
 
 import { dailySeries, lastDays } from "@/domain/daily-series"
 import { db } from "@/lib/db"
-import { companyMembers, contactMessages, offers, user } from "@/lib/db/schema"
+import {
+  companyMembers,
+  contactMessages,
+  offers,
+  serviceRequests,
+  user,
+} from "@/lib/db/schema"
 import { activeOfferConditions } from "@/server/offers/queries"
 
 // Tableau de bord de l'admin (plan 15) : des comptes réels, aucune donnée de démonstration.
 
 export async function getAdminIndicators(today: string) {
-  const [deposited, collected, pendingVerifications, newMessages, candidates] =
-    await Promise.all([
-      db.$count(
-        offers,
-        and(activeOfferConditions(today), eq(offers.origin, "deposited")),
-      ),
-      db.$count(
-        offers,
-        and(activeOfferConditions(today), eq(offers.origin, "collected")),
-      ),
-      db.$count(companyMembers, eq(companyMembers.status, "pending")),
-      db.$count(contactMessages, eq(contactMessages.status, "new")),
-      db.$count(user, eq(user.role, "candidate")),
-    ])
-  return { deposited, collected, pendingVerifications, newMessages, candidates }
+  const [
+    deposited,
+    collected,
+    pendingVerifications,
+    newMessages,
+    newServiceRequests,
+    candidates,
+  ] = await Promise.all([
+    db.$count(
+      offers,
+      and(activeOfferConditions(today), eq(offers.origin, "deposited")),
+    ),
+    db.$count(
+      offers,
+      and(activeOfferConditions(today), eq(offers.origin, "collected")),
+    ),
+    db.$count(companyMembers, eq(companyMembers.status, "pending")),
+    db.$count(contactMessages, eq(contactMessages.status, "new")),
+    db.$count(serviceRequests, eq(serviceRequests.status, "new")),
+    db.$count(user, eq(user.role, "candidate")),
+  ])
+  return {
+    deposited,
+    collected,
+    pendingVerifications,
+    newMessages,
+    newServiceRequests,
+    candidates,
+  }
 }
 
 // Jour d'un horodatage, à Paris (AAAA-MM-JJ).

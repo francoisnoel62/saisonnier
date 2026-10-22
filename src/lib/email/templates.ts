@@ -132,6 +132,47 @@ export function contactNotificationEmail({
   }
 }
 
+// Demande de prestation d'un employeur (§7), traitée à la main par le fondateur.
+export function serviceRequestNotificationEmail({
+  name,
+  email,
+  companyName,
+  services,
+  scope,
+  purchaseFormat,
+  message,
+  url,
+}: {
+  name: string
+  email: string
+  companyName: string
+  services: string[]
+  scope: string
+  purchaseFormat: string
+  message: string | null
+  url: string
+}): Template {
+  const greeting = `${companyName} demande une prestation.`
+  const details = [
+    `Demandeur : ${name} <${email}>`,
+    `Prestations : ${services.join(", ")}`,
+    `Portée : ${scope}`,
+    `Formule : ${purchaseFormat}`,
+  ]
+  const footer = "Répondre à cet email écrit directement à l'employeur."
+
+  return {
+    subject: `Demande de prestation — ${companyName}`,
+    text: `${greeting}\n\n${details.join("\n")}${message ? `\n\n${message}` : ""}\n\n${url}\n\n${footer}`,
+    html: layout({
+      greeting,
+      paragraphs: message ? [...details, message] : details,
+      action: { label: "Ouvrir les demandes", url },
+      footer,
+    }),
+  }
+}
+
 // Nouveau rattachement à vérifier : prévient le fondateur (H2). Tout vient de l'employeur.
 export function membershipRequestEmail({
   name,

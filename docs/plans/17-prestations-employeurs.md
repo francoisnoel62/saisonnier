@@ -65,9 +65,9 @@ Pas de tarif, pas de paiement.
 
 ## Critères d'acceptation
 
-- [ ] §7 : aucune prestation n'est obligatoire pour publier.
-- [ ] §7 : les engagements sont visibles.
-- [ ] Le traitement manuel des demandes est outillé.
+- [x] §7 : aucune prestation n'est obligatoire pour publier.
+- [x] §7 : les engagements sont visibles.
+- [x] Le traitement manuel des demandes est outillé.
 
 ## Hors périmètre
 

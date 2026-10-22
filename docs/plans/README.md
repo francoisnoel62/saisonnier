@@ -122,6 +122,7 @@ Le cahier des charges laisse ces points ouverts. Les plans appliquent les choix 
 | H17 | Espace employeur : un déposant vérifié gère toutes les annonces déposées de son entreprise. Avant sa vérification, il ne voit et ne modifie que ses propres annonces, qui restent en attente ; refusé, il ne dépose et ne modifie plus rien. Une annonce confiée au chargé de recrutement du service se corrige par le fondateur. | 14 |
 | H18 | Une annonce ne s'enregistre pas avec une date de fin ou une date limite de candidature déjà passée. La remise en ligne vaut confirmation de validité ; la date de publication d'origine est conservée, pour qu'une annonce ne remonte pas dans la recherche en étant retirée puis remise en ligne. | 14 |
 | H19 | Back-office : enregistrer une annonce collectée (saisie de l'admin, ou futur scan) la publie et date la vérification de sa source à aujourd'hui ; sa date de publication d'origine est conservée. Une annonce transmise par un employeur sans compte se saisit comme « déposée » : le fondateur en devient le déposant et reçoit son rappel de validité. Une annonce modifiée garde son origine ; déposée, elle garde aussi son entreprise et son statut. | 15 |
+| H20 | Prestations : un déposant vérifié suit les demandes de son entreprise, un déposant en attente les siennes. Le questionnaire, le tri, la sélection et la prise de contact supposent que le service reçoive les candidatures : le fondateur bascule alors l'annonce sur le chargé de recrutement ; le sourcing seul ne le suppose pas. | 17 |
 
 ## Glossaire : cahier des charges → code
 
