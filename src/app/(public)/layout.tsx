@@ -1,18 +1,17 @@
 import { PublicFooter } from "@/components/public/public-footer"
 import { PublicHeader } from "@/components/public/public-header"
 import { getSession } from "@/lib/dal"
+import styles from "@/components/public/public.module.css"
 
-// Pages ouvertes à tous : la session sert seulement à proposer « Accéder à mon espace ».
 export default async function PublicLayout({ children }: LayoutProps<"/">) {
   const session = await getSession()
-
   return (
-    <>
+    <div className={styles.site}>
       <PublicHeader role={session?.user.role} />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-10">
+      <main id="contenu" className={styles.main}>
         {children}
       </main>
       <PublicFooter />
-    </>
+    </div>
   )
 }

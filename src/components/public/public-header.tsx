@@ -1,45 +1,116 @@
-import { SunSnowIcon } from "lucide-react"
+"use client"
+
+import { ArrowUpRightIcon, MenuIcon, XIcon } from "lucide-react"
 import Link from "next/link"
-
+import { useState } from "react"
+import { Brand } from "@/components/public/brand"
 import { Button } from "@/components/ui/button"
-import { site } from "@/config/site"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { homePathFor, type Role } from "@/domain/roles"
+import styles from "./public.module.css"
 
-// En-tête des pages publiques. `role` est absent pour un visiteur non connecté.
+const navigation = [
+  { href: "/#recherche", label: "Trouver ma saison" },
+  { href: "/#destinations", label: "Les destinations" },
+  { href: "/#notre-conviction", label: "Notre état d’esprit" },
+]
+
 export function PublicHeader({ role }: { role?: Role }) {
+  const [open, setOpen] = useState(false)
   return (
-    <header className="border-b">
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <SunSnowIcon className="size-4" aria-hidden />
-          </span>
-          {site.name}
+    <header className={styles.header}>
+      <a className={styles.skipLink} href="#contenu">
+        Aller au contenu
+      </a>
+      <div className={styles.headerInner}>
+        <Link href="/" aria-label="Accueil" className={styles.brandLink}>
+          <Brand />
         </Link>
-        <nav
-          aria-label="Navigation principale"
-          className="flex flex-wrap items-center gap-x-2 gap-y-1"
-        >
+        <nav className={styles.desktopNav} aria-label="Navigation principale">
+          {navigation.map(({ href, label }) => (
+            <Link key={href} href={href}>
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <div className={styles.headerActions}>
           {role ? (
-            <Button asChild size="sm">
-              <Link href={homePathFor(role)}>Accéder à mon espace</Link>
+            <Button asChild className={styles.buttonSmall}>
+              <Link href={homePathFor(role)}>
+                Accéder à mon espace <ArrowUpRightIcon aria-hidden />
+              </Link>
             </Button>
           ) : (
             <>
-              <Button asChild variant="ghost" size="sm">
+              <Link className={styles.loginLink} href="/connexion">
+                Se connecter
+              </Link>
+              <Button asChild className={styles.buttonSmall}>
                 <Link href="/inscription/employeur">
-                  Employeurs : publier une offre
+                  Vous recrutez ? <ArrowUpRightIcon aria-hidden />
                 </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/connexion">Se connecter</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/inscription">Créer un compte</Link>
               </Button>
             </>
           )}
-        </nav>
+        </div>
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <button className={styles.menuButton} aria-label="Ouvrir le menu">
+              <MenuIcon aria-hidden />
+            </button>
+          </SheetTrigger>
+          <SheetContent className={styles.mobileMenu} showCloseButton={false}>
+            <SheetTitle>
+              <Brand />
+            </SheetTitle>
+            <SheetDescription>
+              Votre prochaine saison commence ici.
+            </SheetDescription>
+            <SheetClose
+              className={styles.menuClose}
+              aria-label="Fermer le menu"
+            >
+              <XIcon aria-hidden />
+            </SheetClose>
+            <nav aria-label="Navigation mobile" onClick={() => setOpen(false)}>
+              {navigation.map(({ href, label }) => (
+                <Link key={href} href={href}>
+                  {label}
+                  <ArrowUpRightIcon aria-hidden />
+                </Link>
+              ))}
+              {role ? (
+                <Link href={homePathFor(role)}>
+                  Accéder à mon espace <ArrowUpRightIcon aria-hidden />
+                </Link>
+              ) : (
+                <>
+                  <Link href="/connexion">
+                    Se connecter <ArrowUpRightIcon aria-hidden />
+                  </Link>
+                  <Link href="/inscription/candidat">
+                    Créer un compte <ArrowUpRightIcon aria-hidden />
+                  </Link>
+                  <Link href="/inscription/employeur">
+                    Vous recrutez ? <ArrowUpRightIcon aria-hidden />
+                  </Link>
+                </>
+              )}
+            </nav>
+            <p className={styles.mobileMenuNote}>
+              0 % IA. 100 % humain.
+              <br />
+              Et une vraie envie de vous rencontrer.
+            </p>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   )
