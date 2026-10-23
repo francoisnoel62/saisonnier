@@ -343,11 +343,13 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
     const started = Date.now()
     const signal = AbortSignal.timeout(timeoutMs)
     const robots: RobotsDecision[] = []
+    let finalUrl: string | undefined
     try {
       let current = value
       for (let redirects = 0; ; redirects++) {
         const url = checkScanUrl(current, policy)
         if (!url) return { ok: false, reason: "invalid_url", robots }
+        finalUrl = url.href
         const rules = await getRobots(url, signal)
         if ("ok" in rules) {
           robots.push({
@@ -356,7 +358,7 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
             allowed: false,
             crawlDelayMs: 0,
           })
-          return { ...rules, robots }
+          return { ...rules, robots, finalUrl }
         }
         const allowed = rules.parser.isAllowed(url.href, userAgent) !== false
         robots.push({
@@ -365,9 +367,10 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
           allowed,
           crawlDelayMs: rules.crawlDelayMs,
         })
-        if (!allowed) return { ok: false, reason: "robots_disallowed", robots }
+        if (!allowed)
+          return { ok: false, reason: "robots_disallowed", robots, finalUrl }
         const response = await raw(url, signal, rules.crawlDelayMs)
-        if (!response.ok) return { ...response, robots }
+        if (!response.ok) return { ...response, robots, finalUrl }
         if (redirectStatuses.has(response.status)) {
           if (redirects >= scanLimits.maxRedirects)
             return {
@@ -375,6 +378,7 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
               reason: "too_many_redirects",
               status: response.status,
               robots,
+              finalUrl,
             }
           if (!response.headers.location)
             return {
@@ -382,6 +386,7 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
               reason: "http_error",
               status: response.status,
               robots,
+              finalUrl,
             }
           try {
             current = new URL(response.headers.location, url).href
@@ -394,6 +399,7 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
           return {
             ...failureForStatus(response.status, response.headers),
             robots,
+            finalUrl,
           }
         return {
           ok: true,
@@ -412,6 +418,7 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
         ok: false,
         reason: signal.aborted ? "timeout" : "network",
         robots,
+        finalUrl,
       }
     }
   }

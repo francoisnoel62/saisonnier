@@ -38,4 +38,4 @@ export type ScanFetchResult = (
       fetchedAt: string
     }
   | ScanFailure
-) & { robots: RobotsDecision[] }
+) & { robots: RobotsDecision[]; finalUrl?: string }

@@ -15,6 +15,9 @@ it.each(sources)(
     expect(
       files.filter((file) => file.startsWith("posting-")).length,
     ).toBeGreaterThanOrEqual(3)
+    expect(
+      files.filter((file) => file.startsWith("posting-")).length,
+    ).toBeLessThanOrEqual(6)
     for (const file of files.filter((file) => /\.(html|xml)$/.test(file))) {
       const body = readFileSync(join(directory, file), "utf8")
       const $ = load(
@@ -22,7 +25,9 @@ it.each(sources)(
         file.endsWith(".xml") ? { xmlMode: true } : undefined,
       )
       expect(
-        $("script:not([type='application/ld+json']), img, iframe, svg").length,
+        $(
+          "script:not([type='application/ld+json']), img, iframe, svg, meta[name='csrf-token'], input[name='authenticity_token']",
+        ).length,
         file,
       ).toBe(0)
       // Le texte RSS contient lui-même du HTML échappé : le contrôle porte aussi dessus.

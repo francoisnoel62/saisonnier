@@ -155,7 +155,10 @@ export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
                     )}
                     <p>
                       HTTP : {request.status ?? "sans réponse"} ·{" "}
-                      {request.elapsedMs} ms · {request.bytes ?? 0} octets
+                      {request.elapsedMs} ms ·{" "}
+                      {request.bytes === undefined
+                        ? "taille non mesurée"
+                        : `${request.bytes} octets`}
                     </p>
                     {request.reason && <p>Motif : {request.reason}</p>}
                     {request.robots.map((robots, index) => (

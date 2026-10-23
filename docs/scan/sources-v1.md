@@ -81,7 +81,7 @@ Sandaya et PVCP restent des pistes écartées du registre V1 tant qu'une liste a
 
 Les [fixtures Belambra](../../src/server/scan/sources/fixtures/belambra/README.md) et [VVF](../../src/server/scan/sources/fixtures/vvf/README.md) conservent les listes réelles et six fiches maximum par source. Scripts exécutables, images et suivis retirés ; contacts fictifs `.example` et tranches de fiction. Les tests contrôlent l'anonymisation et les diagnostics sur ces captures, sans appeler les sites.
 
-Cas capturés : contrat saisonnier, CDD de remplacement seul, CDI, contrat contradictoire, période libre, période partielle, salaire sans base, logement possible, formulaire seul, plusieurs recrutements. Une durée contractuelle seule et une clôture explicite n'ont pas encore été rencontrées dans cet échantillon ; ne pas fabriquer une capture prétendument réelle. Elles restent à compléter avant les tests d'extraction du plan 05.
+Cas capturés : contrat saisonnier, CDD de remplacement seul, CDI, contrat contradictoire, période libre, période partielle, salaire sans base, logement possible, formulaire seul, plusieurs recrutements et clôture explicite. L'[ancienne fiche VVF 318954](https://vvfrecrute.factorial.fr/job_posting/serveur-h-f-318954), capturée à 12:17:39 UTC, répond HTTP 200 mais annonce que l'offre n'existe plus : un succès HTTP ne prouve pas qu'un recrutement est actif. Une durée contractuelle seule n'a pas été rencontrée ; conserver cette limite pour les tests d'extraction du plan 05, sans fabriquer une capture prétendument réelle.
 
 ## Validation à consigner
 

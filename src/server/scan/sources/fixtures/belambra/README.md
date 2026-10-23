@@ -14,3 +14,5 @@ Les captures brutes ne sont pas versionnées. Ne pas reformater ces fichiers.
 | posting-10.html | https://recrute.belambra.fr/jobs/8545711-responsable-maintenance-h-f | 2026-10-23T11:59:11.412Z |
 | posting-period.html | https://recrute.belambra.fr/jobs/8467939-responsable-menage-h-f | 2026-10-23T12:04:31.346Z |
 | posting-multiple.html | https://recrute.belambra.fr/jobs/8340139-employes-saison-montagne-h-f | 2026-10-23T12:04:33.670Z |
+
+Les métadonnées et champs CSRF éphémères ont également été supprimés.

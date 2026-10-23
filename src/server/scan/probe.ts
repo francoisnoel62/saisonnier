@@ -35,11 +35,11 @@ export async function probeScanSource(
       url,
       ok: response.ok,
       status: response.status,
+      finalUrl: response.finalUrl,
       robots: response.robots,
       elapsedMs: response.ok ? response.elapsedMs : Date.now() - start,
       ...(response.ok
         ? {
-            finalUrl: response.finalUrl,
             bytes: response.bytes,
             contentType: response.contentType,
           }

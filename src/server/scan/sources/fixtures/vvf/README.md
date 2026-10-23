@@ -11,6 +11,10 @@ Les captures brutes ne sont pas versionnées. Ne pas reformater ces fichiers.
 | posting-1.html | https://vvfrecrute.factorial.fr/job_posting/assistant-e-commercial-grands-comptes-h-f-327834 | 2026-10-23T11:59:17.203Z |
 | posting-2.html | https://vvfrecrute.factorial.fr/job_posting/responsable-de-maintenance-h-f-326869 | 2026-10-23T11:59:19.530Z |
 | posting-4.html | https://vvfrecrute.factorial.fr/job_posting/ouvrier-de-maintenance-h-f-326968 | 2026-10-23T11:59:23.073Z |
-| posting-5.html | https://vvfrecrute.factorial.fr/job_posting/ouvrier-de-maintenance-h-f-326967 | 2026-10-23T11:59:25.662Z |
 | posting-6.html | https://vvfrecrute.factorial.fr/job_posting/barman-h-f-326965 | 2026-10-23T11:59:27.156Z |
 | posting-8.html | https://vvfrecrute.factorial.fr/job_posting/serveur-h-f-326962 | 2026-10-23T11:59:31.293Z |
+| posting-closed.html | https://vvfrecrute.factorial.fr/job_posting/serveur-h-f-318954 | 2026-10-23T12:17:39.566Z |
+
+`posting-closed.html` : HTTP 200 réel, mais le texte annonce que l'offre n'existe plus. Un succès HTTP ne prouve donc pas qu'un recrutement est actif.
+
+Les métadonnées et champs CSRF éphémères ont également été supprimés.
