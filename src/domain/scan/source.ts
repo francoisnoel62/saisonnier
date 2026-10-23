@@ -5,6 +5,16 @@ import { isValidSiren } from "@/domain/membership"
 import { scanLimits } from "./limits"
 import { checkScanUrl, isTestSourceUrl, type ScanUrlPolicy } from "./url-safety"
 
+export const scanSourceRoles = ["primary", "reserve"] as const
+
+// Bornes d'une requête surchargeables par source : elles ne peuvent que se resserrer.
+export const scanRequestLimitsSchema = z.object({
+  minIntervalMs: z.number().int().min(scanLimits.minIntervalMs).optional(),
+  timeoutMs: z.number().int().positive().max(scanLimits.timeoutMs).optional(),
+  maxBytes: z.number().int().positive().max(scanLimits.maxBytes).optional(),
+})
+export type ScanRequestLimits = z.infer<typeof scanRequestLimitsSchema>
+
 const noteSchema = z.object({
   url: z.url(),
   note: z.string().min(1),
@@ -35,12 +45,9 @@ const sourceBaseSchema = z.object({
   officialHosts: z.array(z.string().regex(/^[a-z0-9.-]+$/)).min(1),
   affiliationProof: noteSchema,
   reuse: noteSchema.extend({ robotsExcerpt: z.string().min(1) }),
-  role: z.enum(["primary", "reserve"]),
+  role: z.enum(scanSourceRoles),
   priority: z.number().int().nonnegative(),
-  limits: z.object({
-    minIntervalMs: z.number().int().min(scanLimits.minIntervalMs).optional(),
-    timeoutMs: z.number().int().positive().max(scanLimits.timeoutMs).optional(),
-    maxBytes: z.number().int().positive().max(scanLimits.maxBytes).optional(),
+  limits: scanRequestLimitsSchema.extend({
     maxListPages: z
       .number()
       .int()
@@ -80,6 +87,11 @@ export const scanSourceSchema = z.discriminatedUnion("kind", [
   }),
 ])
 export type ScanSourceDefinition = z.infer<typeof scanSourceSchema>
+// Ce que l'écran admin reçoit d'une source.
+export type ScanSourceSummary = Pick<
+  ScanSourceDefinition,
+  "key" | "label" | "kind" | "role" | "officialHosts"
+> & { checkedAt: string }
 
 export function validateScanSourceRegistry(
   registry: Record<string, ScanSourceDefinition>,

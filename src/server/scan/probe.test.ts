@@ -93,3 +93,42 @@ it("arrête la source après un refus de fiche et ne journalise jamais son conte
   expect(mocks.fetch).toHaveBeenCalledTimes(2)
   expect(log.mock.calls[0][1]).not.toContain("<a")
 })
+
+it("une fiche introuvable n'empêche pas de lire les suivantes", async () => {
+  vi.spyOn(console, "info").mockImplementation(() => {})
+  const source = buildScanSourceDefinitions().belambra
+  mocks.fetch
+    .mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      finalUrl: source.listUrls[0],
+      contentType: "text/html",
+      body: '<a href="/jobs/1-a">a</a><a href="/jobs/2-b">b</a><a href="/jobs/3-c">c</a>',
+      bytes: 20,
+      elapsedMs: 1,
+      waitedMs: 0,
+      fetchedAt: "2026-10-23T13:00:00Z",
+      robots: [],
+    })
+    .mockResolvedValueOnce({
+      ok: false,
+      reason: "not_found",
+      status: 404,
+      elapsedMs: 1,
+      waitedMs: 0,
+      robots: [],
+    })
+    .mockResolvedValue({
+      ok: true,
+      status: 200,
+      finalUrl: "https://recrute.belambra.fr/jobs/2-b",
+      contentType: "text/html",
+      body: "<p>fiche</p>",
+      bytes: 12,
+      elapsedMs: 1,
+      waitedMs: 0,
+      fetchedAt: "2026-10-23T13:00:00Z",
+      robots: [],
+    })
+  expect((await probeScanSource(source)).requests).toHaveLength(4)
+})

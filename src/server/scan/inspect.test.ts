@@ -16,9 +16,11 @@ function fixture(source: string, name: string) {
 it("repère la pagination France Travail et ses vingt fiches, sans suivre les actions de compte", () => {
   const source = sources["france-travail"]
   const result = inspectScanDocument(
-    fixture("france-travail", "list.html"),
-    source.listUrls[0],
-    "text/html",
+    {
+      body: fixture("france-travail", "list.html"),
+      finalUrl: source.listUrls[0],
+      contentType: "text/html",
+    },
     source,
   )
   expect(result.links).toHaveLength(20)
@@ -31,9 +33,11 @@ it("repère la pagination France Travail et ses vingt fiches, sans suivre les ac
 
 it("compte le flux RSS réel et les liens uniques de fiche", () => {
   const result = inspectScanDocument(
-    fixture("belambra", "list.xml"),
-    sources.belambra.listUrls[0],
-    "application/rss+xml",
+    {
+      body: fixture("belambra", "list.xml"),
+      finalUrl: sources.belambra.listUrls[0],
+      contentType: "application/rss+xml",
+    },
     sources.belambra,
   )
   expect(result.rssItems).toBe(94)
@@ -42,18 +46,22 @@ it("compte le flux RSS réel et les liens uniques de fiche", () => {
 })
 it("signale le JSON-LD JobPosting présent mais invalide de Teamtailor", () => {
   const result = inspectScanDocument(
-    fixture("belambra", "posting-9.html"),
-    "https://recrute.belambra.fr/jobs/8557979-serveur-h-f",
-    "text/html",
+    {
+      body: fixture("belambra", "posting-9.html"),
+      finalUrl: "https://recrute.belambra.fr/jobs/8557979-serveur-h-f",
+      contentType: "text/html",
+    },
     sources.belambra,
   )
   expect(result.jobPosting).toBe("invalid_json")
 })
 it("ne prend pas une candidature spontanée Factorial pour une fiche", () => {
   const result = inspectScanDocument(
-    fixture("vvf", "list.html"),
-    sources.vvf.listUrls[0],
-    "text/html",
+    {
+      body: fixture("vvf", "list.html"),
+      finalUrl: sources.vvf.listUrls[0],
+      contentType: "text/html",
+    },
     sources.vvf,
   )
   expect(result.links).toHaveLength(27)
@@ -61,45 +69,26 @@ it("ne prend pas une candidature spontanée Factorial pour une fiche", () => {
   expect(result.jobPosting).toBe("absent")
 })
 it("ne suit ni un hôte tiers ni un lien imitant le chemin de fiche", () => {
-  const body =
-    '<a href="https://other.example/jobs/123-poste">Autre</a><a href="/jobs/123-poste/apply">Formulaire</a><a href="/jobs/123-poste">Fiche</a><a href="/jobs/123-poste#apply">Doublon</a><a rel="next" href="/jobs/show_more?page=2">Suite</a>'
   const result = inspectScanDocument(
-    body,
-    sources.belambra.listUrls[0],
-    "text/html",
+    {
+      body: '<a href="https://other.example/jobs/123-poste">Autre</a><a href="/jobs/123-poste/apply">Formulaire</a><a href="/jobs/123-poste">Fiche</a><a href="/jobs/123-poste#apply">Doublon</a><a rel="next" href="/jobs/show_more?page=2">Suite</a>',
+      finalUrl: sources.belambra.listUrls[0],
+      contentType: "text/html",
+    },
     sources.belambra,
   )
   expect(result.links).toEqual(["https://recrute.belambra.fr/jobs/123-poste"])
   expect(result.pagination).toBe(true)
 })
-it("détecte un JobPosting dans un graphe JSON-LD et une liste API paginée", () => {
+it("détecte un JobPosting dans un graphe JSON-LD", () => {
   expect(
     inspectScanDocument(
-      '<script type="application/ld+json">{"@graph":[{"@type":["JobPosting"]}]}</script>',
-      sources.belambra.listUrls[0],
-      "text/html",
+      {
+        body: '<script type="application/ld+json">{"@graph":[{"@type":["JobPosting"]}]}</script>',
+        finalUrl: sources.belambra.listUrls[0],
+        contentType: "text/html",
+      },
       sources.belambra,
     ).jobPosting,
   ).toBe("valid")
-  const apiSource = {
-    ...sources.belambra,
-    officialHosts: ["api.smartrecruiters.com"],
-    postingUrlPattern:
-      "^https://api\\.smartrecruiters\\.com/v1/companies/Accor/postings/[^/?#]+$",
-  }
-  const result = inspectScanDocument(
-    JSON.stringify({
-      content: [
-        {
-          ref: "https://api.smartrecruiters.com/v1/companies/Accor/postings/123",
-        },
-      ],
-      totalFound: 2,
-    }),
-    "https://api.smartrecruiters.com/v1/companies/Accor/postings?country=fr",
-    "application/json",
-    apiSource,
-  )
-  expect(result.links).toHaveLength(1)
-  expect(result.pagination).toBe(true)
 })

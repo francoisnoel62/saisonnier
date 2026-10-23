@@ -6,6 +6,12 @@ import { XMLParser } from "fast-xml-parser"
 import type { ScanProbeRequest } from "@/domain/scan/probe"
 import type { ScanSourceDefinition } from "@/domain/scan/source"
 
+export type ScanDocument = {
+  body: string
+  finalUrl: string
+  contentType: string
+}
+
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -25,13 +31,13 @@ function hasJobPosting(value: unknown): boolean {
 
 // Diagnostic de structure uniquement : aucun champ d'annonce n'est extrait ici.
 export function inspectScanDocument(
-  body: string,
-  url: string,
-  contentType: string,
+  { body, finalUrl, contentType }: ScanDocument,
   source: ScanSourceDefinition,
 ) {
-  const xml = /xml|rss/.test(contentType)
-  const $ = load(body, xml ? { xmlMode: true } : undefined)
+  const xml =
+    contentType === "application/rss+xml" ||
+    /^(?:application|text)\/xml$/.test(contentType)
+  const $ = load(body, { xml })
   let rssItems = 0
   if (xml) {
     try {
@@ -55,40 +61,23 @@ export function inspectScanDocument(
         jobPosting = "invalid_json"
     }
   })
-  const candidates: string[] = []
+  const hrefs: string[] = []
   $("a[href]").each((_index, element) => {
-    candidates.push($(element).attr("href") ?? "")
+    hrefs.push($(element).attr("href") ?? "")
   })
   if (xml)
     $("item > link").each((_index, element) => {
-      candidates.push($(element).text().trim())
+      hrefs.push($(element).text().trim())
     })
-  let pagination =
+  const pagination =
     $(
       '[rel="next"], a[href*="show_more"], [data-url*="show_more"], a[href*="page=2"], a[href*="afficherplusderesultats/"]',
     ).length > 0
-  if (contentType.includes("json")) {
-    try {
-      const parsed = record(JSON.parse(body))
-      if (Array.isArray(parsed.content))
-        for (const item of parsed.content) {
-          const ref = record(item).ref
-          if (typeof ref === "string") candidates.push(ref)
-        }
-      if (
-        typeof parsed.totalFound === "number" &&
-        Array.isArray(parsed.content)
-      )
-        pagination = parsed.totalFound > parsed.content.length
-    } catch {
-      /* Le diagnostic reste disponible même si le document est invalide. */
-    }
-  }
   const pattern = new RegExp(source.postingUrlPattern)
   const links = new Set<string>()
-  for (const candidate of candidates) {
+  for (const href of hrefs) {
     try {
-      const target = new URL(candidate, url)
+      const target = new URL(href, finalUrl)
       target.hash = ""
       if (
         source.officialHosts.includes(target.hostname) &&

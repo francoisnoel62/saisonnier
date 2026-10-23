@@ -18,3 +18,5 @@ Les captures brutes ne sont pas versionnées. Ne pas reformater ces fichiers.
 `posting-closed.html` : HTTP 200 réel, mais le texte annonce que l'offre n'existe plus. Un succès HTTP ne prouve donc pas qu'un recrutement est actif.
 
 Les métadonnées et champs CSRF éphémères ont également été supprimés.
+
+Correction après revue (23/10/2026) : les `<link rel="preconnect">` vers Google Tag Manager, Google Analytics, Google Ads (DoubleClick, googleadservices) et Facebook, restes de suivi, sont retirés de toutes les captures.

@@ -1,11 +1,12 @@
 import { expect, it } from "vitest"
 
 import {
+  type ScanSourceDefinition,
   scanSourceSchema,
   validateScanSourceRegistry,
 } from "@/domain/scan/source"
 
-import { buildScanSourceDefinitions } from "./registry"
+import { buildScanSourceDefinitions, scanSourceSummaries } from "./registry"
 
 it("valide toutes les sources de production, sans fixture", () => {
   const sources = buildScanSourceDefinitions()
@@ -55,18 +56,66 @@ it("valide la seule origine locale fournie aux tests", () => {
     ),
   ).not.toEqual([])
 })
-it("refuse une clé incohérente, un hôte de liste non officiel, un SIREN invalide et un alias incomplet", () => {
+// Chaque faute est isolée : un seul contrôle doit la détecter.
+function errorsWith(
+  change: (vvf: ScanSourceDefinition) => ScanSourceDefinition,
+) {
   const sources = buildScanSourceDefinitions()
-  if (sources.vvf.kind !== "employer")
-    throw new Error("Portail employeur attendu")
+  return validateScanSourceRegistry(
+    { ...sources, vvf: change(sources.vvf) },
+    { environment: "production" },
+  )
+}
+it("refuse une clé incohérente", () => {
+  expect(errorsWith((vvf) => ({ ...vvf, key: "belambra" }))).toEqual([
+    "vvf: clé incohérente ou dupliquée",
+  ])
+})
+it("refuse un hôte de liste non officiel", () => {
+  expect(
+    errorsWith((vvf) => ({ ...vvf, officialHosts: ["wrong.example"] })),
+  ).toEqual(["vvf: hôte non officiel https://vvfrecrute.factorial.fr/"])
+})
+it("refuse un SIREN invalide", () => {
+  const errors = errorsWith((vvf) => {
+    if (vvf.kind !== "employer") throw new Error("Portail employeur attendu")
+    return { ...vvf, employer: { name: "VVF", siren: "123456789" } }
+  })
+  expect(errors).toHaveLength(1)
+  expect(errors[0]).toContain("employer.siren")
+})
+it("refuse un alias de lieu incomplet", () => {
+  const errors = errorsWith((vvf) => ({
+    ...vvf,
+    placeAliases: { station: { inseeCode: "", name: "", departmentCode: "" } },
+  }))
+  expect(errors).toHaveLength(1)
+  expect(errors[0]).toContain("placeAliases")
+})
+it("les alias déclarés désignent une commune complète", () => {
+  expect(buildScanSourceDefinitions().vvf.placeAliases).toEqual({
+    "PRAPOUTEL LES SEPT LAUX": {
+      inseeCode: "38002",
+      name: "Les Adrets",
+      departmentCode: "38",
+    },
+  })
+})
+it("résume les sources par priorité avec leur dernière vérification", () => {
+  const sources = buildScanSourceDefinitions()
   sources.vvf = {
     ...sources.vvf,
-    key: "belambra",
-    officialHosts: ["wrong.example"],
-    employer: { name: "VVF", siren: "123456789" },
-    placeAliases: { station: { inseeCode: "", name: "", departmentCode: "" } },
+    affiliationProof: {
+      ...sources.vvf.affiliationProof,
+      checkedAt: "2026-10-01",
+    },
   }
-  expect(
-    validateScanSourceRegistry(sources, { environment: "production" }).length,
-  ).toBeGreaterThan(0)
+  const summaries = scanSourceSummaries(sources)
+  expect(summaries.map((source) => source.key)).toEqual([
+    "france-travail",
+    "belambra",
+    "vvf",
+    "ms-vacances",
+  ])
+  expect(summaries[2].checkedAt).toBe("2026-10-23")
 })

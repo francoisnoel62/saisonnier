@@ -20,6 +20,8 @@ Parcours : ouvrir `/admin/scan` avec un compte admin ; pour chaque source princi
 
 Toutes les URL finales sont identiques aux URL demandées. Pour les huit requêtes Belambra/VVF : robots.txt HTTP 200, lecture autorisée, Crawl-delay 0 ms ; aucune pagination détectée. Détail fidèle des diagnostics :
 
+> **Lecture des durées (revue de la PR #32).** Ces sondes ont été faites avant la révision du client : la « Durée » comprend l'attente de politesse de 2 s entre deux requêtes d'un même hôte (robots.txt puis liste, liste puis fiche). Un serveur instantané donne déjà 2 000 ms ; ces valeurs ne mesurent donc pas la latence des sites. Le panneau distingue désormais la durée des échanges et l'attente de politesse.
+
 | Source / requête | URL demandée et finale | HTTP | Durée | Octets | JobPosting JSON-LD | Éléments RSS / liens de fiche |
 |---|---|---|---|---|---|---|
 | Belambra liste | <https://recrute.belambra.fr/jobs.rss> | 200 | 2046 ms | 373281 | absent | 94 / 94 |
@@ -44,7 +46,7 @@ Toutes les URL finales sont identiques aux URL demandées. Pour les huit requêt
 
 ### Recherche et provenance
 
-Le fondateur a fourni cette [recherche exacte](https://candidat.francetravail.fr/offres/recherche?domaine=G&emission=3&lieux=99100&offresPartenaires=false&range=0-19&rayon=10&tri=1&typeContrat=SAI) : France (`99100`), domaine G, contrat saisonnier (`SAI`), filtre « Date de création : Trois jours » (`emission=3`), offres partenaires désactivées, tri par date (`tri=1`), premier lot `0-19`. Le générateur de pagination change uniquement `range`, sur 20 pages au maximum. Les tests figent tous les paramètres fournis. Le critère de trois jours concerne la création des offres ; aucune durée de contrat minimale de trois jours n'est déduite.
+Le fondateur a fourni cette [recherche exacte](https://candidat.francetravail.fr/offres/recherche?domaine=G&emission=3&lieux=99100&offresPartenaires=false&range=0-19&rayon=10&tri=1&typeContrat=SAI) : France (`99100`), domaine G, contrat saisonnier (`SAI`), filtre « Date de création : Trois jours » (`emission=3`), offres partenaires désactivées, tri par date (`tri=1`), premier lot `0-19`. La pagination (paramètre `range`, 20 pages au plus) relève des plans 05 et 09 ; le test fige tous les paramètres fournis. Le critère de trois jours concerne la création des offres ; aucune durée de contrat minimale de trois jours n'est déduite.
 
 Le service est celui de France Travail, décrit par ses [CGU officielles](https://www.francetravail.fr/informations/informations-legales-et-conditio/conditions-generales-dutilisatio.html). Il s'agit d'un **diffuseur de découverte**, pas de l'employeur des recrutements : le registre impose `kind="discovery"`, `employer=null`, `employerWebsite=null`. Le filtre sans partenaires n'établit pas que chaque annonce vient directement de son employeur final : des agences d'intérim apparaissent dans la liste.
 
@@ -90,6 +92,7 @@ Décision du fondateur consignée : France Travail prioritaire sur la recherche 
 - Reprise : les mentions du site principal prévoient une autorisation écrite préalable de reproduction hors copie privée. Leur portée sur le portail ATS et l'autorisation de reprise doivent être validées avant activation. La [page de données et confidentialité du portail](https://recrute.belambra.fr/data-privacy) mène à sa politique de traitement des candidatures ; ces données ne sont jamais collectées.
 - [robots.txt](https://recrute.belambra.fr/robots.txt), HTTP 200 le 23/10/2026 : groupe `*` interdisant `/app/`, `/messages/`, `/messenger/`, `/facebook/tab/`, `/jobs/internal/`. Aucun `Crawl-delay`. `/jobs.rss` et les fiches publiques sont autorisés pour notre bot. Le groupe `aihitdata` interdit tout à cet agent. Le signal de contenu du portail ne dispense pas d'examiner ses conditions.
 - Lecture depuis le poste, 11:58–11:59 UTC : flux HTTP 200, 373 281 octets, 94 éléments RSS et 94 URL distinctes ; dix fiches HTTP 200, 52 828 à 56 542 octets. Aucune pagination du flux détectée. Le JSON-LD peut être valide ou invalide selon la fiche : conserver les deux cas. Le HTML contient les libellés de contrat et de salaire.
+- Lieux : le JSON-LD donne l'adresse complète du club. Aucun alias n'est déclaré dans le registre : le plan 05 lit l'adresse, sinon le lieu reste « à vérifier ».
 
 ### Dix fiches examinées
 
@@ -120,7 +123,7 @@ Deux captures complémentaires couvrent [une période en texte libre](https://re
 
 ### Dix fiches examinées
 
-Échantillon : les dix premières URL uniques dans l'ordre de la liste. Sept recrutements saisonniers explicites dans le tourisme de loisirs, avec métier, station, période et formulaire. Les dates de décembre suivies de janvier 2027 demandent une résolution d'année, sans invention ; Prapoutel reste à résoudre en commune. Les sept fiches correspondent à plusieurs métiers et périodes, pas sept URL supposées être des doublons.
+Échantillon : les dix premières URL uniques dans l'ordre de la liste. Sept recrutements saisonniers explicites dans le tourisme de loisirs, avec métier, station, période et formulaire. Les dates de décembre suivies de janvier 2027 demandent une résolution d'année, sans invention ; Prapoutel est résolu dans le registre : « PRAPOUTEL LES SEPT LAUX » → Les Adrets (INSEE 38002, Isère), vérifié sur geo.api.gouv.fr le 23/10/2026. Les sept fiches correspondent à plusieurs métiers et périodes, pas sept URL supposées être des doublons.
 
 | Identifiant et fiche | Secteur / lieu | Contrat | Période documentée | Canal / décision |
 |---|---|---|---|---|
@@ -140,7 +143,7 @@ Deux captures complémentaires couvrent [une période en texte libre](https://re
 - Site employeur : <https://www.ms-vacances.com/>. Son pied de page « Entre vous & nous », lien « Offres d'emploi », mène au [portail officiel](https://emploi.ms-vacances.com/). Flux : <https://emploi.ms-vacances.com/jobs.rss>. Aucun SIREN attribué à tous les campings du groupe.
 - Conditions : la [page de mentions légales](https://www.ms-vacances.com/mentions-legales/) est accessible mais ne fournit pas de texte exploitable pendant le relevé (contenu principal absent). La [politique de données du portail](https://emploi.ms-vacances.com/data-privacy) décrit les candidatures. Aucune autorisation de republication établie ; validation du fondateur et clarification des conditions avant activation.
 - [robots.txt](https://emploi.ms-vacances.com/robots.txt), HTTP 200 : mêmes restrictions Teamtailor que Belambra (`/app/`, `/messages/`, `/messenger/`, `/facebook/tab/`, `/jobs/internal/`), sans Crawl-delay. Flux et fiches autorisés pour notre bot.
-- Sonde depuis le poste le 23/10/2026 à 12:34 UTC : flux HTTP 200, 124 652 octets, 24 éléments RSS et 24 URL uniques ; dix fiches HTTP 200. Secteur des campings établi ; nombreux CDI et stages, et un début de contrat ambigu. La réserve apporte une autre source lisible, sans supposer que ses 24 URL sont exploitables.
+- Sonde depuis le poste le 23/10/2026 à 12:34 UTC : flux HTTP 200, 124 652 octets, 24 éléments RSS et 24 URL uniques ; dix fiches HTTP 200. Secteur des campings établi ; nombreux CDI et stages, et un début de contrat ambigu. La réserve apporte une autre source lisible, sans supposer que ses 24 URL sont exploitables. **Non sondée depuis une preview** : sonde à faire avant toute activation de cette réserve (étape 9).
 
 ### Dix fiches examinées
 
@@ -182,3 +185,6 @@ Cas capturés : contrat saisonnier, CDD de remplacement seul, CDI, contrat contr
 - [x] Décision du fondateur du 23/10/2026 consignée : France Travail prioritaire sur sa recherche fournie ; ancienne proposition principale refusée. Conditions et restrictions documentées, aucune activation ou autorisation de publication présumée.
 - [x] Réserve ajoutée sans extrapoler son volume.
 - [x] Quatre échantillons de dix fiches examinées et captures anonymisées disponibles pour les prochains tests.
+- [ ] Validation de ce dossier par le fondateur (étape 9 du plan).
+- [ ] Validation par le fondateur du mode d'accès France Travail (JSON `/api-descriptifoffre/`) et du cadre d'une extraction systématique (CGU, droit du producteur de base de données) : choix d'implémentation, hors de sa décision consignée (SH17).
+- [ ] Sonde MS Vacances depuis une preview, avant toute activation de cette réserve.

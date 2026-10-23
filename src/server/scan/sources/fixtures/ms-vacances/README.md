@@ -16,3 +16,5 @@ Les captures brutes ne sont pas versionnées. Ne pas reformater ces fichiers.
 | posting-7.html | https://emploi.ms-vacances.com/jobs/8514707-responsable-agent-d-entretien-h-f | 2026-10-23T12:34:39.564Z |
 
 Les métadonnées et champs CSRF éphémères ont également été supprimés.
+
+Correction après revue (23/10/2026) : le remplacement des téléphones avait pris pour un numéro une suite de chiffres du premier `<guid>` de `list.xml`. Ses deux premiers groupes, irrécupérables, sont remplacés par des zéros (`d0000000-0000-4a06-a161-847e34e4bed2`) : le GUID garde la forme d'un UUID et reste unique dans le flux.

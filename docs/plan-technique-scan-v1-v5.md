@@ -181,7 +181,7 @@ Les crons Vercel ne garantissent pas une reprise automatique de toute invocation
 
 Chaque lot laisse l'application déployable, avec les conventions de branche, PR et preview du dépôt. Lire les guides Next installés avant les modifications de code.
 
-**Plans d'implémentation détaillés :** ces huit lots sont découpés en dix plans d'une session dans [`docs/plans/scan-v1/`](./plans/scan-v1/README.md), avec leurs hypothèses (SH1 à SH16), leur glossaire, leurs réglages par défaut et la traçabilité des cas du §10 du cahier.
+**Plans d'implémentation détaillés :** ces huit lots sont découpés en dix plans d'une session dans [`docs/plans/scan-v1/`](./plans/scan-v1/README.md), avec leurs hypothèses (SH1 à SH17), leur glossaire, leurs réglages par défaut et la traçabilité des cas du §10 du cahier.
 
 | Lot | Livraison | Vérification utile |
 |---|---|---|

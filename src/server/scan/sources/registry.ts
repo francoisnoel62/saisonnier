@@ -1,6 +1,9 @@
 import "server-only"
 
-import type { ScanSourceDefinition } from "@/domain/scan/source"
+import type {
+  ScanSourceDefinition,
+  ScanSourceSummary,
+} from "@/domain/scan/source"
 import { franceTravailSearchUrl } from "@/domain/scan/france-travail"
 import { env } from "@/lib/env"
 
@@ -92,7 +95,14 @@ export function buildScanSourceDefinitions(
       role: "reserve",
       priority: 20,
       limits: {},
-      placeAliases: {},
+      // Station de la commune des Adrets (geo.api.gouv.fr, vérifié le 23/10/2026).
+      placeAliases: {
+        "PRAPOUTEL LES SEPT LAUX": {
+          inseeCode: "38002",
+          name: "Les Adrets",
+          departmentCode: "38",
+        },
+      },
     },
     "ms-vacances": {
       key: "ms-vacances",
@@ -158,3 +168,22 @@ export function buildScanSourceDefinitions(
 export const scanSourceDefinitions = buildScanSourceDefinitions(
   env.SCAN_TEST_SOURCE_URL,
 )
+
+// Ce que l'écran admin montre d'une source, par priorité ; la date est la plus récente
+// des vérifications documentées (rattachement, conditions de reprise).
+export function scanSourceSummaries(
+  sources: Record<string, ScanSourceDefinition> = scanSourceDefinitions,
+): ScanSourceSummary[] {
+  return Object.values(sources)
+    .sort((a, b) => a.priority - b.priority)
+    .map(
+      ({ key, label, kind, role, officialHosts, affiliationProof, reuse }) => ({
+        key,
+        label,
+        kind,
+        role,
+        officialHosts,
+        checkedAt: [affiliationProof.checkedAt, reuse.checkedAt].sort().at(-1)!,
+      }),
+    )
+}

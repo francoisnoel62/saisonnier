@@ -8,6 +8,7 @@ export type ScanProbeRequest = {
   status?: number
   finalUrl?: string
   elapsedMs: number
+  waitedMs: number
   bytes?: number
   contentType?: string
   reason?: ScanFailureReason

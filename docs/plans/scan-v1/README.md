@@ -2,7 +2,7 @@
 
 Dix plans pour réaliser la **V1 du scan** décrite par le [plan technique V1–V5](../../plan-technique-scan-v1-v5.md) (§1 à §6), conformément au [cahier des charges du scan](../../cahier-des-charges-scan-saisonnier-v1.md). Ils détaillent les huit lots du §6 du plan technique. Chaque plan tient en une session de travail, se termine par des tests verts et laisse l'application déployable.
 
-Rédigés le 23 octobre 2026 à partir du code de `main` (plans 01 à 17 de l'application terminés). Le plan scan 01 est implémenté et vérifié en preview dans la [PR #32](https://github.com/francoisnoel62/saisonnier/pull/32). Les plans 02 à 10 ne sont pas exécutés ; aucun passage de collecte n'est installé ni programmé.
+Rédigés le 23 octobre 2026 à partir du code de `main` (plans 01 à 17 de l'application terminés). Le plan scan 01 est en revue dans la [PR #32](https://github.com/francoisnoel62/saisonnier/pull/32) ; son statut se coche après le merge. Les plans 02 à 10 ne sont pas exécutés ; aucun passage de collecte n'est installé ni programmé.
 
 ## Résultat attendu
 
@@ -69,7 +69,7 @@ Deux pistes peuvent avancer en parallèle : **01 → 05** (sources et extracteur
 
 | # | Plan | Dépend de | Taille | Lot du plan technique | Résultat visible | Statut |
 |---|---|---|---|---|---|---|
-| 01 | [Sources, client HTTP sûr et sonde](01-sources-client-http.md) | — | M | 1 | sonde exécutée depuis la preview, registre, fixtures anonymisées, dossier des sources | ☑ |
+| 01 | [Sources, client HTTP sûr et sonde](01-sources-client-http.md) | — | M | 1 | sonde exécutée depuis la preview, registre, fixtures anonymisées, dossier des sources | ☐ |
 | 02 | [Règles du scan](02-regles-scan.md) | — | M | 2 | règles pures testées : 72 h, dates, contrat, période, canal, admission | ☐ |
 | 03 | [Données du scan](03-donnees-scan.md) | 02 | M | 2 | tables, passages uniques, livraison et compteur idempotents | ☐ |
 | 04 | [Publication protégée](04-publication-protegee.md) | 03 | M | 3 | publication unique et rejouable, doublons et divergences en revue, retraits préservés | ☐ |
@@ -119,7 +119,7 @@ Elles complètent les hypothèses H1–H20 de l'application. **H10** (« aucun s
 | SH14 | Les fixtures sont des pages réelles anonymisées : structure conservée, noms de personnes, emails et téléphones remplacés par des valeurs fictives (`.example`, tranches de fiction du `CLAUDE.md`). | 01, 05 |
 | SH15 | Le scan ne crée jamais d'entreprise. Il propose celle du registre (par SIREN) si elle existe en base ; sinon l'admin crée la fiche pendant la revue. Un portail de groupe n'impose pas son entreprise à toutes ses offres. | 05, 06, 09 |
 | SH16 | Notifications : un email au fondateur à la fin d'un passage qui a livré des dossiers ou rencontré un incident nouveau, et quand le remplissage initial ne peut plus atteindre 50 avec les sources actives. Jamais un email par dossier. | 09 |
-| SH17 | Arbitrage du fondateur du 23/10/2026 pendant le plan 01 : France Travail devient la source de découverte prioritaire, avec la recherche fournie (France, domaine G, contrat SAI, création depuis trois jours, sans offres partenaires, tri par date). Exception ciblée au report des job-boards en V3. `kind = "discovery"` porte un employeur et un site employeur nuls ; un diffuseur n'est jamais l'employeur d'une offre. Le HTML de liste et le JSON public du composant officiel sont lus sans navigateur ni API partenaire authentifiée. La source officielle employeur et les conditions de publication restent à établir avant publication. Les autres portails restent en réserve, sans activation automatique. | 01, 05 |
+| SH17 | Arbitrage du fondateur du 23/10/2026 pendant le plan 01 : France Travail devient la source de découverte prioritaire, avec la recherche fournie (France, domaine G, contrat SAI, création depuis trois jours, sans offres partenaires, tri par date). Exception ciblée au report des job-boards en V3. `kind = "discovery"` porte un employeur et un site employeur nuls ; un diffuseur n'est jamais l'employeur d'une offre. **Choix d'implémentation, à valider par le fondateur** (hors de sa décision consignée) : le HTML de liste et le JSON public du composant officiel (`/api-descriptifoffre/`) sont lus sans navigateur ni API partenaire authentifiée ; la validation couvre aussi le cadre d'une extraction systématique (CGU, droit du producteur de base de données). La source officielle employeur et les conditions de publication restent à établir avant publication. Les autres portails restent en réserve, sans activation automatique. | 01, 05 |
 
 ## Glossaire : cahier des charges du scan → code
 
@@ -153,7 +153,9 @@ Ils se règlent dans le registre (par source) ou dans `src/domain/scan/limits.ts
 | Requêtes simultanées par domaine | 1 | politesse (SH12) |
 | Domaines traités en parallèle | 3 | quelques sources à la fois, sans pic |
 | Intervalle minimal entre deux requêtes d'un domaine | 2 s, ou le `Crawl-delay` s'il est plus long | politesse |
-| Délai maximal d'une requête | 15 s | une source lente ne bloque pas le lot |
+| Délai maximal d'une requête | 15 s, comptées depuis l'envoi (attente de politesse exclue) | une source lente ne bloque pas le lot |
+| Recul après un 429 sans `Retry-After` | 60 s | politesse (SH12) |
+| Budget de la sonde admin | 100 s pour la liste et trois fiches | sous la durée maximale de `/admin/scan` (120 s) |
 | Taille maximale d'une réponse | 2 Mo après décompression | borne mémoire et stockage |
 | Redirections | 5 au plus, chacune revalidée | sécurité |
 | Essais par piste | 3 en cas d'échec temporaire | reprises bornées |

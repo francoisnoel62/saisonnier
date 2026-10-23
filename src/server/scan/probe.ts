@@ -1,7 +1,8 @@
 import "server-only"
 
 import { franceTravailPostingDataUrl } from "@/domain/scan/france-travail"
-
+import { stopsSource } from "@/domain/scan/http"
+import { scanLimits } from "@/domain/scan/limits"
 import type { ScanProbeRequest, ScanProbeResult } from "@/domain/scan/probe"
 import type { ScanSourceDefinition } from "@/domain/scan/source"
 import { env } from "@/lib/env"
@@ -9,10 +10,19 @@ import { env } from "@/lib/env"
 import { createScanHttpClient } from "./http"
 import { inspectScanDocument } from "./inspect"
 
+// URL réellement lue pour une fiche : France Travail sert ses données publiques en JSON.
+function postingReadUrl(source: ScanSourceDefinition, pageUrl: string) {
+  return source.adapter === "france-travail"
+    ? franceTravailPostingDataUrl(pageUrl)
+    : null
+}
+
 export async function probeScanSource(
   source: ScanSourceDefinition,
 ): Promise<ScanProbeResult> {
-  const client = createScanHttpClient(source.limits)
+  const { minIntervalMs, timeoutMs, maxBytes } = source.limits
+  const client = createScanHttpClient({ minIntervalMs, timeoutMs, maxBytes })
+  const deadline = Date.now() + scanLimits.probeBudgetMs
   const result: ScanProbeResult = {
     sourceKey: source.key,
     deploymentUrl: env.VERCEL_URL
@@ -26,15 +36,9 @@ export async function probeScanSource(
     kind: ScanProbeRequest["kind"],
     pageUrl?: string,
   ) {
-    const start = Date.now()
-    const response = await client.scanFetch(url)
+    const response = await client.scanFetch(url, { deadline })
     const inspection = response.ok
-      ? inspectScanDocument(
-          response.body,
-          response.finalUrl,
-          response.contentType,
-          source,
-        )
+      ? inspectScanDocument(response, source)
       : null
     result.requests.push({
       kind,
@@ -44,7 +48,8 @@ export async function probeScanSource(
       status: response.status,
       finalUrl: response.finalUrl,
       robots: response.robots,
-      elapsedMs: response.ok ? response.elapsedMs : Date.now() - start,
+      elapsedMs: response.elapsedMs,
+      waitedMs: response.waitedMs,
       ...(response.ok
         ? {
             bytes: response.bytes,
@@ -61,17 +66,14 @@ export async function probeScanSource(
   const list = await read(source.listUrls[0], "list")
   if (list.response.ok) {
     for (const url of list.links.slice(0, 3)) {
-      const dataUrl =
-        source.adapter === "france-travail"
-          ? franceTravailPostingDataUrl(url)
-          : null
+      const dataUrl = postingReadUrl(source, url)
       const { response } = await read(
         dataUrl ?? url,
         "posting",
         dataUrl ? url : undefined,
       )
       // Refus explicite ou panne de l'hôte : aucune autre fiche de la source.
-      if (!response.ok) break
+      if (!response.ok && stopsSource(response.reason)) break
     }
   }
   console.info("[scan sonde]", JSON.stringify(result))

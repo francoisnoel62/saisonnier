@@ -2,14 +2,6 @@
 export const franceTravailSearchUrl =
   "https://candidat.francetravail.fr/offres/recherche?domaine=G&emission=3&lieux=99100&offresPartenaires=false&range=0-19&rayon=10&tri=1&typeContrat=SAI"
 
-export function franceTravailListUrl(page = 0) {
-  if (!Number.isInteger(page) || page < 0 || page >= 20)
-    throw new Error("Page France Travail hors limites.")
-  const url = new URL(franceTravailSearchUrl)
-  url.searchParams.set("range", `${page * 20}-${page * 20 + 19}`)
-  return url.href
-}
-
 // Le HTML de détail charge un composant ; ses données publiques sont servies en JSON
 // sur cette même origine. Aucune authentification ni API partenaire n'est utilisée.
 export function franceTravailPostingDataUrl(pageUrl: string) {

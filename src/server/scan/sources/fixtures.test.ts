@@ -4,7 +4,23 @@ import { load } from "cheerio"
 import { expect, it } from "vitest"
 
 const root = join(process.cwd(), "src/server/scan/sources/fixtures")
-const sources = ["belambra", "vvf", "ms-vacances", "france-travail"]
+// Tout nouveau dossier de captures est contrôlé sans avoir à l'inscrire ici.
+const sources = readdirSync(root, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+const trackers =
+  "googletagmanager|google-analytics|googleadservices|facebook\\.net|doubleclick|hotjar|clarity\\.ms"
+
+it("les quatre sources du dossier ont leurs captures", () => {
+  expect(sources).toEqual(
+    expect.arrayContaining([
+      "belambra",
+      "vvf",
+      "ms-vacances",
+      "france-travail",
+    ]),
+  )
+})
 
 it.each(sources)(
   "%s : captures réelles, documentées et contacts fictifs uniquement",
@@ -22,16 +38,28 @@ it.each(sources)(
       /\.(html|xml|json)$/.test(file),
     )) {
       const body = readFileSync(join(directory, file), "utf8")
-      const $ = load(
-        body,
-        file.endsWith(".xml") ? { xmlMode: true } : undefined,
-      )
+      const $ = load(body, { xml: file.endsWith(".xml") })
       expect(
         $(
           "script:not([type='application/ld+json']), img, iframe, svg, meta[name='csrf-token'], input[name='authenticity_token'], input[name='t:formdata']",
         ).length,
         file,
       ).toBe(0)
+      // Aucun reste de suivi, même sans exécution (préconnexions, liens).
+      expect(
+        $("link[href], a[href]")
+          .map((_i, el) => $(el).attr("href"))
+          .get()
+          .filter((href) => new RegExp(trackers).test(href)),
+        file,
+      ).toEqual([])
+      // L'anonymisation ne touche pas aux identifiants ATS : un GUID garde sa forme d'UUID.
+      for (const guid of $("guid")
+        .map((_i, el) => $(el).text().trim())
+        .get())
+        expect(guid, `${file}: ${guid}`).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+        )
       // Le texte RSS contient lui-même du HTML échappé : le contrôle porte aussi dessus.
       const text = file.endsWith(".json")
         ? JSON.stringify(JSON.parse(body))

@@ -18,18 +18,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { formatIsoDate } from "@/domain/offer-display"
+import { scanFailureLabels } from "@/domain/scan/http"
 import type { ScanProbeResult } from "@/domain/scan/probe"
+import type { ScanSourceSummary as SourceRow } from "@/domain/scan/source"
 import { formatDateTime } from "@/lib/format"
 import { probeScanSourceAction } from "@/server/scan/actions"
-
-type SourceRow = {
-  key: string
-  label: string
-  kind: "employer" | "discovery"
-  role: "primary" | "reserve"
-  officialHosts: string[]
-  checkedAt: string
-}
 
 export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
   const [selected, setSelected] = useState<SourceRow | null>(null)
@@ -92,10 +86,7 @@ export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
                   Hôtes officiels : {source.officialHosts.join(", ")}
                 </p>
                 <p className="text-sm">
-                  Vérification documentée :{" "}
-                  {new Intl.DateTimeFormat("fr-FR").format(
-                    new Date(`${source.checkedAt}T12:00:00Z`),
-                  )}
+                  Vérification documentée : {formatIsoDate(source.checkedAt)}
                 </p>
                 <Button
                   variant="outline"
@@ -169,19 +160,24 @@ export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
                       </p>
                     )}
                     <p>
-                      HTTP : {request.status ?? "sans réponse"} ·{" "}
-                      {request.elapsedMs} ms ·{" "}
+                      HTTP : {request.status ?? "sans réponse"} · échanges{" "}
+                      {request.elapsedMs} ms · attente de politesse{" "}
+                      {request.waitedMs} ms ·{" "}
                       {request.bytes === undefined
                         ? "taille non mesurée"
                         : `${request.bytes} octets`}
                     </p>
-                    {request.reason && <p>Motif : {request.reason}</p>}
+                    {request.reason && (
+                      <p>Motif : {scanFailureLabels[request.reason]}</p>
+                    )}
                     {request.robots.map((robots, index) => (
                       <p key={index} className="wrap-anywhere">
                         robots.txt :{" "}
                         {robots.allowed
                           ? "autorisé"
-                          : "indisponible ou interdit"}{" "}
+                          : robots.reason
+                            ? `indisponible (${scanFailureLabels[robots.reason]})`
+                            : "interdit"}{" "}
                         (HTTP {robots.status ?? "sans réponse"}, délai{" "}
                         {robots.crawlDelayMs} ms) — {robots.url}
                       </p>

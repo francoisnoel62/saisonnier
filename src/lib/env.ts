@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { isLocalTestOrigin } from "@/domain/scan/url-safety"
+
 // Variables serveur, validées au premier import : une variable manquante fait échouer le démarrage.
 const serverEnvSchema = z
   .object({
@@ -37,15 +39,7 @@ const serverEnvSchema = z
     // Exception locale explicite, absente de toute preview et production.
     SCAN_TEST_SOURCE_URL: z
       .url()
-      .refine((value) => {
-        const url = new URL(value)
-        return (
-          url.protocol === "http:" &&
-          url.hostname === "localhost" &&
-          !url.username &&
-          !url.password
-        )
-      }, "Utiliser uniquement http://localhost:<port>.")
+      .refine(isLocalTestOrigin, "Utiliser uniquement http://localhost:<port>.")
       .optional(),
   })
   .superRefine((value, context) => {

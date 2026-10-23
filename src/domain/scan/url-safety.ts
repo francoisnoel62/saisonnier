@@ -3,21 +3,28 @@ export type ScanUrlPolicy = {
   testSourceUrl?: string
 }
 
-// L'exception locale porte sur une origine explicite, jamais sur tout le réseau local.
-export function isTestSourceUrl(url: URL, policy: ScanUrlPolicy) {
-  if (policy.environment === "production" || !policy.testSourceUrl) return false
+// Seule forme admise pour SCAN_TEST_SOURCE_URL : http://localhost:<port>, sans identifiants.
+export function isLocalTestOrigin(value: string) {
   try {
-    const test = new URL(policy.testSourceUrl)
+    const url = new URL(value)
     return (
-      test.protocol === "http:" &&
-      test.hostname === "localhost" &&
-      !test.username &&
-      !test.password &&
-      url.origin === test.origin
+      url.protocol === "http:" &&
+      url.hostname === "localhost" &&
+      !url.username &&
+      !url.password
     )
   } catch {
     return false
   }
+}
+
+// L'exception locale porte sur une origine explicite, jamais sur tout le réseau local.
+export function isTestSourceUrl(url: URL, policy: ScanUrlPolicy) {
+  if (policy.environment === "production" || !policy.testSourceUrl) return false
+  return (
+    isLocalTestOrigin(policy.testSourceUrl) &&
+    url.origin === new URL(policy.testSourceUrl).origin
+  )
 }
 
 export function checkScanUrl(value: string, policy: ScanUrlPolicy): URL | null {

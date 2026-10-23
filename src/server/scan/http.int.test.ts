@@ -8,6 +8,8 @@ import { once } from "node:events"
 import { gzipSync, deflateSync, brotliCompressSync } from "node:zlib"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { site } from "@/config/site"
+
 import { createScanHttpClient, retryAfterMs } from "./http"
 import { HostPacer } from "./host-pacer"
 
@@ -60,7 +62,7 @@ describe("scanFetch, serveur HTTP local explicitement autorisé", () => {
   it("lit une réponse typée, s'identifie et conserve robots une fois par étape", async () => {
     let robots = 0
     const client = await server((req, res) => {
-      expect(req.headers["user-agent"]).toContain("SaisonnierBot/1.0 (+")
+      expect(req.headers["user-agent"]).toContain(`${site.name}Bot/1.0 (+`)
       expect(req.headers["accept-language"]).toBe("fr-FR,fr;q=0.9")
       if (req.url === "/robots.txt") robots++
       if (!noRobots(req, res)) html(res)
@@ -105,7 +107,7 @@ describe("scanFetch, serveur HTTP local explicitement autorisé", () => {
       { ok: false, reason: "blocked_address" },
     )
   })
-  it("le délai total inclut une résolution DNS suspendue", async () => {
+  it("une résolution DNS suspendue expire", async () => {
     const client = createScanHttpClient({
       timeoutMs: 40,
       resolve: async () => new Promise(() => {}),
@@ -178,7 +180,7 @@ describe("scanFetch, serveur HTTP local explicitement autorisé", () => {
       if (req.url === "/robots.txt") {
         res.writeHead(200, { "Content-Type": "text/plain" })
         res.end(
-          "User-agent: *\nDisallow: /\n\nUser-agent: SaisonnierBot\nAllow: /\n",
+          `User-agent: *\nDisallow: /\n\nUser-agent: ${site.name}Bot\nAllow: /\n`,
         )
       } else html(res)
     })
@@ -321,5 +323,110 @@ describe("scanFetch, serveur HTTP local explicitement autorisé", () => {
   it("interprète aussi Retry-After sous forme de date", () => {
     const now = Date.parse("2026-10-23T12:00:00Z")
     expect(retryAfterMs("Fri, 23 Oct 2026 12:02:00 GMT", now)).toBe(120000)
+  })
+  it("décode le texte selon le charset déclaré", async () => {
+    const client = await server((req, res) => {
+      if (noRobots(req, res)) return
+      res.writeHead(200, { "Content-Type": "text/html; charset=iso-8859-1" })
+      res.end(Buffer.from("<p>Saisonnière été</p>", "latin1"))
+    })
+    expect(await client.scanFetch(client.origin)).toMatchObject({
+      ok: true,
+      body: "<p>Saisonnière été</p>",
+    })
+  })
+  it("refuse un charset inconnu plutôt que de corrompre le texte", async () => {
+    const client = await server((req, res) => {
+      if (noRobots(req, res)) return
+      res.writeHead(200, { "Content-Type": "text/html; charset=x-inconnu" })
+      res.end("ok")
+    })
+    expect(await client.scanFetch(client.origin)).toMatchObject({
+      ok: false,
+      reason: "unsupported_type",
+    })
+  })
+  it("lit robots.txt quel que soit son Content-Type", async () => {
+    const client = await server((req, res) => {
+      if (req.url === "/robots.txt") {
+        res.writeHead(200)
+        res.end("User-agent: *\nDisallow: /private\n")
+      } else html(res)
+    })
+    expect(await client.scanFetch(client.origin)).toMatchObject({ ok: true })
+    expect(await client.scanFetch(`${client.origin}/private`)).toMatchObject({
+      ok: false,
+      reason: "robots_disallowed",
+    })
+  })
+  it("l'attente de politesse ne consomme pas le délai d'une requête", async () => {
+    const client = await server(
+      (req, res) => {
+        if (!noRobots(req, res)) html(res)
+      },
+      { timeoutMs: 400, minIntervalMs: 100 },
+    )
+    const responses = await Promise.all(
+      [1, 2, 3, 4, 5, 6, 7].map((page) =>
+        client.scanFetch(`${client.origin}/p${page}`),
+      ),
+    )
+    expect(responses.map((response) => response.ok)).toEqual(
+      Array(7).fill(true),
+    )
+  })
+  it("sépare la durée des échanges de l'attente de politesse", async () => {
+    const client = await server(
+      (req, res) => {
+        if (!noRobots(req, res)) html(res)
+      },
+      { minIntervalMs: 150 },
+    )
+    const result = await client.scanFetch(client.origin)
+    expect(result.waitedMs).toBeGreaterThanOrEqual(140)
+    expect(result.elapsedMs).toBeLessThan(140)
+  })
+  it("un Crawl-delay au-delà de l'échéance diffère l'hôte sans requête ni attente", async () => {
+    let pages = 0
+    const client = await server((req, res) => {
+      if (req.url === "/robots.txt") {
+        res.writeHead(200, { "Content-Type": "text/plain" })
+        res.end("User-agent: *\nCrawl-delay: 30\n")
+      } else {
+        pages++
+        html(res)
+      }
+    })
+    const started = Date.now()
+    const result = await client.scanFetch(client.origin, {
+      deadline: Date.now() + 1_000,
+    })
+    expect(result).toMatchObject({ ok: false, reason: "rate_limited" })
+    if (!result.ok) expect(result.retryAfterMs).toBeGreaterThan(29_000)
+    expect(pages).toBe(0)
+    expect(Date.now() - started).toBeLessThan(500)
+  })
+  it("un 429 sans Retry-After éloigne l'hôte par défaut", async () => {
+    let pages = 0
+    const client = await server((req, res) => {
+      if (noRobots(req, res)) return
+      pages++
+      res.writeHead(429)
+      res.end()
+    })
+    expect(await client.scanFetch(client.origin)).toMatchObject({
+      ok: false,
+      reason: "rate_limited",
+    })
+    expect(
+      await client.scanFetch(`${client.origin}/next`, {
+        deadline: Date.now() + 1_000,
+      }),
+    ).toMatchObject({
+      ok: false,
+      reason: "rate_limited",
+      retryAfterMs: expect.any(Number),
+    })
+    expect(pages).toBe(1)
   })
 })
