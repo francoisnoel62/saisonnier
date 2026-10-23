@@ -66,6 +66,14 @@
 - Fiche `/offres/[id]` : `OfferDetails` (`src/components/offers/offer-details.tsx`) est purement présentationnel et ne reçoit que `toOfferDetailsData(offer)`, sans contact ni entreprise. Les coordonnées viennent de `getApplicationDetails` (`src/server/offers/application.ts`) : dossier complet ou admin seulement, domaines exclus masqués et journalisés. Un composant client ne reçoit jamais l'offre entière (anonymat).
 - Page `/offres` : l'URL est la seule source de vérité. Parseurs nuqs et clés françaises (`metier`, `dept`, `base`…) dans `src/server/search/search-params.ts`, partagés par la page (`loadSearch`) et les filtres (`useSearch()`, `src/components/search/search-provider.tsx`) ; ce module n'accède pas à la base. Un nouveau critère s'ajoute au schéma, aux parseurs, à `activeCriteriaChips` (`src/domain/search-chips.ts`) et aux contrôles.
 
+## Sources du scan (plan scan 01)
+
+- `/admin/scan` est réservé aux admins : registre des sources et sonde depuis le déploiement (`probeScanSourceAction`, rôle vérifié dans l'action). Diagnostic temporaire en `Sheet`, journal `[scan sonde]`, aucune écriture en base.
+- Client réseau `src/server/scan/http.ts` : `createScanHttpClient()` par étape partage robots.txt entre ses lectures ; `scanFetch(url)` pour une lecture isolée. DNS intégralement contrôlé puis épinglé, HTTPS, redirections revalidées, robots respecté, 15 s et 2 Mo après décompression. `HostPacer` sérialise les lectures par hôte (2 s ou Crawl-delay) et respecte Retry-After.
+- Registre en code `scanSourceDefinitions` (`src/server/scan/sources/registry.ts`), schéma et validation dans `src/domain/scan/source.ts`, réglages globaux `limits.ts`. Le dossier `docs/scan/sources-v1.md` porte provenance, conditions, échantillon et décisions humaines ; lire ses limites avant activation.
+- `SCAN_TEST_SOURCE_URL=http://localhost:<port>` autorise cette seule origine locale en développement/test ; `env.ts` refuse toute définition en `NODE_ENV=production` (preview incluse). Playwright lance le serveur de fixtures `scripts/scan-fixture-server.ts` sur `E2E_PORT + 1` et lui seul fournit les tests de sonde.
+- Fixtures réelles anonymisées dans `src/server/scan/sources/fixtures/`, avec provenance par source, exclues de Prettier. Les tests ne lisent jamais les sources réelles.
+
 ## Authentification
 
 - Better Auth 1.7 (`src/lib/auth.ts`), email + mot de passe, vérification d'email obligatoire. Rôles `candidate` / `employer` / `admin` sur `user.role` (`input: false` : jamais fourni par le client ; contrainte CHECK en base).

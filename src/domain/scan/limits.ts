@@ -1,0 +1,16 @@
+export const scanLimits = {
+  concurrentRequestsPerHost: 1,
+  concurrentHosts: 3,
+  minIntervalMs: 2_000,
+  timeoutMs: 15_000,
+  maxBytes: 2 * 1024 * 1024,
+  maxRedirects: 5,
+  maxAttempts: 3,
+  batchBudgetMs: 120_000,
+  maxListPages: 20,
+  maxPostings: 400,
+  refreshIntervalMs: 5_000,
+  bootstrapTarget: 50,
+  bootstrapDeadlineMs: 6 * 60 * 60 * 1_000,
+  dailyWindowMs: 72 * 60 * 60 * 1_000,
+} as const

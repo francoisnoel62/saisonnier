@@ -99,10 +99,10 @@ Relevés du 23 octobre 2026 avec un outil de lecture Web et une requête depuis 
 ## Critères d'acceptation
 
 - [ ] Depuis une preview Vercel, la sonde lit la liste et au moins trois fiches de chaque source principale ; les résultats sont consignés dans `docs/scan/sources-v1.md`.
-- [ ] Le client refuse toute adresse interne, y compris après redirection ; il respecte robots.txt et plafonne durée et taille.
+- [x] Le client refuse toute adresse interne, y compris après redirection ; il respecte robots.txt et plafonne durée et taille.
 - [ ] Provenance, rattachement et conditions de reprise sont documentés pour chaque source retenue ; la décision du fondateur est notée.
-- [ ] Le réservoir estimé atteint 70 dossiers exploitables, ou des sources de réserve ont été ajoutées.
-- [ ] Les fixtures sont anonymisées, et un test le vérifie.
+- [x] Le réservoir estimé atteint 70 dossiers exploitables, ou des sources de réserve ont été ajoutées.
+- [x] Les fixtures sont anonymisées, et un test le vérifie.
 
 ## Hors périmètre
 
