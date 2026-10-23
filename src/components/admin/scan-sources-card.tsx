@@ -25,6 +25,7 @@ import { probeScanSourceAction } from "@/server/scan/actions"
 type SourceRow = {
   key: string
   label: string
+  kind: "employer" | "discovery"
   role: "primary" | "reserve"
   officialHosts: string[]
   checkedAt: string
@@ -75,9 +76,18 @@ export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
                 <div>
                   <h3 className="font-medium">{source.label}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {source.role === "primary" ? "Principale" : "Réserve"}
+                    {source.role === "primary" ? "Principale" : "Réserve"} ·{" "}
+                    {source.kind === "discovery"
+                      ? "Découverte"
+                      : "Portail employeur"}
                   </p>
                 </div>
+                {source.kind === "discovery" && (
+                  <p className="text-sm text-muted-foreground">
+                    La source officielle de l’employeur reste à retrouver avant
+                    publication.
+                  </p>
+                )}
                 <p className="text-sm wrap-anywhere">
                   Hôtes officiels : {source.officialHosts.join(", ")}
                 </p>
@@ -148,6 +158,11 @@ export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
                       {request.ok ? "Accessible" : "Échec"}
                     </h3>
                     <p className="wrap-anywhere">URL : {request.url}</p>
+                    {request.pageUrl && (
+                      <p className="wrap-anywhere">
+                        Fiche publique : {request.pageUrl}
+                      </p>
+                    )}
                     {request.finalUrl && (
                       <p className="wrap-anywhere">
                         URL finale : {request.finalUrl}

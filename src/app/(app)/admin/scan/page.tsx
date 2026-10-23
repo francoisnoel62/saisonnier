@@ -14,6 +14,7 @@ export default function ScanPage() {
         .map((source) => ({
           key: source.key,
           label: source.label,
+          kind: source.kind,
           role: source.role,
           officialHosts: source.officialHosts,
           checkedAt: [

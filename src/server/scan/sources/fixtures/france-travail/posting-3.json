@@ -1,0 +1,117 @@
+{
+  "numeroOffre": "Offre n° 215PYCZ",
+  "intituleOffre": "#FORUM Commis de cuisine (H/F)",
+  "codeRome": "G1602",
+  "appellationRome": "Commis / Commise de cuisine",
+  "descriptif": "***Halle Olympique le mardi 10 novembre de 9h30 à 12h30***\n***Se Présenter ce jour-là à la Halle au Stand VILLAGES CLUBS DU SOLEIL***\n\n***SAISON HIVER 2026-2027***POSTE NOURRI ET LOGE***\n\nVenez vivre l'expérience d'un emploi en saison aux Villages Clubs du Soleil dans un de nos établissements à la mer ou à la montagne. En plus d'un cadre de travail idéal et d'une aventure humaine unique, vous bénéficiez de nombreux avantages comme le fait d'être logé et nourri sur place. Vous avez accès aux prestations des vacanciers (prêt de matériel, activités sportives...) et la possibilité d'exprimer votre talent en participant aux spectacles !\n\nMission\n \nRejoins la Tribu Hiver 27du Villages Clubs du Soleil\n\n Ta saison où tout commence. \n\nNous recherchons un(e) Commis de cuisine F/H pour nos villages Clubs du Soleil de Montagne\n\n Ton terrain d'aventure : \n\nRéalisation de la production chaude ou froide selon des fiches techniques\nDécoupes juliennes de légumes\nProcéder au nettoyage du matériel et des ustensiles de cuisine, des équipements et des locaux\nAppliquer et respecter les normes d'hygiène et de sécurité \n\nProfil\n \n Ce que demande la tribu cuisine : \n\nNous recherchons une personne diplômée dans le domaine de la restauration, disposant d'une expérience préalable en cuisine collective et/ou traditionnelle (villages vacances, camping, hôtel...). Dans la tribu, il est nécessaire d'avoir une bonne connaissance des normes HACCP et d'une connaissance des techniques de découpes de juliennes de légumes.\n\nExigences de la communauté : BAC PRO Restauration, CAP/BEP Cuisine\n\nConditions d'embauche\n\nCondition pour rejoindre notre tribu Montagne ? \n\nPoste à pourvoir en CDD de mi-décembre 2026 à avril 2027\n35h/semaine - Salaire de 1867€ brut/mois\nPoste nourri et logé (logement partagé) avec contrepartie\nIndemnité logement de 137.93 € / mois en cas de logement par tes propres moyens (sur justificatifs)\n\nLES +\n\n Un lieu de travail unique en montagne\n\n Une aventure humaine enrichissante en village de vacances\n\nUn accès à certaines prestations du village vacances et selon le village (spa, piscine, salle de sport, prêt de matériels de skis...)  \n\n Et si tu connais quelqu'un qui connait quelqu'un, qui lui-même connait quelqu'un qui cherche une saison, Passe le message et on l'appellera aussi. \n\nSouviens-toi : l'hiver, c'est froid. Mais les souvenirs que tu te crées avec nous, eux, te réchaufferont longtemps",
+  "lieuTravail": {
+    "libelleLieuTravail": "Les Belleville",
+    "libelleCommuneLieuTravail": "Belleville",
+    "codeDepartementLieuTravail": "73",
+    "syntheseLieuTravail": "73 - Les Belleville"
+  },
+  "libelleLieuTravail": "Les Belleville (73)",
+  "deplacement": null,
+  "syntheseContrat": "Saisonnier - 4 Mois - Contrat travail",
+  "syntheseHoraire": "Non disponible",
+  "salaire": "Mensuel de 1868.0 Euros",
+  "listeAvantages": [
+    "Hébergement",
+    "Restauration"
+  ],
+  "qualification": "Employé non qualifié",
+  "publicCible": "Bénéficiaire de l'obligation d'emploi",
+  "descriptionEntreprise": null,
+  "syntheseSecteurActivite": "Hébergement touristique et autre hébergement de courte durée",
+  "experienceProfil": {
+    "experience": "6 Mois",
+    "estUneExperienceIndispensable": true
+  },
+  "experience": {
+    "syntheseExperience": null,
+    "codeExperiencePro": "E"
+  },
+  "suivi": {
+    "codeTypeAffichageCoordonneesRecruteur": null,
+    "listeOperationNationale": null,
+    "flagManqueDeCandidats": false
+  },
+  "listeFormation": [
+    {
+      "estUneFormationIndispensable": false,
+      "libelleFormation": "CAP, BEP et équivalents Cuisine"
+    },
+    {
+      "estUneFormationIndispensable": false,
+      "libelleFormation": "Bac ou équivalent Cuisine"
+    }
+  ],
+  "listeCompetence": [
+    {
+      "libelleCompetence": "Entretenir, nettoyer un espace, un lieu, un local",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Cuire des viandes, poissons ou légumes",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Dresser des plats pour le service",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Eplucher des légumes et des fruits",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Préparer les viandes et les poissons",
+      "estUneCompetenceIndispensable": false
+    }
+  ],
+  "listeSavoirEtre": [],
+  "listeLangue": [],
+  "listePermis": [],
+  "conditionTravailPoste": {
+    "libelleConditionTravail": null,
+    "commentaireConditionTravail": null,
+    "listeLibelleTypeHoraire": [
+      "35H/semaine",
+      "Travail en horaires décalés",
+      " Travail les week-ends et jours fériés",
+      " Travail saisonnier"
+    ],
+    "listeLibelleConditionExerciceHoraire": [
+      "Exposition à de hautes températures",
+      "Port d'équipement de protection individuelle (EPI) : gants, chaussures, casque, protections auditives",
+      "Port et manipulation de charges lourdes ou encombrantes",
+      "Station debout prolongée"
+    ],
+    "flagAccesTravailleursHandicapes": true
+  },
+  "etablissement": {
+    "adresseNonDisponible": false,
+    "libelleEnseigne": "VILLAGES CLUBS DU SOLEIL",
+    "descriptionEtablissement": "",
+    "syntheseSecteurActivite": "",
+    "effectif": "Non disponible",
+    "urlEntreprise": null,
+    "flagUrlEntrepriseInvalide": false,
+    "flagEntrepriseAdaptee": false
+  },
+  "codeTypeAffichageCoordonneesRecruteur": "V",
+  "listeOperationNationale": [
+    {
+      "codeOperationNationale": "PJE",
+      "libelleOperationNationale": "Plan \"1 jeune, 1 solution\" "
+    },
+    {
+      "codeOperationNationale": "HAN",
+      "libelleOperationNationale": "Employeur Handi-engagé"
+    }
+  ],
+  "logo": null,
+  "flagOffrePartenaireAOM": false,
+  "dateDerniereModification": "23 octobre 2026",
+  "pageEmployeurUrl": "https://recrute.francetravail.fr/page-employeur/villages-clubs-du-soleil-345",
+  "pageEmployeurLibelleBouton": "Découvrir l’employeur"
+}

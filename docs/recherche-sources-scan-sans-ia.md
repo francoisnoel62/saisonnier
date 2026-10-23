@@ -63,6 +63,8 @@ Ces API ne constituent pas un annuaire exhaustif des employeurs français. Le pa
 
 Les choix d'extracteurs HTML, la qualification déterministe, les reprises, l'interface admin et les contraintes d'exécution Vercel relèvent de la suite de l'exploration ; cette note vérifie les sources et ne constitue pas le plan technique.
 
+**Mise à jour du 23/10/2026 pendant le plan 01 :** le fondateur a demandé France Travail comme découverte prioritaire. La liste HTML de sa recherche et le JSON public du composant officiel de détail ont été lus par le client du scan, sans clé ni rendu JavaScript. Ce constat ne rétablit pas l'accès à l'API partenaire restreinte étudiée ci-dessus et ne vaut pas autorisation de republication ; mesures et limites dans le [dossier des sources](scan/sources-v1.md).
+
 ## Apports de l’étude transmise le 23 octobre
 
 Vérification ciblée de quatre pistes du panorama fourni par le fondateur. **Accès public, coût nul, droit de réutilisation et compatibilité avec notre parcours employeur sont quatre questions distinctes.** Aucun compte ni demande d'accès n'a été créé. La consultation ponctuelle d'un flux public ci-dessous via l'outil Web ne constitue pas un essai de notre futur collecteur depuis Vercel.

@@ -10,6 +10,8 @@
 
 Ce plan ne lit encore aucun champ d'annonce (plan 05) et n'enregistre rien en base (plan 03).
 
+**Arbitrage du fondateur pendant l'implémentation, 23/10/2026 (SH17) :** ajouter France Travail comme découverte prioritaire, sur l'[URL de recherche fournie](https://candidat.francetravail.fr/offres/recherche?domaine=G&emission=3&lieux=99100&offresPartenaires=false&range=0-19&rayon=10&tri=1&typeContrat=SAI). Les portails employeurs restent en réserve. Le registre distingue `kind="discovery"` / `"employer"` ; France Travail n'est jamais l'employeur attribué aux annonces. Les fiches utilisent le JSON public de leur composant officiel, sans clé ni rendu JavaScript ; la source officielle employeur reste nécessaire avant publication. Le détail de la décision, les captures et les mesures sont dans `docs/scan/sources-v1.md`.
+
 ## Ce qui est déjà observé
 
 Relevés du 23 octobre 2026 avec un outil de lecture Web et une requête depuis le poste de travail. Ils orientent les adaptateurs ; ils ne remplacent pas la sonde depuis Vercel.
@@ -98,9 +100,9 @@ Relevés du 23 octobre 2026 avec un outil de lecture Web et une requête depuis 
 
 ## Critères d'acceptation
 
-- [ ] Depuis une preview Vercel, la sonde lit la liste et au moins trois fiches de chaque source principale ; les résultats sont consignés dans `docs/scan/sources-v1.md`.
+- [ ] Depuis une preview Vercel, la sonde lit la liste et au moins trois fiches de chaque source principale ; les résultats sont consignés dans `docs/scan/sources-v1.md`. Proposition initiale Belambra/VVF vérifiée le 23/10/2026 ; le fondateur demande une autre sélection, à vérifier de nouveau.
 - [x] Le client refuse toute adresse interne, y compris après redirection ; il respecte robots.txt et plafonne durée et taille.
-- [ ] Provenance, rattachement et conditions de reprise sont documentés pour chaque source retenue ; la décision du fondateur est notée.
+- [x] Provenance, rattachement et conditions de reprise sont documentés pour chaque source retenue ; la décision du fondateur est notée (France Travail prioritaire, SH17 ; aucune autorisation de publication présumée).
 - [x] Le réservoir estimé atteint 70 dossiers exploitables, ou des sources de réserve ont été ajoutées.
 - [x] Les fixtures sont anonymisées, et un test le vérifie.
 

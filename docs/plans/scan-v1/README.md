@@ -119,6 +119,7 @@ Elles complètent les hypothèses H1–H20 de l'application. **H10** (« aucun s
 | SH14 | Les fixtures sont des pages réelles anonymisées : structure conservée, noms de personnes, emails et téléphones remplacés par des valeurs fictives (`.example`, tranches de fiction du `CLAUDE.md`). | 01, 05 |
 | SH15 | Le scan ne crée jamais d'entreprise. Il propose celle du registre (par SIREN) si elle existe en base ; sinon l'admin crée la fiche pendant la revue. Un portail de groupe n'impose pas son entreprise à toutes ses offres. | 05, 06, 09 |
 | SH16 | Notifications : un email au fondateur à la fin d'un passage qui a livré des dossiers ou rencontré un incident nouveau, et quand le remplissage initial ne peut plus atteindre 50 avec les sources actives. Jamais un email par dossier. | 09 |
+| SH17 | Arbitrage du fondateur du 23/10/2026 pendant le plan 01 : France Travail devient la source de découverte prioritaire, avec la recherche fournie (France, domaine G, contrat SAI, création depuis trois jours, sans offres partenaires, tri par date). Exception ciblée au report des job-boards en V3. `kind = "discovery"` porte un employeur et un site employeur nuls ; un diffuseur n'est jamais l'employeur d'une offre. Le HTML de liste et le JSON public du composant officiel sont lus sans navigateur ni API partenaire authentifiée. La source officielle employeur et les conditions de publication restent à établir avant publication. Les autres portails restent en réserve, sans activation automatique. | 01, 05 |
 
 ## Glossaire : cahier des charges du scan → code
 
@@ -172,7 +173,7 @@ Ils se règlent dans le registre (par source) ou dans `src/domain/scan/limits.ts
 
 ## Hors périmètre de la V1 du scan
 
-- Recherche Web (Tavily, Brave), API ou pages de job-boards et d'agrégateurs (France Travail, Indeed, LinkedIn, EasyJobs, Arbeitnow…) : V3.
+- Recherche Web (Tavily, Brave), API ou pages de job-boards et d'agrégateurs (Indeed, LinkedIn, EasyJobs, Arbeitnow…) : V3. France Travail fait l'objet de l'exception ciblée SH17 demandée par le fondateur ; son API partenaire restreinte n'est pas intégrée.
 - Catalogue exhaustif par entreprise, pagination complète avec curseurs persistants, gestion des sources dans l'admin : V2.
 - Navigateur automatisé, PDF, nouveaux formats d'ATS sans échantillon, preuve surlignée, comparaison de versions, actions groupées : V4.
 - Planification par rendement, carte de couverture : V5.

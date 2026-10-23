@@ -13,6 +13,22 @@ function fixture(source: string, name: string) {
   )
 }
 
+it("repère la pagination France Travail et ses vingt fiches, sans suivre les actions de compte", () => {
+  const source = sources["france-travail"]
+  const result = inspectScanDocument(
+    fixture("france-travail", "list.html"),
+    source.listUrls[0],
+    "text/html",
+    source,
+  )
+  expect(result.links).toHaveLength(20)
+  expect(result.links[0]).toBe(
+    "https://candidat.francetravail.fr/offres/recherche/detail/215PYPJ",
+  )
+  expect(result.pagination).toBe(true)
+  expect(result.links.every((url) => !url.includes("t:ac="))).toBe(true)
+})
+
 it("compte le flux RSS réel et les liens uniques de fiche", () => {
   const result = inspectScanDocument(
     fixture("belambra", "list.xml"),

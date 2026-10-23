@@ -22,11 +22,21 @@ test("Scan — sources et navigation accessibles à l'admin sur mobile", async (
   await expect(
     asAdmin.getByRole("heading", { name: "Sources du scan" }),
   ).toBeVisible()
+  const firstSource = asAdmin
+    .locator("[data-slot='card-content'] > ul > li")
+    .first()
+  await expect(
+    firstSource.getByRole("heading", { name: "France Travail" }),
+  ).toBeVisible()
+  await expect(firstSource.getByText("Principale · Découverte")).toBeVisible()
+  await expect(
+    firstSource.getByText(/source officielle de l’employeur/),
+  ).toBeVisible()
   await expect(
     asAdmin.getByRole("button", {
       name: /Tester l’accès depuis ce déploiement/,
     }),
-  ).toHaveCount(4)
+  ).toHaveCount(5)
   await expectNoHorizontalScroll(asAdmin)
 })
 

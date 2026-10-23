@@ -1,0 +1,73 @@
+{
+  "numeroOffre": "Offre n° 215PWWM",
+  "intituleOffre": "#alpesdusud Cuisinier  (H/F)",
+  "codeRome": "G1609",
+  "appellationRome": "Cuisinier / Cuisinière",
+  "descriptif": "Restaurant traditionnel de spécialités montagnardes ouvert toute l'année sur la place centrale de Valberg recherche son cuisinier H/F: vous préparerez les plats en sauce, plats traditionnels montagnards + vous ferez les pizzas \n\nDébut de contrat immédiat , en contrat saisonnier ou CDI\n",
+  "lieuTravail": {
+    "libelleLieuTravail": "PEONE",
+    "libelleCommuneLieuTravail": "Péone",
+    "codeDepartementLieuTravail": "06",
+    "syntheseLieuTravail": "06 - PEONE"
+  },
+  "libelleLieuTravail": "PEONE (06)",
+  "deplacement": null,
+  "syntheseContrat": "Saisonnier - 6 Mois - Contrat travail",
+  "syntheseHoraire": "Non disponible",
+  "salaire": "selon expérience",
+  "listeAvantages": [],
+  "qualification": "Ouvrier qualifié (P1,P2)",
+  "publicCible": "Tous",
+  "descriptionEntreprise": null,
+  "syntheseSecteurActivite": "Restauration traditionnelle",
+  "experienceProfil": {
+    "experience": "2 An(s) - sur un même poste",
+    "estUneExperienceIndispensable": true
+  },
+  "experience": {
+    "syntheseExperience": null,
+    "codeExperiencePro": "E"
+  },
+  "suivi": {
+    "codeTypeAffichageCoordonneesRecruteur": null,
+    "listeOperationNationale": null,
+    "flagManqueDeCandidats": false
+  },
+  "listeFormation": [],
+  "listeCompetence": [
+    {
+      "libelleCompetence": "Dresser des plats pour le service",
+      "estUneCompetenceIndispensable": false
+    }
+  ],
+  "listeSavoirEtre": [],
+  "listeLangue": [],
+  "listePermis": [],
+  "conditionTravailPoste": {
+    "libelleConditionTravail": null,
+    "commentaireConditionTravail": null,
+    "listeLibelleTypeHoraire": [
+      "39H/semaine",
+      "Travail en journée"
+    ],
+    "listeLibelleConditionExerciceHoraire": null,
+    "flagAccesTravailleursHandicapes": false
+  },
+  "etablissement": {
+    "adresseNonDisponible": false,
+    "libelleEnseigne": "LE SAPET",
+    "descriptionEtablissement": "",
+    "syntheseSecteurActivite": "",
+    "effectif": "Non disponible",
+    "urlEntreprise": null,
+    "flagUrlEntrepriseInvalide": false,
+    "flagEntrepriseAdaptee": false
+  },
+  "codeTypeAffichageCoordonneesRecruteur": "V",
+  "listeOperationNationale": [],
+  "logo": null,
+  "flagOffrePartenaireAOM": false,
+  "dateDerniereModification": "23 octobre 2026",
+  "pageEmployeurUrl": "https://recrute.francetravail.fr/page-employeur/le-sapet-599",
+  "pageEmployeurLibelleBouton": "Voir toutes les offres de l’employeur"
+}

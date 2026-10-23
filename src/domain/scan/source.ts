@@ -10,14 +10,16 @@ const noteSchema = z.object({
   note: z.string().min(1),
   checkedAt: z.iso.date(),
 })
-export const scanSourceSchema = z.object({
+const sourceBaseSchema = z.object({
   key: z.string().regex(/^[a-z][a-z0-9-]*$/),
   label: z.string().min(1),
-  employer: z.object({
-    name: z.string().min(1),
-    siren: z.string().refine(isValidSiren).optional(),
-  }),
-  adapter: z.enum(["teamtailor", "factorial", "smartrecruiters", "fixture"]),
+  adapter: z.enum([
+    "teamtailor",
+    "factorial",
+    "smartrecruiters",
+    "france-travail",
+    "fixture",
+  ]),
   listUrls: z.array(z.url()).min(1),
   postingUrlPattern: z
     .string()
@@ -31,7 +33,6 @@ export const scanSourceSchema = z.object({
       }
     }),
   officialHosts: z.array(z.string().regex(/^[a-z0-9.-]+$/)).min(1),
-  employerWebsite: z.url(),
   affiliationProof: noteSchema,
   reuse: noteSchema.extend({ robotsExcerpt: z.string().min(1) }),
   role: z.enum(["primary", "reserve"]),
@@ -62,6 +63,22 @@ export const scanSourceSchema = z.object({
     }),
   ),
 })
+export const scanSourceSchema = z.discriminatedUnion("kind", [
+  sourceBaseSchema.extend({
+    kind: z.literal("employer"),
+    employer: z.object({
+      name: z.string().min(1),
+      siren: z.string().refine(isValidSiren).optional(),
+    }),
+    employerWebsite: z.url(),
+  }),
+  sourceBaseSchema.extend({
+    kind: z.literal("discovery"),
+    // Un diffuseur d'annonces n'est jamais affecté comme employeur des recrutements.
+    employer: z.null(),
+    employerWebsite: z.null(),
+  }),
+])
 export type ScanSourceDefinition = z.infer<typeof scanSourceSchema>
 
 export function validateScanSourceRegistry(
@@ -82,7 +99,7 @@ export function validateScanSourceRegistry(
     keys.add(source.key)
     for (const value of [
       ...source.listUrls,
-      source.employerWebsite,
+      ...(source.employerWebsite ? [source.employerWebsite] : []),
       source.affiliationProof.url,
       source.reuse.url,
     ]) {

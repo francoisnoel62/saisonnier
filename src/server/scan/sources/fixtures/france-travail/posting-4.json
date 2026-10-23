@@ -1,0 +1,98 @@
+{
+  "numeroOffre": "Offre n° 215PXPP",
+  "intituleOffre": "Employé / Employée de ménage en hôtellerie de plein air (H/F)",
+  "codeRome": "G1501",
+  "appellationRome": "Employé / Employée de ménage en hôtellerie de plein air",
+  "descriptif": "Vous avez le sens du détail ? Devenez Agent d'Entretien au Camping Oyam (Formation incluse !)\n\nVous aimez quand tout est impeccable ? Vous avez le goût du travail bien fait et vous appréciez de voir le résultat immédiat de vos efforts ? Le Camping Oyam Bidart recherche ses futurs talents de l'entretien ! Pas besoin d'être un expert du nettoyage, nous recherchons avant tout votre sérieux et votre envie de contribuer au bien-être de nos vacanciers.\n\nVOS MISSIONS :\nAssurer un cadre impeccable pour nos clients\nAu sein de notre équipe, vous jouerez un rôle clé dans la satisfaction de nos clients à travers des missions variées :\n\nCôté Hébergements : Assurer le nettoyage complet des mobil-homes (sols, sanitaires, cuisine, vitres) pour offrir un accueil irréprochable.\nCôté Espaces Communs : Veiller à la propreté des sanitaires, des zones de passage et des espaces de détente pour un cadre toujours agréable.\nCôté Qualité : Participer à la gestion des déchets, au tri sélectif et signaler toute anomalie pour maintenir le haut niveau de notre établissement.\n\nLE \"PLUS\" : On vous accompagne ! Vous souhaitez professionnaliser votre sens de l'organisation ? Ce poste est une opportunité de monter en compétences grâce à un parcours de formation sur mesure (POEI) financé par France Travail\n\nParcours de formation : Une immersion pour maîtriser les techniques de nettoyage, les règles d'hygiène et l'utilisation des produits du 4 janvier au 29 janvier.\n\nContrat sécurisé : Un contrat de 4 mois minimum à partir de mars 2027.\n\nVOTRE PROFIL\n\nVous êtes rigoureux(se) et avez le sens de l'organisation.\nVous êtes autonome tout en appréciant le travail en équipe.\nVous avez le sens du service : votre priorité est le confort et la satisfaction des clients.\nUne première expérience en entretien ou une forte motivation à apprendre sont vos meilleurs atouts.\n\nPRÊT(E) À NOUS REJOINDRE ? Ne laissez pas passer cette chance de rejoindre une équipe conviviale !\nEnvoyez votre candidature dès maintenant.\n\nRDV pour une réunion d'information : Le MARDI 3 novembre à 9h00 au camping d'Ilbarritz.\nAttention - nombre de place limité - postulez dès maintenant pour réserver votre invitation à cette session de recrutement.",
+  "lieuTravail": {
+    "libelleLieuTravail": "BIDART",
+    "libelleCommuneLieuTravail": "Bidart",
+    "codeDepartementLieuTravail": "64",
+    "syntheseLieuTravail": "64 - BIDART"
+  },
+  "libelleLieuTravail": "BIDART (64)",
+  "deplacement": null,
+  "syntheseContrat": "Saisonnier - 4 Mois - Contrat travail",
+  "syntheseHoraire": "Non disponible",
+  "salaire": "Horaire de 12.31 Euros",
+  "listeAvantages": [],
+  "qualification": "Ouvrier spécialisé",
+  "publicCible": "Tous",
+  "descriptionEntreprise": null,
+  "syntheseSecteurActivite": "Terrains de camping et parcs pour caravanes ou véhicules de loisirs",
+  "experienceProfil": {
+    "experience": "Débutant accepté",
+    "estUneExperienceIndispensable": false
+  },
+  "experience": {
+    "syntheseExperience": null,
+    "codeExperiencePro": "D"
+  },
+  "suivi": {
+    "codeTypeAffichageCoordonneesRecruteur": null,
+    "listeOperationNationale": null,
+    "flagManqueDeCandidats": false
+  },
+  "listeFormation": [],
+  "listeCompetence": [
+    {
+      "libelleCompetence": "Approvisionner un chariot de ménage ou chariot de linge",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Changer les draps, refaire le lit (mise à blanc, recouche) et remplacer le linge de toilette",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Désinfecter et décontaminer un équipement",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Identifier et signaler les dysfonctionnements, les dégradations du mobilier et des équipements de la chambre",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Respecter des règles, des consignes, normes et procédures opérationnelles",
+      "estUneCompetenceIndispensable": true
+    }
+  ],
+  "listeSavoirEtre": [
+    "Faire preuve de rigueur et de précision",
+    "Avoir le sens du service"
+  ],
+  "listeLangue": [],
+  "listePermis": [],
+  "conditionTravailPoste": {
+    "libelleConditionTravail": null,
+    "commentaireConditionTravail": null,
+    "listeLibelleTypeHoraire": [
+      "35H/semaine",
+      "Travail les week-ends et jours fériés",
+      " Travail en journée"
+    ],
+    "listeLibelleConditionExerciceHoraire": null,
+    "flagAccesTravailleursHandicapes": false
+  },
+  "etablissement": {
+    "adresseNonDisponible": false,
+    "libelleEnseigne": "CAMPING OYAM",
+    "descriptionEtablissement": "",
+    "syntheseSecteurActivite": "",
+    "effectif": "Non disponible",
+    "urlEntreprise": null,
+    "flagUrlEntrepriseInvalide": false,
+    "flagEntrepriseAdaptee": false
+  },
+  "codeTypeAffichageCoordonneesRecruteur": "V",
+  "listeOperationNationale": [
+    {
+      "codeOperationNationale": "PJE",
+      "libelleOperationNationale": "Plan \"1 jeune, 1 solution\" "
+    }
+  ],
+  "logo": null,
+  "flagOffrePartenaireAOM": false,
+  "dateDerniereModification": "23 octobre 2026",
+  "pageEmployeurUrl": "https://recrute.francetravail.fr/page-employeur/camping-oyam-820",
+  "pageEmployeurLibelleBouton": "Découvrir l’employeur"
+}

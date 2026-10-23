@@ -65,7 +65,7 @@ export function inspectScanDocument(
     })
   let pagination =
     $(
-      '[rel="next"], a[href*="show_more"], [data-url*="show_more"], a[href*="page=2"]',
+      '[rel="next"], a[href*="show_more"], [data-url*="show_more"], a[href*="page=2"], a[href*="afficherplusderesultats/"]',
     ).length > 0
   if (contentType.includes("json")) {
     try {

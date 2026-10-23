@@ -3,6 +3,7 @@ import type { ScanFailureReason, RobotsDecision } from "./http"
 export type ScanProbeRequest = {
   kind: "list" | "posting"
   url: string
+  pageUrl?: string
   ok: boolean
   status?: number
   finalUrl?: string
