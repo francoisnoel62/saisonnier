@@ -2,7 +2,7 @@
 
 **23 octobre 2026 — proposition de réalisation, aucun scan installé ou activé.**
 
-Références : [cahier des charges du scan](./cahier-des-charges-scan-saisonnier-v1.md), [exploration technique](./exploration-scan-sans-ia-v1.md), [recherche des sources](./recherche-sources-scan-sans-ia.md).
+Références : [cahier des charges du scan](./cahier-des-charges-scan-saisonnier-v1.md), [exploration technique](./exploration-scan-sans-ia-v1.md), [recherche des sources](./recherche-sources-scan-sans-ia.md), [plans d'implémentation de la V1](./plans/scan-v1/README.md).
 
 ## 1. Résultat demandé et décisions acquises
 
@@ -179,6 +179,8 @@ Les crons Vercel ne garantissent pas une reprise automatique de toute invocation
 
 Chaque lot laisse l'application déployable, avec les conventions de branche, PR et preview du dépôt. Lire les guides Next installés avant les modifications de code.
 
+**Plans d'implémentation détaillés :** ces huit lots sont découpés en dix plans d'une session dans [`docs/plans/scan-v1/`](./plans/scan-v1/README.md), avec leurs hypothèses (SH1 à SH16), leur glossaire, leurs réglages par défaut et la traçabilité des cas du §10 du cahier.
+
 | Lot | Livraison | Vérification utile |
 |---|---|---|
 | **1. Échantillon et sources** | Sources prioritaires/réserve, provenance documentée, exemples complets/incomplets, accès depuis preview | Réservoir de dossiers exploitables suffisant pour soutenir l'objectif ; aucune estimation déduite du seul compteur des sites |
@@ -240,4 +242,4 @@ Recette : suivre durée entre publication source et découverte lorsqu'elle est 
 
 Points à résoudre pendant le lot 1 : accessibilité réelle depuis Vercel, conditions de reprise des sources retenues, nombre de dossiers exploitables et qualité du préremplissage. Le temps admin est mesuré séparément pour améliorer la revue. Pendant le lot 7 : compatibilité du SDK Workflow, capacité du compte, horaire cron et plafonds d'exécution. Ces vérifications déterminent si la V1 est prête à satisfaire son objectif.
 
-La prochaine action de réalisation est le **lot 1 de la V1**, suivi des adaptations indispensables de l'ingestion et des dossiers de revue. Le développement des onze ATS du panorama, une recherche nationale complète et les fonctionnalités V5 ne sont pas des prérequis pour livrer les cinquante premiers dossiers à vérifier.
+La prochaine action de réalisation est le **lot 1 de la V1** ([plan scan 01](./plans/scan-v1/01-sources-client-http.md)), suivi des adaptations indispensables de l'ingestion et des dossiers de revue. Le développement des onze ATS du panorama, une recherche nationale complète et les fonctionnalités V5 ne sont pas des prérequis pour livrer les cinquante premiers dossiers à vérifier.

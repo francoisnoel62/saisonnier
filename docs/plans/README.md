@@ -3,7 +3,7 @@
 18 petits plans dépendants pour construire la V1 décrite dans le [cahier des charges](../cahier-des-charges-job-board-saisonnier-v1.md).
 Chaque plan tient en une session de travail, se termine par des tests verts et laisse l'application déployable.
 
-Le scan automatisé fait désormais l'objet d'un [plan technique distinct, V1 à V5](../plan-technique-scan-v1-v5.md), préparé le 23 octobre 2026. Ces cinq niveaux concernent le scan ; les 18 plans ci-dessous décrivent la construction initiale de l'application.
+Le scan automatisé fait désormais l'objet d'un [plan technique distinct, V1 à V5](../plan-technique-scan-v1-v5.md), préparé le 23 octobre 2026. Ces cinq niveaux concernent le scan ; les 18 plans ci-dessous décrivent la construction initiale de l'application. La V1 du scan se réalise par les [dix plans de `scan-v1/`](scan-v1/README.md).
 
 > Le cahier des charges est encore à la racine du dossier. Le plan 01 le déplace dans `docs/`, car create-next-app refuse un dossier non vide, sauf `docs/`.
 
@@ -114,7 +114,7 @@ Le cahier des charges laisse ces points ouverts. Les plans appliquent les choix 
 | H7 | Horaires : temps plein ou partiel, heures hebdomadaires et précisions libres. Le filtre porte sur plein / partiel. À affiner (coupures, travail de nuit…). | 07, 08 |
 | H8 | Le critère expérience devient le filtre « Débutants acceptés ». Le critère permis devient le filtre « Permis non exigé ». | 08 |
 | H9 | Dépôt employeur : email et/ou téléphone obligatoire, lien officiel facultatif. Liens, emails et sources sont contrôlés contre une liste de domaines exclus, modifiable par l'admin. | 07, 14 |
-| H10 | Annonces collectées : en V1, l'admin les saisit via une fonction d'import unique, que le futur scan nocturne réutilisera. Aucun scraping en V1. | 15 |
+| H10 | Annonces collectées : en V1, l'admin les saisit via une fonction d'import unique, que le futur scan nocturne réutilisera. Aucun scraping en V1. Le scan, planifié depuis dans [`scan-v1/`](scan-v1/README.md), publie par son propre service et laisse cette saisie à l'admin. | 15 |
 | H11 | Le CV n'est accessible qu'à son propriétaire. L'admin n'y a pas accès non plus. | 10 |
 | H12 | Comme le compte est obligatoire, les offres ne sont pas indexables par les moteurs de recherche. Le référencement repose sur les pages publiques. | 06 |
 | H13 | L'intitulé du poste est obligatoire au dépôt ; le métier choisi dans le référentiel reste facultatif. | 07, 14 |
@@ -157,7 +157,7 @@ Ne pas introduire, même partiellement (§5, §8, §9) :
 - une CVthèque, l'accès des employeurs aux CV, l'envoi automatique de documents ;
 - un pipeline de candidature détaillé ou des relances automatiques ;
 - la revendication d'une annonce collectée par un employeur ;
-- le scan nocturne automatisé (sa conception est reportée) ;
+- le scan nocturne automatisé, hors des plans [`scan-v1/`](scan-v1/README.md), seuls à l'introduire ;
 - les tarifs, le paiement et le questionnaire en ligne des prestations ;
 - un annuaire d'employeurs sans offre, des guides ;
 - le coaching, le suivi personnalisé et les abonnements candidats (V2).
