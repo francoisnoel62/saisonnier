@@ -3,6 +3,8 @@
 18 petits plans dépendants pour construire la V1 décrite dans le [cahier des charges](../cahier-des-charges-job-board-saisonnier-v1.md).
 Chaque plan tient en une session de travail, se termine par des tests verts et laisse l'application déployable.
 
+Le scan automatisé fait désormais l'objet d'un [plan technique distinct, V1 à V5](../plan-technique-scan-v1-v5.md), préparé le 23 octobre 2026. Ces cinq niveaux concernent le scan ; les 18 plans ci-dessous décrivent la construction initiale de l'application.
+
 > Le cahier des charges est encore à la racine du dossier. Le plan 01 le déplace dans `docs/`, car create-next-app refuse un dossier non vide, sauf `docs/`.
 
 ## Stack retenue

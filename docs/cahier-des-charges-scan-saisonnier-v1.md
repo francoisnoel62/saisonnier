@@ -4,6 +4,8 @@
 
 Ce document complète le [cahier des charges du job-board V1](./cahier-des-charges-job-board-saisonnier-v1.md). Il décrit le fonctionnement à réaliser ; aucun scan n’est développé ni programmé par ce document. Les choix techniques, notamment le rôle éventuel de l’IA, feront l’objet du plan technique détaillé.
 
+**Dernier arbitrage du 23 octobre 2026 :** le fondateur demande un [plan technique progressif du scan, V1 à V5](./plan-technique-scan-v1-v5.md). La V1 doit fournir au moins 50 nouvelles annonces distinctes à vérifier par l’admin, en moins de six heures suivant l’installation et le lancement initial, avec zéro frais de services supplémentaires hors Vercel. Ce délai ne comprend ni le développement ni la vérification humaine ; aucune publication n’est requise pour atteindre l’objectif. Le premier remplissage peut inclure des annonces plus anciennes que 72 heures, sans signal explicite de clôture ; cette exception ne s’applique pas aux passages quotidiens suivants. L’admission en file et les critères minimums de publication sont distincts.
+
 ## 1. Objectif et périmètre
 
 Découvrir chaque jour sur le Web des offres provenant directement des employeurs, les qualifier, les publier lorsqu’elles satisfont les critères.
@@ -28,11 +30,13 @@ Le téléphone ou l’email de candidature constitue le parcours privilégié. U
 
 Le scan de découverte comporte une seule opération quotidienne : découvrir des annonces, établir leur provenance, vérifier leur admissibilité et publier ou soumettre à examen.
 
-Les offres conformes peuvent être publiées automatiquement. Les situations ambiguës sont présentées au fondateur dans une file de vérification.
+Les offres conformes peuvent être publiées automatiquement hors de la campagne initiale de vérification. Cette campagne initiale alimente la file admin, y compris avec des dossiers complets, sans publication automatique. Les situations ambiguës restent présentées au fondateur dans la file de vérification lors des autres passages.
+
+**Collecte asynchrone et revue au fil de l’eau :** chaque dossier exploitable est enregistré et rendu accessible à l’admin dès qu’il est prêt, pendant que le scan continue en arrière-plan. L’admin peut commencer sa vérification, le corriger, le valider ou le rejeter sans attendre la fin du passage, l’arrivée des 50 annonces ou l’échéance des six heures. Le fil se rafraîchit automatiquement sans perdre la saisie ni remplacer le dossier ouvert. La collecte continue même si l’admin ferme l’écran ; les dossiers déjà livrés restent accessibles si une autre source échoue.
 
 1. Les doublons sont traités manuellement par l’admin. Le scan ne fusionne pas automatiquement des annonces distinctes (§7).
 2. Le contrôle des annonces déjà publiées relève entièrement d’un autre cron : vérification des URL, modifications, retraits et échéances dépassées. Le §8 consigne les règles destinées à ce chantier ; ce contrôle ne fait pas partie du scan de découverte.
-3. Le parcours exhaustif des offres ouvertes de chaque entreprise est prévu dans une V2, avec un autre cron.
+3. Le parcours exhaustif récurrent des offres ouvertes de chaque entreprise est prévu dans une V2, avec un autre cron. Le remplissage initial de la V1 peut consulter un ensemble limité de sources employeurs pour atteindre son objectif, selon l’exception du §3.
 
 ## 3. Calendrier et fenêtres de découverte
 
@@ -40,10 +44,16 @@ Les offres conformes peuvent être publiées automatiquement. Les situations amb
 |---|---|
 | Scan quotidien | Rechercher les nouveautés dans les 72 heures précédant le début du passage |
 | Heure cible | Vers 3 h, selon le fuseau Europe/Paris |
-| Premier lancement | Même fenêtre de 72 heures ; aucune collecte initiale élargie aux offres plus anciennes |
-| Reprise après interruption | Même fenêtre de 72 heures ; aucun élargissement pour couvrir toute la période manquée |
+| Premier lancement | Remplissage initial déclenché immédiatement, sans attendre le cron nocturne ; offres encore actives admissibles même si leur publication est antérieure à 72 heures |
+| Reprise des passages quotidiens après interruption | Même fenêtre de 72 heures ; aucun élargissement pour couvrir toute la période manquée |
 
-La fenêtre est fixée au début de chaque passage, borne de début incluse. Elle permet de récupérer une annonce publiée quelques jours auparavant mais découverte plus tard. Une telle annonce conserve sa véritable date de publication lorsqu’elle est disponible. Elle n’est pas présentée comme publiée le jour de sa découverte.
+Pour les passages quotidiens, la fenêtre est fixée au début de chaque passage, borne de début incluse. Elle permet de récupérer une annonce publiée quelques jours auparavant mais découverte plus tard. Une telle annonce conserve sa véritable date de publication lorsqu’elle est disponible. Elle n’est pas présentée comme publiée le jour de sa découverte.
+
+Le remplissage initial est une campagne unique, suivie séparément, avec un objectif d’au moins 50 nouveaux dossiers distincts exploitables pour la revue avant six heures. Il conserve également les vraies dates de publication. Une reprise technique de cette campagne réutilise son avancement ; un redéploiement, une réactivation du cron ou un passage quotidien ne déclenche pas automatiquement un nouveau remplissage élargi. Une annonce explicitement close ou dont l’échéance est dépassée ne compte pas dans l’objectif. Les critères minimums devront être établis avant toute publication ultérieure.
+
+Un dossier livré doit présenter un intitulé, une URL de découverte précise, la date de collecte, du texte utile ou des données extraites, des indices documentés de pertinence pour le périmètre et les points restant à vérifier. La source officielle employeur, la période ou le canal de candidature peuvent encore manquer ; ces lacunes sont explicites et bloquent la publication, pas la remise du dossier à l’admin. Une annonce découverte sur France Travail peut donc alimenter cette file sans devenir publiable sur la seule foi de France Travail. Cela ne présume pas de l’accès automatisé autorisé à ce site.
+
+Les simples liens sans contenu exploitable, les annonces manifestement hors périmètre, les doublons connus et les dossiers déjà présents sont exclus du compteur. Les suggestions de métiers et alertes ne sont pas des annonces supplémentaires. Le compteur cumule les dossiers admissibles devenus accessibles à la revue, indépendamment du stock encore en attente et du nombre publié ; l’admin peut commencer dès le premier dossier ou revenir plus tard. L’instant d’atteinte du seuil doit être strictement antérieur à la fin des six heures. Ce délai est un objectif de volume, jamais une durée d’attente avant de rendre les dossiers visibles.
 
 Lorsque la source indique seulement une date sans heure, une date dont le jour civil recoupe la fenêtre reste admissible. La précision de la source est conservée, sans inventer d’heure. Les dates sont interprétées dans le fuseau de la source lorsqu’il est connu, sinon dans Europe/Paris.
 
@@ -189,9 +199,10 @@ Cette section décrit les règles fonctionnelles du contrôle des annonces déj�
 
 Si une partie du passage échoue, les offres validées sont publiées. Le travail restant est conservé pour reprise et le passage est indiqué comme partiellement terminé. Une source défaillante ne bloque pas les autres. Reprendre une piste déjà découverte ou une validation en attente ne déclenche pas une recherche historique au-delà de la fenêtre du prochain passage.
 
-Le tableau de contrôle est actualisé à l’issue du passage et indique :
+Le tableau de contrôle et le fil de vérification sont actualisés automatiquement pendant le passage, au fur et à mesure des dossiers enregistrés. Un bilan final les complète à l’issue du passage. Ils indiquent :
 
-- les pistes découvertes et les offres publiées par ce scan ;
+- les pistes découvertes, les dossiers exploitables livrés pour vérification et, séparément, les offres publiées par ce scan ;
+- pour la campagne initiale, la progression vers 50 dossiers et l’instant d’atteinte du seuil avant six heures ;
 - les cas à examiner et les divergences nécessitant une décision ;
 - les suggestions de métiers et de familles à examiner ;
 - le résultat global du passage et les parties qui n’ont pas pu être couvertes.
@@ -207,7 +218,15 @@ Ces cas serviront à contrôler la réalisation ; ils ne constituent pas des tes
 | Cas | Résultat attendu |
 |---|---|
 | Une offre horodatée exactement 72 heures avant le début du passage est découverte | Inclusion possible, avec sa date de publication réelle |
-| Premier lancement du scan | Recherche limitée à la fenêtre habituelle de 72 heures, sans collecte initiale élargie |
+| Premier lancement du scan | Campagne initiale immédiate, annonces plus anciennes admises sans signal de clôture, dates originales préservées et au moins 50 dossiers distincts exploitables pour la revue avant six heures |
+| Le dossier initial est complet et paraît publiable | Présentation dans la file admin ; pas de publication automatique pendant cette campagne |
+| Un dossier pertinent contient du texte utile mais sa période ou sa source officielle reste à établir | Compté comme livré pour vérification ; publication bloquée tant que les minimums ne sont pas établis |
+| L’admin n’est pas connecté pendant les six premières heures | Livraison et compteur indépendants de sa présence ; aucune validation humaine requise pour atteindre la cible |
+| Le premier dossier est prêt alors que les autres sont encore en cours de collecte | Apparition au prochain rafraîchissement automatique du fil ; vérification et décision possibles immédiatement, sans attendre 50 dossiers ni six heures |
+| Une nouvelle annonce arrive pendant la saisie d’une correction | Fil et compteurs actualisés sans remplacer le dossier ouvert ni perdre la saisie |
+| L’admin commence la revue avant la fin de la collecte | Le cumul des dossiers livrés reste distinct du stock en attente et des publications ; une reprise du scan n’écrase pas ses corrections ou décisions |
+| L’admin ferme l’écran ou une autre source échoue | Collecte indépendante de la présence de l’admin ; dossiers déjà livrés conservés, accessibles et traitables |
+| Passage quotidien après le remplissage initial | Fenêtre habituelle de 72 heures ; aucune répétition implicite du remplissage élargi |
 | Le scan reprend après cinq jours d’arrêt | Recherche limitée aux dernières 72 heures, sans rattrapage des cinq jours |
 | Une annonce admissible ne comporte aucune date de publication | Mention « découverte le… », sans prétendre connaître son ancienneté |
 | Un résultat de recherche est visible mais la source officielle est illisible | Piste en prévalidation, sans publication fondée sur le seul extrait |
@@ -247,7 +266,7 @@ Les cas de contrôle suivants appartiennent au chantier séparé du §8 :
 
 **Mise en avant payante :** chantier séparé du scan et de son prochain plan technique. Le principe retenu comprend des badges visuels supplémentaires, par exemple « Urgent », une présence sur la landing page et une priorité dans les résultats de recherche. Cette priorité s’applique parmi les annonces satisfaisant les filtres et les règles de visibilité. Les tarifs, la durée, le paiement et les modalités d’affichage seront définis dans ce chantier.
 
-**V2 :** ajouter un scan par entreprise pour récupérer toutes ses offres ouvertes qui satisfont les critères, au-delà des fenêtres de découverte de la V1.
+**V2 du scan :** ajouter un scan récurrent par entreprise pour récupérer toutes ses offres ouvertes qui satisfont les critères, au-delà des fenêtres de découverte quotidiennes de la V1. La campagne initiale limitée de la V1 constitue l’exception définie au §3. Les cinq niveaux proposés sont décrits dans le [plan technique V1–V5](./plan-technique-scan-v1-v5.md) ; ils ne désignent pas les versions de l’application entière.
 
 La conception technique devra déterminer les moyens de recherche et de collecte, la couverture des requêtes, les mécanismes d’extraction et de validation, l’aide à la revue manuelle des doublons, les suggestions de métiers et de familles, le stockage, l’orchestration, la reprise après erreur, l’hébergement et la gestion des accès nécessaires. Elle devra préciser le rôle éventuel de l’IA sans modifier les critères de publication ni remplacer les décisions réservées à l’admin.
 
