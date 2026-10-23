@@ -185,6 +185,19 @@ Cas capturés : contrat saisonnier, CDD de remplacement seul, CDI, contrat contr
 - [x] Décision du fondateur du 23/10/2026 consignée : France Travail prioritaire sur sa recherche fournie ; ancienne proposition principale refusée. Conditions et restrictions documentées, aucune activation ou autorisation de publication présumée.
 - [x] Réserve ajoutée sans extrapoler son volume.
 - [x] Quatre échantillons de dix fiches examinées et captures anonymisées disponibles pour les prochains tests.
-- [ ] Validation de ce dossier par le fondateur (étape 9 du plan).
-- [ ] Validation par le fondateur du mode d'accès France Travail (JSON `/api-descriptifoffre/`) et du cadre d'une extraction systématique (CGU, droit du producteur de base de données) : choix d'implémentation, hors de sa décision consignée (SH17).
-- [ ] Sonde MS Vacances depuis une preview, avant toute activation de cette réserve.
+- [x] Dossier validé le 23/10/2026, par délégation explicite du fondateur, avec les réserves de la section suivante (étape 9 du plan).
+- [x] Mode d'accès France Travail tranché le 23/10/2026, par délégation explicite du fondateur (SH17) : voir « Décision sur l'accès France Travail ».
+- [ ] Sonde MS Vacances depuis une preview, avant toute activation de cette réserve (accès admin du fondateur requis).
+
+## Décision sur l'accès France Travail (23/10/2026)
+
+Décision prise par délégation explicite du fondateur, après la revue de la PR #32. Ce n'est pas un avis juridique.
+
+**Accepté pour la sonde et le développement des plans 05 et 06.** La liste HTML de la recherche fournie et le JSON public `/api-descriptifoffre/offre/<id>` sont lus par le client du scan, avec ses garanties : robots.txt respecté, une requête à la fois, 2 s au moins entre deux requêtes, au plus 20 pages de liste et 400 fiches par passage, aucun compte, cookie, jeton ni rendu JavaScript. Le contenu lu sert à **découvrir** un recrutement et à préremplir un dossier pour l'admin. Il n'est jamais republié tel quel : une annonce publiée provient de la source officielle de l'employeur (SH17).
+
+**Non accepté en l'état pour le passage quotidien en production (plans 09 et 10).** Une lecture quotidienne et automatique d'une partie de la base d'offres de France Travail est une extraction **répétée et systématique**. Le droit du producteur de base de données (art. L.342-1 et L.342-2 du code de la propriété intellectuelle) peut l'interdire même pour des parties non substantielles, et les CGU réservent la réutilisation aux partenaires de l'API. Avant d'activer France Travail dans un passage programmé, il faut l'une de ces deux conditions :
+
+1. utiliser l'[API Offres d'emploi](https://www.data.gouv.fr/dataservices/api-offres-demploi) officielle, avec un compte partenaire et ses conditions (recommandé : même donnée, accès autorisé, contrat stable) ;
+2. obtenir un avis juridique écrit, ou l'accord de France Travail, qui couvre la lecture du composant public.
+
+Le plan 09 vérifie cette condition avant d'autoriser la source dans un passage programmé ; l'admin peut toujours lancer la sonde.
