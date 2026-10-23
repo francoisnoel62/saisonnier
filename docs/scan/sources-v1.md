@@ -16,7 +16,7 @@ Parcours : ouvrir `/admin/scan` avec un compte admin ; pour chaque source princi
 |---|---|---|---|---|---|
 | Belambra | `saisonnier-4s3w7njrs-francois-noels-projects.vercel.app` | 23/10/2026 14:44 Paris | HTTP 200 | Trois HTTP 200 | Diagnostics transmis par le fondateur |
 | VVF | Même déploiement | 23/10/2026 14:45 Paris | HTTP 200 | Trois HTTP 200 | Diagnostics transmis par le fondateur |
-| France Travail, nouvelle priorité | À redéployer après l'ajout SH17 | En attente | — | — | Sonde à exécuter après déploiement |
+| France Travail, nouvelle priorité | [Preview SH17](https://saisonnier-git-plan-scan-01-sour-2b72fa-francois-noels-projects.vercel.app/admin/scan), commit `da769df` déployé | En attente | — | — | Diagnostic authentifié demandé au fondateur |
 
 Toutes les URL finales sont identiques aux URL demandées. Pour les huit requêtes : robots.txt HTTP 200, lecture autorisée, Crawl-delay 0 ms ; aucune pagination détectée. Détail fidèle des diagnostics :
 
@@ -105,7 +105,7 @@ Deux captures complémentaires couvrent [une période en texte libre](https://re
 
 - Site employeur : <https://www.vvf.fr/>. Liste HTML : <https://vvfrecrute.factorial.fr/> ; fiches `/job_posting/<slug>-<id>`, candidatures `/apply/<slug>-<id>`. L'identifiant numérique est stable ; le slug seul ne l'est pas. `/apply` est une candidature spontanée, exclue de l'inventaire.
 - Rattachement : [page officielle VVF recrutement](https://www.vvf.fr/article/vvf-recrutement), liens « Voir les offres » vers le portail Factorial. Les [mentions légales](https://www.vvf.fr/article/les-mentions-legales) donnent le SIREN `775634132` (SIRET de l'association).
-- Reprise : les [conditions générales d'utilisation du site](https://www.vvf.fr/article/conditions-generales-utilisation-site-internet) interdisent la reproduction hors usage privé et non commercial. Examiner leur portée sur Factorial, les mentions et la [politique de confidentialité du portail](https://vvfrecrute.factorial.fr/terms). Aucune autorisation de republication explicite n'a été établie dans cette session ; décision du fondateur attendue.
+- Reprise : les [conditions générales d'utilisation du site](https://www.vvf.fr/article/conditions-generales-utilisation-site-internet) interdisent la reproduction hors usage privé et non commercial. Examiner leur portée sur Factorial, les mentions et la [politique de confidentialité du portail](https://vvfrecrute.factorial.fr/terms). Aucune autorisation de republication explicite n'a été établie dans cette session ; réserve technique sans activation selon SH17.
 - [robots.txt](https://vvfrecrute.factorial.fr/robots.txt), HTTP 200 le 23/10/2026 : `User-agent: *`, `Allow: /`, sans délai.
 - Lecture depuis le poste, 11:59 UTC : liste HTTP 200, 74 914 octets, 27 liens distincts de fiche ; dix fiches HTTP 200, 31 867 à 33 556 octets. Aucun JSON-LD ni pagination détectés. Contrat, temps de travail, rémunération et lieu dans des puces sans libellé.
 
@@ -150,11 +150,11 @@ Les dix premières URL uniques du flux, sans sélection selon le contrat. Toutes
 | [8489997 — Stage réception](https://emploi.ms-vacances.com/jobs/8489997-stage-receptionniste-h-f) | Camping Les Tamaris (66) | Stage avril–juin, puis CDD juillet–août | Non compté ; stage principal |
 | [8489902 — Stage réception](https://emploi.ms-vacances.com/jobs/8489902-stage-receptionniste-h-f) | Camping Côte des Roses (11) | Stage mai–juin, puis CDD juillet–août | Non compté ; stage principal |
 
-Réservoir exploratoire de réserve : `24 × 2/10`, arrondi vers le bas, soit environ **4 dossiers**, avant déduplication. Le petit échantillon non aléatoire ne démontre pas un rendement stable. Décision proposée : `reserve`, priorité après les deux sources principales, activation et conditions encore soumises au fondateur.
+Réservoir exploratoire de réserve : `24 × 2/10`, arrondi vers le bas, soit environ **4 dossiers**, avant déduplication. Le petit échantillon non aléatoire ne démontre pas un rendement stable. Selon SH17 : `reserve`, priorité après Belambra et VVF, sans activation ; les conditions restent à clarifier avant toute reprise.
 
 ## Réservoir et sources écartées
 
-L'objectif porte sur des dossiers exploitables en revue, pas sur des annonces déjà publiables. Extrapolation exploratoire à partir des lectures, **avant déduplication métier**, arrondie vers le bas par source : Belambra `94 × 9/10 ≈ 84` ; VVF `27 × 7/10 ≈ 18`, soit environ **102 dossiers potentiels**, hors réserve. Ce calcul applique des taux observés à des URL uniques réellement lues dans les listes ; il ne reprend pas un compteur commercial. Les vingt fiches principales ne sont pas un échantillon aléatoire : le regroupement par date et établissement limite la confiance dans l'extrapolation. Les dates absentes de Belambra, l'identité des lieux, les contradictions et les doublons peuvent réduire le résultat. Le seuil de 70 n'est pas encore confirmé en preview ni par extraction.
+L'objectif porte sur des dossiers exploitables en revue, pas sur des annonces déjà publiables. L'ancienne proposition Belambra/VVF soutenait une extrapolation exploratoire **avant déduplication métier**, arrondie vers le bas par source : Belambra `94 × 9/10 ≈ 84` ; VVF `27 × 7/10 ≈ 18`, soit environ **102 dossiers potentiels**. Ce calcul applique des taux observés à des URL uniques réellement lues dans les listes ; il ne reprend pas un compteur commercial. Les vingt fiches de cette proposition ne sont pas un échantillon aléatoire : le regroupement par date et établissement limite la confiance dans l'extrapolation. Les dates absentes de Belambra, l'identité des lieux, les contradictions et les doublons peuvent réduire le résultat. Cette estimation décrit désormais les réserves ; celle de France Travail figure dans sa section dédiée. Aucun volume n'est confirmé par extraction dans ce plan.
 
 **Sélection mise à jour selon SH17 :** France Travail `primary`, priorité 0 ; Belambra, VVF et MS Vacances `reserve`, sans activation automatique. L'ancienne estimation Belambra/VVF ci-dessus documente seulement les réserves et ne remplace pas l'estimation de la source prioritaire. Aucun extracteur n'est ajouté dans ce plan. L'[API SmartRecruiters](https://api.smartrecruiters.com/v1/companies/Accor/postings?country=fr) est **écartée** : à 12:33 UTC, le client renvoie `robots_disallowed`. Le [robots.txt](https://api.smartrecruiters.com/robots.txt) répond HTTP 200, autorise seulement `LinkedInBot` sur `/v1/companies/` et contient `User-agent: *`, `Disallow: /`. Notre bot ne prend pas une autre identité ; aucune liste ni fiche n'a été lue. Le fait que l'API réponde sans clé, observé dans le plan, ne remplace pas cette vérification d'accès.
 
@@ -168,6 +168,7 @@ Cas capturés : contrat saisonnier, CDD de remplacement seul, CDI, contrat contr
 
 ## Validation à consigner
 
+- [ ] Diagnostic France Travail depuis la preview SH17 : liste et trois fiches, dernière preuve d'accès attendue.
 - [x] Résultats de la sonde de la proposition initiale depuis une preview Vercel : liste et trois fiches de chaque source principale.
 - [x] Décision du fondateur du 23/10/2026 consignée : France Travail prioritaire sur sa recherche fournie ; ancienne proposition principale refusée. Conditions et restrictions documentées, aucune activation ou autorisation de publication présumée.
 - [x] Réserve ajoutée sans extrapoler son volume.
