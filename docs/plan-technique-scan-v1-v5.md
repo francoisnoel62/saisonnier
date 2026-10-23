@@ -59,6 +59,8 @@ Les 94 offres Belambra et les 27 liens VVF ne représentent pas encore 121 dossi
 
 **Choix d'exécution :** développer d'abord les sources lisibles avec le plus d'annonces pertinentes et exploitables pour une revue dans un petit échantillon. Ajouter une source de réserve si leur réservoir ne permet pas d'atteindre 50 dossiers. SmartRecruiters est également candidat si des employeurs pertinents sont identifiés ; Greenhouse, Lever ou Ashby ne sont pas prioritaires par leur seule disponibilité technique.
 
+**Arbitrage du fondateur du 23/10/2026 pendant le plan 01 :** France Travail est ajouté comme découverte prioritaire sur sa recherche filtrée fournie, selon SH17 des plans du scan. L'accès vérifié utilise la liste HTML et le JSON public du composant de détail sur le même hôte ; il ne dépend pas de l'API partenaire restreinte. Cette exception ciblée au périmètre initial ne transforme pas France Travail en source officielle employeur pour la publication. Voir le [dossier de sources et ses mesures](scan/sources-v1.md).
+
 Un dossier découvert sur France Travail ou un autre job-board peut compter dans l'objectif admin alors que la source officielle employeur reste à retrouver. Il reste invisible aux candidats. Ce changement de compteur ne valide pas un accès automatisé à France Travail et ne rend pas ce site obligatoire ou exclusif pour la V1.
 
 ### Préparation avant installation
@@ -179,7 +181,7 @@ Les crons Vercel ne garantissent pas une reprise automatique de toute invocation
 
 Chaque lot laisse l'application déployable, avec les conventions de branche, PR et preview du dépôt. Lire les guides Next installés avant les modifications de code.
 
-**Plans d'implémentation détaillés :** ces huit lots sont découpés en dix plans d'une session dans [`docs/plans/scan-v1/`](./plans/scan-v1/README.md), avec leurs hypothèses (SH1 à SH16), leur glossaire, leurs réglages par défaut et la traçabilité des cas du §10 du cahier.
+**Plans d'implémentation détaillés :** ces huit lots sont découpés en dix plans d'une session dans [`docs/plans/scan-v1/`](./plans/scan-v1/README.md), avec leurs hypothèses (SH1 à SH17), leur glossaire, leurs réglages par défaut et la traçabilité des cas du §10 du cahier.
 
 | Lot | Livraison | Vérification utile |
 |---|---|---|

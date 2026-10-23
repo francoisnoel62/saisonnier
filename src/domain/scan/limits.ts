@@ -1,0 +1,21 @@
+export const scanLimits = {
+  concurrentRequestsPerHost: 1,
+  concurrentHosts: 3,
+  minIntervalMs: 2_000,
+  // Délai d'un échange HTTP, compté à partir de son envoi (attente de politesse exclue).
+  timeoutMs: 15_000,
+  maxBytes: 2 * 1024 * 1024,
+  maxRedirects: 5,
+  // Recul appliqué à l'hôte après un 429 sans Retry-After.
+  defaultRetryAfterMs: 60_000,
+  maxAttempts: 3,
+  batchBudgetMs: 120_000,
+  // Sonde de l'admin : sous la durée maximale de la page /admin/scan (120 s).
+  probeBudgetMs: 100_000,
+  maxListPages: 20,
+  maxPostings: 400,
+  refreshIntervalMs: 5_000,
+  bootstrapTarget: 50,
+  bootstrapDeadlineMs: 6 * 60 * 60 * 1_000,
+  dailyWindowMs: 72 * 60 * 60 * 1_000,
+} as const

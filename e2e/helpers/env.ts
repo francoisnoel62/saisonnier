@@ -8,6 +8,7 @@ try {
 
 export const E2E_PORT = Number(process.env.E2E_PORT ?? 3100)
 export const E2E_URL = `http://localhost:${E2E_PORT}`
+export const SCAN_FIXTURE_PORT = E2E_PORT + 1
 
 // Transmises au serveur de test ; elles priment sur les fichiers .env* chargés par Next.
 const serverVariables = [
@@ -31,6 +32,7 @@ export function serverEnv() {
       serverVariables.map((name) => [name, process.env[name] as string]),
     ),
     BETTER_AUTH_URL: E2E_URL,
+    SCAN_TEST_SOURCE_URL: `http://localhost:${SCAN_FIXTURE_PORT}`,
     // Sans clé Resend, les emails s'affichent dans la console du serveur.
     RESEND_API_KEY: "",
     // Distinct de celui du `next dev` habituel (port 3000), qui peut tourner en même temps.

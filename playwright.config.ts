@@ -1,6 +1,11 @@
 import { defineConfig, devices } from "@playwright/test"
 
-import { E2E_PORT, E2E_URL, serverEnv } from "./e2e/helpers/env"
+import {
+  E2E_PORT,
+  E2E_URL,
+  SCAN_FIXTURE_PORT,
+  serverEnv,
+} from "./e2e/helpers/env"
 
 export default defineConfig({
   testDir: "./e2e",
@@ -32,11 +37,19 @@ export default defineConfig({
       testIgnore: /auth\.setup\.ts/,
     },
   ],
-  webServer: {
-    command: `npx next dev -p ${E2E_PORT}`,
-    url: E2E_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: serverEnv(),
-  },
+  webServer: [
+    {
+      command: "npx tsx scripts/scan-fixture-server.ts",
+      url: `http://localhost:${SCAN_FIXTURE_PORT}`,
+      reuseExistingServer: !process.env.CI,
+      env: { SCAN_FIXTURE_PORT: String(SCAN_FIXTURE_PORT) },
+    },
+    {
+      command: `npx next dev -p ${E2E_PORT}`,
+      url: E2E_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      env: serverEnv(),
+    },
+  ],
 })

@@ -10,6 +10,8 @@
 
 Ce plan ne lit encore aucun champ d'annonce (plan 05) et n'enregistre rien en base (plan 03).
 
+**Arbitrage du fondateur pendant l'implémentation, 23/10/2026 (SH17) :** ajouter France Travail comme découverte prioritaire, sur l'[URL de recherche fournie](https://candidat.francetravail.fr/offres/recherche?domaine=G&emission=3&lieux=99100&offresPartenaires=false&range=0-19&rayon=10&tri=1&typeContrat=SAI). Les portails employeurs restent en réserve. Le registre distingue `kind="discovery"` / `"employer"` ; France Travail n'est jamais l'employeur attribué aux annonces ; la source officielle employeur reste nécessaire avant publication. **Choix d'implémentation, à valider par le fondateur** (il ne fait pas partie de sa décision) : les fiches sont lues dans le JSON public de leur composant officiel (`/api-descriptifoffre/offre/<id>`, même hôte), sans clé ni rendu JavaScript. Cette validation porte aussi sur le cadre d'une extraction systématique (CGU de France Travail, droit du producteur de base de données), distinct de la republication. Le détail de la décision, les captures et les mesures sont dans `docs/scan/sources-v1.md`.
+
 ## Ce qui est déjà observé
 
 Relevés du 23 octobre 2026 avec un outil de lecture Web et une requête depuis le poste de travail. Ils orientent les adaptateurs ; ils ne remplacent pas la sonde depuis Vercel.
@@ -35,25 +37,25 @@ Relevés du 23 octobre 2026 avec un outil de lecture Web et une requête depuis 
    - `checkScanUrl(url, policy)` (pur, dans `src/domain/scan/url-safety.ts`) : `https:` seulement, port 443 implicite, ni identifiant ni mot de passe dans l'URL.
    - La politique est un paramètre : en preview et en production, elle n'autorise aucun hôte local ; en développement et en test, elle autorise en plus le seul `http://localhost:<port>` de `SCAN_TEST_SOURCE_URL`. Les tests d'intégration passent explicitement l'hôte de leur serveur local.
 3. **Client HTTP** `src/server/scan/http.ts` (`server-only`) : `scanFetch(url, options)`.
-   - **Résolution** : `dns.promises.lookup(host, { all: true })`. Refus si une seule adresse n'est pas publique. La connexion utilise l'adresse validée (option `lookup` de `https.request`) : aucune seconde résolution, donc pas de « DNS rebinding ».
-   - **Redirections** : manuelles, 5 au plus. Chaque nouvelle URL repasse `checkScanUrl`, la résolution et robots.txt.
-   - **Bornes** : délai total de 15 s (`AbortSignal.timeout`) ; lecture en flux, arrêtée au-delà de 2 Mo après décompression (gzip, deflate, br). Types admis : HTML, XHTML, JSON, JSON-LD, RSS, XML.
+   - **Résolution** : `dns.promises.lookup(host, { all: true })`. Refus si une seule adresse n'est pas publique. La connexion n'utilise que les adresses validées (option `lookup` de `https.request`, toutes proposées pour que Node bascule de l'une à l'autre) : aucune seconde résolution, donc pas de « DNS rebinding ».
+   - **Redirections** : manuelles, 5 au plus. Chaque nouvelle URL repasse `checkScanUrl`, la résolution et robots.txt. Une redirection de robots.txt repasse `checkScanUrl` et la résolution, pas robots.txt (RFC 9309).
+   - **Bornes** (révisées après la revue de la PR #32) : 15 s par échange HTTP, comptées à partir de son envoi : l'attente de politesse n'entre pas dans ce délai. L'attente est bornée par l'échéance de l'appelant (`deadline`, par défaut le budget d'une étape de lot) ; une attente qui la dépasse rend aussitôt `rate_limited` avec `retryAfterMs`, sans requête. Lecture en flux, arrêtée au-delà de 2 Mo après décompression (gzip, deflate, br). Texte décodé selon le charset déclaré (`Content-Type`, sinon `<meta>` ou prologue XML, sinon UTF-8) ; un charset inconnu est refusé (`unsupported_type`). Types admis pour une page : HTML, XHTML, JSON, JSON-LD, RSS, XML ; robots.txt se lit quel que soit son type.
    - **En-têtes** : `User-Agent: ${site.name}Bot/1.0 (+${BETTER_AUTH_URL}/contact)` (le nom vient de `src/config/site.ts`, H14), `Accept-Language: fr-FR,fr;q=0.9`.
    - **robots.txt** : lu une fois par hôte et conservé pour l'étape ; règles de notre User-Agent, sinon de `*` ; `Crawl-delay` relevé. Un 404 vaut « tout est permis » ; un 5xx ou un délai dépassé rend l'hôte indisponible, sans lecture des pages.
-   - **Politesse** : `HostPacer`, intervalle minimal par hôte (2 s, ou le `Crawl-delay`). Le plan 09 le prolonge entre deux étapes par `lastRequestAt` en base.
+   - **Politesse** : `HostPacer`, intervalle minimal par hôte (2 s, ou le `Crawl-delay`), que seuls le développement et les tests peuvent raccourcir. Un 429 sans `Retry-After` éloigne l'hôte 60 s. Le plan 09 le prolonge entre deux étapes par `lastRequestAt` en base.
    - **Résultat typé**, jamais d'exception pour une réponse HTTP :
-     `{ ok: true, status, finalUrl, contentType, body, bytes, elapsedMs, fetchedAt }` ou `{ ok: false, reason, status?, retryAfterMs? }`.
-     Motifs : `invalid_url`, `blocked_address`, `robots_disallowed`, `timeout`, `too_large`, `unsupported_type`, `too_many_redirects`, `rate_limited` (429 ou 503 avec `Retry-After`), `access_denied` (401, 403), `not_found` (404), `gone` (410), `http_error`, `network`.
+     `{ ok: true, status, finalUrl, contentType, body, bytes, fetchedAt }` ou `{ ok: false, reason, status?, retryAfterMs? }`, avec dans les deux cas `robots` (décisions), `elapsedMs` (durée des échanges) et `waitedMs` (attente de politesse).
+     Motifs : `invalid_url`, `blocked_address`, `robots_disallowed`, `timeout`, `too_large`, `unsupported_type`, `too_many_redirects`, `rate_limited` (429, 503 avec `Retry-After`, ou attente de l'hôte au-delà de l'échéance), `access_denied` (401, 403), `not_found` (404), `gone` (410), `http_error`, `network`.
 4. **Variable de test** : `SCAN_TEST_SOURCE_URL` (facultative) dans `src/lib/env.ts` et `.env.example`. `env.ts` la refuse si `NODE_ENV=production` : une preview ou la production ne peut jamais lire une adresse locale.
 5. **Registre des sources** `src/server/scan/sources/registry.ts` : `scanSourceDefinitions`, indexé par une clé stable (`belambra`, `vvf`…). Type et schéma zod dans `src/domain/scan/source.ts`, avec les limites par défaut (README, « Réglages par défaut »).
-   - **Champs** : `label` ; `employer` (nom, SIREN s'il est établi) ; `adapter` (`teamtailor`, `factorial`, `smartrecruiters`, `fixture`) ; `listUrls` ; `postingUrlPattern` (expression des liens de fiche) ; `officialHosts` ; `employerWebsite` ; `affiliationProof` (URL de la page officielle qui mène au portail, note, date de vérification) ; `reuse` (URL des conditions, extrait utile de robots.txt, note, date) ; `role` (`primary` / `reserve`) ; `priority` ; `limits` (surcharges) ; `placeAliases` (nom d'établissement → commune vérifiée : code INSEE, nom, département).
+   - **Champs** : `label` ; `kind` (`employer` / `discovery`, SH17) ; `employer` (nom, SIREN s'il est établi ; nul pour une découverte) ; `adapter` (`teamtailor`, `factorial`, `smartrecruiters`, `france-travail`, `fixture`) ; `listUrls` ; `postingUrlPattern` (expression des liens de fiche) ; `officialHosts` ; `employerWebsite` (nul pour une découverte) ; `affiliationProof` (URL de la page officielle qui mène au portail, ou provenance du diffuseur, note, date de vérification) ; `reuse` (URL des conditions, extrait utile de robots.txt, note, date) ; `role` (`primary` / `reserve`) ; `priority` ; `limits` (surcharges) ; `placeAliases` (nom d'établissement → commune vérifiée : code INSEE, nom, département).
    - La source `fixture` (tests) n'est déclarée que si `SCAN_TEST_SOURCE_URL` est définie.
    - Un test valide tout le registre : clés uniques, URL `https`, hôtes des listes inclus dans `officialHosts`, SIREN au bon format (`isValidSiren`), alias complets.
 6. **Sonde** `src/server/scan/probe.ts` et Server Action `probeScanSourceAction(key)` (`requireRole("admin")`). Pour une source :
    - lire la liste (première page ou flux) ;
    - compter les liens de fiche (`postingUrlPattern`) ;
-   - lire jusqu'à trois fiches ;
-   - renvoyer, par requête : statut HTTP, URL finale, durée, taille, décision de robots.txt, présence d'un JSON-LD `JobPosting`, nombre d'éléments RSS, pagination détectée.
+   - lire jusqu'à trois fiches, en s'arrêtant sur un refus ou une panne de l'hôte (`stopsSource`), pas sur une fiche absente ;
+   - renvoyer, par requête : statut HTTP, URL finale, durée des échanges et attente de politesse, taille, décision de robots.txt, présence d'un JSON-LD `JobPosting`, nombre d'éléments RSS, pagination détectée.
 
    Le résultat est renvoyé à l'écran et journalisé (`[scan sonde] …`), sans être enregistré. Le plan 05 y ajoutera l'extraction d'un échantillon.
 7. **Page `/admin/scan`**, première version.
@@ -98,11 +100,11 @@ Relevés du 23 octobre 2026 avec un outil de lecture Web et une requête depuis 
 
 ## Critères d'acceptation
 
-- [ ] Depuis une preview Vercel, la sonde lit la liste et au moins trois fiches de chaque source principale ; les résultats sont consignés dans `docs/scan/sources-v1.md`.
-- [ ] Le client refuse toute adresse interne, y compris après redirection ; il respecte robots.txt et plafonne durée et taille.
-- [ ] Provenance, rattachement et conditions de reprise sont documentés pour chaque source retenue ; la décision du fondateur est notée.
-- [ ] Le réservoir estimé atteint 70 dossiers exploitables, ou des sources de réserve ont été ajoutées.
-- [ ] Les fixtures sont anonymisées, et un test le vérifie.
+- [x] Depuis une preview Vercel, la sonde lit la liste et au moins trois fiches de chaque source principale ; les résultats sont consignés dans `docs/scan/sources-v1.md`. Proposition initiale Belambra/VVF vérifiée le 23/10/2026 ; France Travail, choisie ensuite comme priorité (SH17), vérifiée le même jour à 16:03 Paris sur `saisonnier-h5e9a85b9-francois-noels-projects.vercel.app` : liste et trois fiches HTTP 200.
+- [x] Le client refuse toute adresse interne, y compris après redirection ; il respecte robots.txt et plafonne durée et taille.
+- [x] Provenance, rattachement et conditions de reprise sont documentés pour chaque source retenue ; la décision du fondateur est notée (France Travail prioritaire, SH17 ; aucune autorisation de publication présumée).
+- [x] Le réservoir estimé atteint 70 dossiers exploitables, ou des sources de réserve ont été ajoutées.
+- [x] Les fixtures sont anonymisées, et un test le vérifie.
 
 ## Hors périmètre
 

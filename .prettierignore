@@ -10,3 +10,6 @@ next-env.d.ts
 # Documents rédigés à la main
 docs
 *.md
+
+# Captures réelles : conserver ce que les extracteurs liront.
+src/server/scan/sources/fixtures

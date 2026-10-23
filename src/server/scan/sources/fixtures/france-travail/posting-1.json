@@ -1,0 +1,107 @@
+{
+  "numeroOffre": "Offre n° 215PYPJ",
+  "intituleOffre": "Chargé(e) d'Accueil et de Réservation (H/F)",
+  "codeRome": "G1704",
+  "appellationRome": "Employé / Employée de réservation en hébergement",
+  "descriptif": "Sous la responsabilité directe du Directeur Adjoint et la supervision de la Responsable Centrale Réservation, vous aurez pour missions :\n\nMISSIONS DU POSTE \n\nLa commercialisation des hébergements : \nGérer et optimiser la commercialisation des appartements en direct et via des tour-opérateurs.\nAssurer le suivi des réservations.\nContribuer au développement des ventes grâce à des prestations annexes comme les forfaits de ski ou les activités offertes à Aussois.\n\nL'accueil et l'accompagnement client : \nAssurer l'accueil des clients à leur arrivée et à leur départ, avec une attention particulière lors de la remise des clés et des états des lieux.\n\nLe développement de la relation propriétaire : \nEntretenir et développer la relation avec les propriétaires en mandat, en veillant à la satisfaction et à la valorisation de leurs biens. \nSuperviser le suivi des appartements en collaboration avec nos équipes techniques, en garantissant leur entretien et leur conformité entre chaque location.\n\nPROFIL RECHERCHÉ:\n\nUne première expérience réussie dans un poste similaire, complétant une formation en tourisme ou en commerce, serait un réel atout.\nAutonome et réactif, vous êtes animé(e) par un fort esprit d'équipe. Force de proposition, vous avez démontré dans vos expériences précédentes votre capacité à vous engager au quotidien dans les missions qui vous sont confiées. Vous savez faire preuve de polyvalence et d'autonomie au quotidien. Vous êtes doté(e) d'un réel sens du relationnel et de la négociation.\nCe poste nécessite d'avoir une maîtrise de l'informatique et notamment des outils métiers ( Arkiane, OpenPro).\nPoste soumis au travail les samedis et dimanches et à des astreintes.\nLes conditions d'intégration (titres restaurants + mutuelle / prévoyance + forfait de ski.) sont de nature à enthousiasmer un(e) candidat(e) de valeur.",
+  "lieuTravail": {
+    "libelleLieuTravail": "AUSSOIS",
+    "libelleCommuneLieuTravail": "Aussois",
+    "codeDepartementLieuTravail": "73",
+    "syntheseLieuTravail": "73 - AUSSOIS"
+  },
+  "libelleLieuTravail": "AUSSOIS (73)",
+  "deplacement": "Jamais",
+  "syntheseContrat": "Saisonnier - 4 Mois - Contrat travail",
+  "syntheseHoraire": "Non disponible",
+  "salaire": "Horaire de 13.17 Euros",
+  "listeAvantages": [
+    "Titres restaurant / Prime de panier",
+    "Complémentaire santé",
+    "Primes"
+  ],
+  "qualification": "Employé qualifié",
+  "publicCible": "Non disponible",
+  "descriptionEntreprise": "La société de Gestion des Activités Touristiques Parrachée Vanoise est en charge de la gestion du domaine skiable d'Aussois (alpin et nordique), d'hébergement (camping et chalets de la pyramide) ainsi que de la base de loisir d'Aussois dont la piscine O'soi.\nStation village de charme implantée à 1500 m d'altitude, Aussois est un vrai village de montagne, aux portes du parc National de la Vanoise, à 1/4 d'heure de l'autoroute A43 et de Modane, cadre de vie et lieu de séjour exceptionnel.\n\n",
+  "syntheseSecteurActivite": "Téléphériques et remontées mécaniques",
+  "experienceProfil": {
+    "experience": "6 Mois",
+    "estUneExperienceIndispensable": true
+  },
+  "experience": {
+    "syntheseExperience": null,
+    "codeExperiencePro": "E"
+  },
+  "suivi": {
+    "codeTypeAffichageCoordonneesRecruteur": null,
+    "listeOperationNationale": null,
+    "flagManqueDeCandidats": false
+  },
+  "listeFormation": [
+    {
+      "estUneFormationIndispensable": false,
+      "libelleFormation": "Bac ou équivalent Accueil tourisme"
+    }
+  ],
+  "listeCompetence": [
+    {
+      "libelleCompetence": "Effectuer le suivi des réservations",
+      "estUneCompetenceIndispensable": false
+    },
+    {
+      "libelleCompetence": "Identifier, traiter une demande client",
+      "estUneCompetenceIndispensable": false
+    }
+  ],
+  "listeSavoirEtre": [
+    "Avoir l'esprit d'équipe",
+    "Avoir le sens du service",
+    "Faire preuve de rigueur et de précision"
+  ],
+  "listeLangue": [],
+  "listePermis": [
+    {
+      "estUnPermisIndispensable": false,
+      "libellePermis": "B - Véhicule léger"
+    }
+  ],
+  "conditionTravailPoste": {
+    "libelleConditionTravail": null,
+    "commentaireConditionTravail": null,
+    "listeLibelleTypeHoraire": [
+      "35H/semaine",
+      "Travail les week-ends et jours fériés",
+      " Travail en astreinte",
+      " Travail saisonnier"
+    ],
+    "listeLibelleConditionExerciceHoraire": [
+      "Autre"
+    ],
+    "flagAccesTravailleursHandicapes": false
+  },
+  "etablissement": {
+    "adresseNonDisponible": false,
+    "libelleEnseigne": "SOCIETE DE GESTION DES ACTIVITES TOURIST",
+    "descriptionEtablissement": "",
+    "syntheseSecteurActivite": "",
+    "effectif": "Non disponible",
+    "urlEntreprise": null,
+    "flagUrlEntrepriseInvalide": false,
+    "flagEntrepriseAdaptee": false
+  },
+  "codeTypeAffichageCoordonneesRecruteur": "N",
+  "listeOperationNationale": [
+    {
+      "codeOperationNationale": "PJE",
+      "libelleOperationNationale": "Plan \"1 jeune, 1 solution\" "
+    }
+  ],
+  "logo": {
+    "url": "https://assets.example/logo.png",
+    "typeMime": "image/png"
+  },
+  "flagOffrePartenaireAOM": false,
+  "dateDerniereModification": "23 octobre 2026",
+  "pageEmployeurUrl": null,
+  "pageEmployeurLibelleBouton": null
+}
