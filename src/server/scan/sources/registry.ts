@@ -63,27 +63,26 @@ export function buildScanSourceDefinitions(
       limits: {},
       placeAliases: {},
     },
-    accor: {
-      key: "accor",
-      label: "Accor (réserve à qualifier)",
-      employer: { name: "Accor" },
-      adapter: "smartrecruiters",
-      listUrls: [
-        "https://api.smartrecruiters.com/v1/companies/Accor/postings?country=fr",
-      ],
+    "ms-vacances": {
+      key: "ms-vacances",
+      label: "MS Vacances",
+      employer: { name: "MS Vacances" },
+      adapter: "teamtailor",
+      listUrls: ["https://emploi.ms-vacances.com/jobs.rss"],
       postingUrlPattern:
-        "^https://api\\.smartrecruiters\\.com/v1/companies/Accor/postings/[^/?#]+$",
-      officialHosts: ["api.smartrecruiters.com", "careers.accor.com"],
-      employerWebsite: "https://group.accor.com/",
+        "^https://emploi\\.ms-vacances\\.com/jobs/[0-9]+-[^/?#]+/?$",
+      officialHosts: ["emploi.ms-vacances.com"],
+      employerWebsite: "https://www.ms-vacances.com/",
       affiliationProof: {
-        url: "https://careers.accor.com/",
-        note: "Réserve : rattachement de l'API publique au portail officiel et périmètre loisirs à établir employeur par employeur.",
+        url: "https://www.ms-vacances.com/",
+        note: "Le pied de page officiel, rubrique Entre vous & nous, renvoie Offres d'emploi vers emploi.ms-vacances.com.",
         checkedAt,
       },
       reuse: {
-        url: "https://careers.accor.com/",
-        robotsExcerpt: "Non relevé ; source de réserve non qualifiée.",
-        note: "Conditions API et portail à examiner avant toute activation. Ni volume ni admissibilité établis.",
+        url: "https://www.ms-vacances.com/mentions-legales/",
+        robotsExcerpt:
+          "User-Agent: * ; Disallow: /app/, /messages/, /messenger/, /facebook/tab/, /jobs/internal/ ; aucun Crawl-delay. Flux et fiches publiques autorisés le 23/10/2026.",
+        note: "Page de mentions actuellement sans contenu exploitable ; politique du portail /data-privacy disponible. Aucune autorisation de reprise établie, validation du fondateur attendue avant activation.",
         checkedAt,
       },
       role: "reserve",

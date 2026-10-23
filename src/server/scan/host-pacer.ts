@@ -74,7 +74,11 @@ export function abortable<T>(
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const abort = () => reject(signal.reason)
-    if (signal.aborted) return abort()
+    if (signal.aborted) {
+      // Le travail en file peut échouer après notre retour ; sa promesse reste observée.
+      void promise.catch(() => {})
+      return abort()
+    }
     signal.addEventListener("abort", abort, { once: true })
     promise
       .then(resolve, reject)

@@ -4,7 +4,7 @@ import { load } from "cheerio"
 import { expect, it } from "vitest"
 
 const root = join(process.cwd(), "src/server/scan/sources/fixtures")
-const sources = ["belambra", "vvf"]
+const sources = ["belambra", "vvf", "ms-vacances"]
 
 it.each(sources)(
   "%s : captures réelles, documentées et contacts fictifs uniquement",

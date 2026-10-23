@@ -65,6 +65,12 @@ it("détecte un JobPosting dans un graphe JSON-LD et une liste API paginée", ()
       sources.belambra,
     ).jobPosting,
   ).toBe("valid")
+  const apiSource = {
+    ...sources.belambra,
+    officialHosts: ["api.smartrecruiters.com"],
+    postingUrlPattern:
+      "^https://api\\.smartrecruiters\\.com/v1/companies/Accor/postings/[^/?#]+$",
+  }
   const result = inspectScanDocument(
     JSON.stringify({
       content: [
@@ -74,9 +80,9 @@ it("détecte un JobPosting dans un graphe JSON-LD et une liste API paginée", ()
       ],
       totalFound: 2,
     }),
-    sources.accor.listUrls[0],
+    "https://api.smartrecruiters.com/v1/companies/Accor/postings?country=fr",
     "application/json",
-    sources.accor,
+    apiSource,
   )
   expect(result.links).toHaveLength(1)
   expect(result.pagination).toBe(true)
