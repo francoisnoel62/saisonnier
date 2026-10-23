@@ -8,7 +8,7 @@ Implémentation du plan 01 sur `plan/scan-01-sources-client-http`. **France Trav
 
 ## Accès depuis la preview
 
-**Sonde authentifiée exécutée par le fondateur**, diagnostics du panneau transmis dans la session le 23/10/2026. Déploiement exact : <https://saisonnier-4s3w7njrs-francois-noels-projects.vercel.app>. Les heures affichées sont celles d'Europe/Paris. La [PR #32](https://github.com/francoisnoel62/saisonnier/pull/32) expose aussi son [alias de preview](https://saisonnier-git-plan-scan-01-sour-2b72fa-francois-noels-projects.vercel.app/admin/scan). L'accès anonyme répond 302 vers le SSO Vercel ; le fondateur a utilisé son accès admin, sans contournement des protections.
+**Sondes authentifiées exécutées par le fondateur**, diagnostics du panneau transmis dans la session le 23/10/2026. Déploiements exacts : <https://saisonnier-4s3w7njrs-francois-noels-projects.vercel.app> pour Belambra/VVF et <https://saisonnier-h5e9a85b9-francois-noels-projects.vercel.app> pour France Travail. Les heures affichées sont celles d'Europe/Paris. La [PR #32](https://github.com/francoisnoel62/saisonnier/pull/32) expose aussi son [alias de preview](https://saisonnier-git-plan-scan-01-sour-2b72fa-francois-noels-projects.vercel.app/admin/scan). L'accès anonyme répond 302 vers le SSO Vercel ; le fondateur a utilisé son accès admin, sans contournement des protections.
 
 Parcours : ouvrir `/admin/scan` avec un compte admin ; pour chaque source principale, « Tester l’accès depuis ce déploiement ». Conserver le résultat du panneau et le journal `[scan sonde]`, avec URL exacte du déploiement, date, HTTP, URL finale, durée, octets, décisions robots, JSON-LD, RSS et pagination. La sonde lit la première liste et jusqu'à trois fiches, et s'arrête au premier échec. Aucun contenu d'annonce n'est envoyé au navigateur ou journalisé.
 
@@ -16,9 +16,9 @@ Parcours : ouvrir `/admin/scan` avec un compte admin ; pour chaque source princi
 |---|---|---|---|---|---|
 | Belambra | `saisonnier-4s3w7njrs-francois-noels-projects.vercel.app` | 23/10/2026 14:44 Paris | HTTP 200 | Trois HTTP 200 | Diagnostics transmis par le fondateur |
 | VVF | Même déploiement | 23/10/2026 14:45 Paris | HTTP 200 | Trois HTTP 200 | Diagnostics transmis par le fondateur |
-| France Travail, nouvelle priorité | [Preview SH17](https://saisonnier-git-plan-scan-01-sour-2b72fa-francois-noels-projects.vercel.app/admin/scan), commit `da769df` déployé | En attente | — | — | Diagnostic authentifié demandé au fondateur |
+| France Travail, priorité SH17 | `saisonnier-h5e9a85b9-francois-noels-projects.vercel.app` | 23/10/2026 16:03 Paris | HTTP 200 | Trois HTTP 200 | Diagnostic transmis par le fondateur |
 
-Toutes les URL finales sont identiques aux URL demandées. Pour les huit requêtes : robots.txt HTTP 200, lecture autorisée, Crawl-delay 0 ms ; aucune pagination détectée. Détail fidèle des diagnostics :
+Toutes les URL finales sont identiques aux URL demandées. Pour les huit requêtes Belambra/VVF : robots.txt HTTP 200, lecture autorisée, Crawl-delay 0 ms ; aucune pagination détectée. Détail fidèle des diagnostics :
 
 | Source / requête | URL demandée et finale | HTTP | Durée | Octets | JobPosting JSON-LD | Éléments RSS / liens de fiche |
 |---|---|---|---|---|---|---|
@@ -30,6 +30,15 @@ Toutes les URL finales sont identiques aux URL demandées. Pour les huit requêt
 | VVF fiche 1 | <https://vvfrecrute.factorial.fr/job_posting/assistant-e-commercial-grands-comptes-h-f-327834> | 200 | 2107 ms | 33556 | absent | 0 / 0 |
 | VVF fiche 2 | <https://vvfrecrute.factorial.fr/job_posting/responsable-de-maintenance-h-f-326869> | 200 | 1944 ms | 32736 | absent | 0 / 0 |
 | VVF fiche 3 | <https://vvfrecrute.factorial.fr/job_posting/responsable-de-maintenance-h-f-326866> | 200 | 2054 ms | 32826 | absent | 0 / 0 |
+
+**France Travail, sonde du 23/10/2026 à 16:03 Paris.** Pour les quatre requêtes : robots.txt HTTP 200 sur <https://candidat.francetravail.fr/robots.txt>, lecture autorisée, Crawl-delay 0 ms ; JSON-LD `JobPosting` absent. Les trois descriptifs sont lus dans le JSON public du composant officiel et le diagnostic conserve leurs liens publics. Mesures exactes transmises :
+
+| Requête | URL demandée et finale | Fiche publique | HTTP | Durée | Octets | Éléments RSS / liens de fiche | Pagination |
+|---|---|---|---|---|---|---|---|
+| Liste | <https://candidat.francetravail.fr/offres/recherche?domaine=G&emission=3&lieux=99100&offresPartenaires=false&range=0-19&rayon=10&tri=1&typeContrat=SAI> | — | 200 | 2191 ms | 136024 | 0 / 20 | oui |
+| Fiche 1 | <https://candidat.francetravail.fr/api-descriptifoffre/offre/215QBQH> | <https://candidat.francetravail.fr/offres/recherche/detail/215QBQH> | 200 | 1836 ms | 16879 | 0 / 0 | non |
+| Fiche 2 | <https://candidat.francetravail.fr/api-descriptifoffre/offre/215QBJY> | <https://candidat.francetravail.fr/offres/recherche/detail/215QBJY> | 200 | 1983 ms | 18057 | 0 / 0 | non |
+| Fiche 3 | <https://candidat.francetravail.fr/api-descriptifoffre/offre/215PYPJ> | <https://candidat.francetravail.fr/offres/recherche/detail/215PYPJ> | 200 | 2017 ms | 18772 | 0 / 0 | non |
 
 ## France Travail — découverte prioritaire (SH17)
 
@@ -72,7 +81,7 @@ Pour éviter le biais des seules premières offres, lecture de dix JSON aux rang
 
 **Réservoir exploratoire de France Travail : `170 × 8/10 = 136 dossiers potentiels de revue`**, avant déduplication métier et recherche des sources officielles. Il dépasse la marge de 70 dossiers visée par le plan. Cet échantillon systématique reste petit, non aléatoire et sensible aux annonces publiées/retirées pendant le relevé ; ce n'est ni un stock confirmé ni une promesse de publication. Les sources employeurs de réserve ne sont pas additionnées automatiquement : elles peuvent recouper France Travail.
 
-Décision du fondateur consignée : France Travail prioritaire sur la recherche fournie, le 23/10/2026. Son accès doit encore être sondé depuis la nouvelle preview ; aucun champ métier n'est extrait ou enregistré par ce plan.
+Décision du fondateur consignée : France Travail prioritaire sur la recherche fournie, le 23/10/2026. Son accès depuis Vercel est validé par la sonde authentifiée de 16:03 : liste et trois fiches HTTP 200, mesures conservées ci-dessus. Aucun champ métier n'est extrait ou enregistré par ce plan.
 
 ## Belambra — Teamtailor, réserve (relevé de la proposition initiale)
 
@@ -168,7 +177,7 @@ Cas capturés : contrat saisonnier, CDD de remplacement seul, CDI, contrat contr
 
 ## Validation à consigner
 
-- [ ] Diagnostic France Travail depuis la preview SH17 : liste et trois fiches, dernière preuve d'accès attendue.
+- [x] Diagnostic France Travail depuis la preview SH17 : liste et trois fiches HTTP 200, le 23/10/2026 à 16:03 Paris ; déploiement et mesures exactes consignés.
 - [x] Résultats de la sonde de la proposition initiale depuis une preview Vercel : liste et trois fiches de chaque source principale.
 - [x] Décision du fondateur du 23/10/2026 consignée : France Travail prioritaire sur sa recherche fournie ; ancienne proposition principale refusée. Conditions et restrictions documentées, aucune activation ou autorisation de publication présumée.
 - [x] Réserve ajoutée sans extrapoler son volume.

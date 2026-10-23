@@ -100,7 +100,7 @@ Relevés du 23 octobre 2026 avec un outil de lecture Web et une requête depuis 
 
 ## Critères d'acceptation
 
-- [ ] Depuis une preview Vercel, la sonde lit la liste et au moins trois fiches de chaque source principale ; les résultats sont consignés dans `docs/scan/sources-v1.md`. Proposition initiale Belambra/VVF vérifiée le 23/10/2026 ; France Travail est ensuite choisie comme priorité (SH17), déployée et en attente de son diagnostic authentifié.
+- [x] Depuis une preview Vercel, la sonde lit la liste et au moins trois fiches de chaque source principale ; les résultats sont consignés dans `docs/scan/sources-v1.md`. Proposition initiale Belambra/VVF vérifiée le 23/10/2026 ; France Travail, choisie ensuite comme priorité (SH17), vérifiée le même jour à 16:03 Paris sur `saisonnier-h5e9a85b9-francois-noels-projects.vercel.app` : liste et trois fiches HTTP 200.
 - [x] Le client refuse toute adresse interne, y compris après redirection ; il respecte robots.txt et plafonne durée et taille.
 - [x] Provenance, rattachement et conditions de reprise sont documentés pour chaque source retenue ; la décision du fondateur est notée (France Travail prioritaire, SH17 ; aucune autorisation de publication présumée).
 - [x] Le réservoir estimé atteint 70 dossiers exploitables, ou des sources de réserve ont été ajoutées.
