@@ -2,7 +2,7 @@
 
 Dix plans pour réaliser la **V1 du scan** décrite par le [plan technique V1–V5](../../plan-technique-scan-v1-v5.md) (§1 à §6), conformément au [cahier des charges du scan](../../cahier-des-charges-scan-saisonnier-v1.md). Ils détaillent les huit lots du §6 du plan technique. Chaque plan tient en une session de travail, se termine par des tests verts et laisse l'application déployable.
 
-Rédigés le 23 octobre 2026 à partir du code de `main` (plans 01 à 17 de l'application terminés). Le plan scan 01 est terminé ([PR #32](https://github.com/francoisnoel62/saisonnier/pull/32)). Les plans 02 à 10 ne sont pas exécutés ; aucun passage de collecte n'est installé ni programmé.
+Rédigés le 23 octobre 2026 à partir du code de `main` (plans 01 à 17 de l'application terminés). Le plan scan 01 est terminé ([PR #32](https://github.com/francoisnoel62/saisonnier/pull/32)). Les règles du plan 02 sont implémentées et testées ; sa colonne « Statut » sera cochée après fusion de la PR. Les plans 03 à 10 ne sont pas exécutés ; aucun passage de collecte n'est installé ni programmé.
 
 ## Résultat attendu
 
@@ -120,6 +120,7 @@ Elles complètent les hypothèses H1–H20 de l'application. **H10** (« aucun s
 | SH15 | Le scan ne crée jamais d'entreprise. Il propose celle du registre (par SIREN) si elle existe en base ; sinon l'admin crée la fiche pendant la revue. Un portail de groupe n'impose pas son entreprise à toutes ses offres. | 05, 06, 09 |
 | SH16 | Notifications : un email au fondateur à la fin d'un passage qui a livré des dossiers ou rencontré un incident nouveau, et quand le remplissage initial ne peut plus atteindre 50 avec les sources actives. Jamais un email par dossier. | 09 |
 | SH17 | Arbitrage du fondateur du 23/10/2026 pendant le plan 01 : France Travail devient la source de découverte prioritaire, avec la recherche fournie (France, domaine G, contrat SAI, création depuis trois jours, sans offres partenaires, tri par date). Exception ciblée au report des job-boards en V3. `kind = "discovery"` porte un employeur et un site employeur nuls ; un diffuseur n'est jamais l'employeur d'une offre. **Choix d'implémentation, à valider par le fondateur** (hors de sa décision consignée) : le HTML de liste et le JSON public du composant officiel (`/api-descriptifoffre/`) sont lus sans navigateur ni API partenaire authentifiée ; la validation couvre aussi le cadre d'une extraction systématique (CGU, droit du producteur de base de données). La source officielle employeur et les conditions de publication restent à établir avant publication. Les autres portails restent en réserve, sans activation automatique. | 01, 05 |
+| SH18 | Règles déterministes du plan 02 : années déduites toujours bloquantes ; durée calendaire jusqu'au jour anniversaire ou à sa veille ; heure locale ambiguë non choisie sans décalage ; échéance civile valable jusqu'à la fin de son jour ; hôtes officiels exacts ; destination exclue bloquante même avec un autre canal ; périodes établies disjointes prioritaires dans l'identité. Détails et contrat d'intégration : [règles V1](../../scan/rules-v1.md). | 02 |
 
 ## Glossaire : cahier des charges du scan → code
 

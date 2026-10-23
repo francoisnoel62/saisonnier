@@ -76,6 +76,16 @@
 - `SCAN_TEST_SOURCE_URL=http://localhost:<port>` autorise cette seule origine locale en développement/test ; `env.ts` refuse toute définition en `NODE_ENV=production` (preview incluse). Playwright lance le serveur de fixtures `scripts/scan-fixture-server.ts` sur `E2E_PORT + 1` et lui seul fournit les tests de sonde.
 - Fixtures réelles anonymisées dans `src/server/scan/sources/fixtures/`, avec provenance par source, exclues de Prettier. Les tests ne lisent jamais les sources réelles. `fixtures.test.ts` contrôle chaque dossier présent : contacts fictifs, aucun script ni reste de suivi, GUID au format UUID (l'anonymisation ne touche pas aux identifiants).
 
+## Règles du scan (plan scan 02)
+
+- Règles pures dans `src/domain/scan/` : `buildProposal` assemble les observations prouvées ; `admitPosting` décide l'admission en revue ; `publicationReadiness` sépare blocages et alertes ; `canAutoPublish` interdit toujours le remplissage initial. Aucune lecture réseau/base ni horloge implicite.
+- Vocabulaire du scan défini une seule fois dans `vocabulary.ts` (valeurs, types, libellés, caractère bloquant des points de revue), à réutiliser pour les futurs enums SQL.
+- `ProposalField<T>` (`field.ts`) : `established`, `to_verify`, `contradictory`, `absent`. Seul un champ établi alimente les filtres. Un champ contradictoire garde ses alternatives et preuves, sans `value` ; les champs facultatifs concernés vont dans `fieldsToConfirm` (SH7).
+- `Observation` / `Evidence` / `ExtractedPosting` (`observation.ts`) : portée `posting` ou `site`, version et date de collecte ; une preuve générale du site n'établit pas de condition du poste. `boundText` / `boundObservations` : 20 000 caractères, 200 observations, extraits de 300 caractères, sans mutation des entrées.
+- Dates source : instant ou jour civil avec fuseau, Paris par défaut ; fenêtre quotidienne fixe de 72 h, jours civils recoupant la fenêtre admis, aucune fenêtre initiale. `validThrough` est une échéance, jamais une fin de contrat. Année déduite : proposition à vérifier et blocage `year_inferred`.
+- Contacts généraux distincts des canaux prouvés de recrutement ; formulaire désigné officiel par l'adaptateur, domaines exclus contrôlés par `findBlockedTargets`. Absence de preuve de clôture ≠ preuve d'activité.
+- Contrat d'intégration, couverture et arbitrages déterministes SH18 : [docs/scan/rules-v1.md](docs/scan/rules-v1.md). Tests fictifs dans `dates-rules.test.ts`, `extraction-rules.test.ts`, `decisions-rules.test.ts`.
+
 ## Authentification
 
 - Better Auth 1.7 (`src/lib/auth.ts`), email + mot de passe, vérification d'email obligatoire. Rôles `candidate` / `employer` / `admin` sur `user.role` (`input: false` : jamais fourni par le client ; contrainte CHECK en base).

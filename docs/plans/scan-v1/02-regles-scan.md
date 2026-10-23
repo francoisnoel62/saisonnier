@@ -123,10 +123,12 @@ Ces règles n'accèdent ni au réseau ni à la base. Les adaptateurs (plan 05) l
 
 ## Critères d'acceptation
 
-- [ ] Toutes les règles sont pures (aucun import de `src/server` ni de `src/lib/db`) et testées par des cas nommés d'après le §10 du cahier.
-- [ ] Aucune règle ne produit une valeur sans preuve ; l'absence et la contradiction restent distinctes.
-- [ ] `canAutoPublish` est faux pour tout dossier du remplissage initial.
-- [ ] Les valeurs des enums du scan n'existent qu'à un seul endroit.
+- [x] Toutes les règles sont pures (aucun import de `src/server` ni de `src/lib/db`) et testées par des cas nommés d'après le §10 du cahier.
+- [x] Aucune règle ne produit une valeur sans preuve ; l'absence et la contradiction restent distinctes.
+- [x] `canAutoPublish` est faux pour tout dossier du remplissage initial.
+- [x] Les valeurs des enums du scan n'existent qu'à un seul endroit.
+
+Réalisation et contrat pour les plans suivants : [règles V1](../../scan/rules-v1.md). Validation locale : lint, typecheck, 836 tests unitaires (dont 251 cas ajoutés), 218 tests d'intégration, 170 E2E réussis et un cas ordinateur ignoré sur mobile.
 
 ## Hors périmètre
 
