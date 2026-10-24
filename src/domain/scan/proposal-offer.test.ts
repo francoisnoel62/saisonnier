@@ -79,3 +79,17 @@ it("un instant source est affiché au jour de Paris, une date civile garde sa pr
     }),
   ).toBe("2026-10-23")
 })
+
+it("transmet les contradictions facultatives à la publication et à la revue", () => {
+  const proposal = buildProposal(
+    posting({
+      observations: [observation("Logement fourni. Logement non fourni.")],
+    }),
+    { referenceDate: "2026-10-24" },
+  )
+  const result = proposalToOfferInput(proposal)
+  expect(result).toMatchObject({
+    housing: "unknown",
+    fieldsToConfirm: ["housing"],
+  })
+})

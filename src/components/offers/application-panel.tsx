@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import type { ApplicationDetails } from "@/server/offers/application"
 
 import { AppliedButton } from "./tracking-buttons"
+import { ExternalApplicationNotice } from "./external-application"
 
 // « Comment postuler » : toujours visible, même sans dossier (§7).
 export function HowToApply({ explanation }: { explanation: string }) {
@@ -58,11 +59,13 @@ export function ApplicationPanel({
   offerId,
   details,
   appliedAt = null,
+  externalApplication = false,
 }: {
   offerId: string
   details: Exclude<ApplicationDetails, { status: "inactive" }>
   // Déclaration « J'ai postulé » du candidat (plan 12).
   appliedAt?: Date | null
+  externalApplication?: boolean
 }) {
   if (details.status === "incomplete") {
     return (
@@ -76,6 +79,7 @@ export function ApplicationPanel({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
+          {externalApplication && <ExternalApplicationNotice />}
           <div>
             <p>Il manque :</p>
             <ul className="list-disc pl-5">
@@ -110,6 +114,7 @@ export function ApplicationPanel({
         )}
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        {externalApplication && <ExternalApplicationNotice />}
         {recruiter && (
           <p className="flex items-start gap-2">
             <UserRoundIcon className="mt-0.5 size-4 shrink-0" aria-hidden />

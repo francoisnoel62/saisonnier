@@ -76,6 +76,7 @@ import {
 } from "./fields"
 import { PublicationMinimum } from "./publication-minimum"
 import { SalaryFields } from "./salary-fields"
+import { CertaintyFields } from "./certainty-fields"
 import { TriStateField } from "./tri-state-field"
 
 type Company = { id: string; legalName: string; displayName: string | null }
@@ -665,6 +666,15 @@ export function OfferForm({
             </Section>
 
             <Section number={first + 7} title="Vie pratique">
+              {admin && <CertaintyFields />}
+              {admin && (
+                <TextField
+                  name="additionalInfo"
+                  label="Divers (facultatif)"
+                  multiline
+                  maxLength={1000}
+                />
+              )}
               <TriStateField name="couplesWelcome" legend="Couples acceptés" />
               <TriStateField name="petsAllowed" legend="Animaux acceptés" />
               <TextField

@@ -6,6 +6,10 @@ import {
 
 import { absent, established, valueOf } from "./field"
 import type { Evidence } from "./observation"
+import {
+  confirmableFields,
+  type ConfirmableField,
+} from "@/domain/field-certainty"
 import type { ScanProposal } from "./proposal"
 import { dateInZone, type SourceDate } from "./source-date"
 
@@ -79,6 +83,25 @@ export function proposalToOfferInput(proposal: ScanProposal) {
     couplesWelcome: valueOf(proposal.conditions.couplesAccepted) ?? "unknown",
     petsAllowed: valueOf(proposal.conditions.petsAccepted) ?? "unknown",
     otherConstraints: valueOf(proposal.practicalInfo) ?? null,
+    additionalInfo: valueOf(proposal.additionalInfo)
+      ? truncatePostingText(valueOf(proposal.additionalInfo)!, 1000)
+      : null,
+    fieldsToConfirm: proposal.fieldsToConfirm.flatMap(
+      (field): ConfirmableField[] => {
+        const names: Record<string, ConfirmableField> = {
+          experienceRequired: "experience",
+          drivingLicenceRequired: "driving_license",
+          couplesAccepted: "couples",
+          petsAccepted: "pets",
+          workTime: "work_time",
+          languagesRequired: "languages",
+        }
+        const name = names[field] ?? field
+        return confirmableFields.includes(name as ConfirmableField)
+          ? [name as ConfirmableField]
+          : []
+      },
+    ),
     applyEmail: application?.emails[0] ?? null,
     applyPhone: application?.phones[0] ?? null,
     applyUrl: application?.formUrl ?? null,

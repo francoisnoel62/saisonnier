@@ -10,9 +10,16 @@ import { proposalToOfferInput } from "./proposal-offer"
 import { scanIssue } from "./vocabulary"
 
 export function proposalFormIssues(proposal: ScanProposal) {
-  return (["title", "description", "missions"] as const).flatMap((field) => {
+  return (
+    ["title", "description", "missions", "additionalInfo"] as const
+  ).flatMap((field) => {
     const value = valueOf(proposal[field])
-    const limit = { title: 150, description: 5000, missions: 3000 }[field]
+    const limit = {
+      title: 150,
+      description: 5000,
+      missions: 3000,
+      additionalInfo: 1000,
+    }[field]
     return value && value.length > limit
       ? [scanIssue("text_truncated", field)]
       : []

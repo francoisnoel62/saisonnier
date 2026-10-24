@@ -25,6 +25,7 @@ export const adminOfferMessages = {
 export async function listAdminOffers() {
   return db.query.offers.findMany({
     with: {
+      createdBy: { columns: { role: true } },
       company: true,
       occupation: true,
       department: { with: { region: true } },

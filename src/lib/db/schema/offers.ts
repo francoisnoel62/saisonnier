@@ -23,6 +23,10 @@ import {
   workTimes,
 } from "@/domain/offer"
 import { salaryUnits } from "@/domain/salary"
+import {
+  confirmableFields,
+  type ConfirmableField,
+} from "@/domain/field-certainty"
 import { triStates } from "@/domain/tri-state"
 
 import { user } from "./auth"
@@ -134,6 +138,12 @@ export const offers = pgTable(
     couplesWelcome: triState(),
     petsAllowed: triState(),
     otherConstraints: text(),
+    additionalInfo: text(),
+    fieldsToConfirm: text()
+      .array()
+      .$type<ConfirmableField[]>()
+      .notNull()
+      .default([]),
 
     // Candidature (§5, §7)
     applicationChannel: applicationChannelEnum().notNull().default("employer"),
@@ -165,6 +175,27 @@ export const offers = pgTable(
     ...timestamps,
   },
   (t) => [
+    check(
+      "offers_additional_info",
+      sql`${notBlank(t.additionalInfo)} and length(${t.additionalInfo}) <= 1000`,
+    ),
+    check(
+      "offers_fields_to_confirm",
+      sql`${t.fieldsToConfirm} <@ ARRAY[${sql.raw(confirmableFields.map((f) => `'${f}'`).join(", "))}]::text[] and array_position(${t.fieldsToConfirm}, null) is null`,
+    ),
+    check(
+      "offers_confirmable_neutral",
+      sql`
+      (not ('salary' = any(${t.fieldsToConfirm})) or num_nonnulls(${t.salaryNetMinCents}, ${t.salaryNetMaxCents}, ${t.salaryNetUnit}, ${t.salaryGrossMinCents}, ${t.salaryGrossMaxCents}, ${t.salaryGrossUnit}) = 0)
+      and (not ('housing' = any(${t.fieldsToConfirm})) or ${t.housing} = 'unknown')
+      and (not ('meals' = any(${t.fieldsToConfirm})) or ${t.meals} = 'unknown')
+      and (not ('experience' = any(${t.fieldsToConfirm})) or ${t.experienceRequired} = 'unknown')
+      and (not ('driving_license' = any(${t.fieldsToConfirm})) or ${t.drivingLicenseRequired} = 'unknown')
+      and (not ('couples' = any(${t.fieldsToConfirm})) or ${t.couplesWelcome} = 'unknown')
+      and (not ('pets' = any(${t.fieldsToConfirm})) or ${t.petsAllowed} = 'unknown')
+      and (not ('languages' = any(${t.fieldsToConfirm})) or ${t.languagesRequired} = 'unknown')
+      and (not ('work_time' = any(${t.fieldsToConfirm})) or ${t.workTime} = 'unknown')`,
+    ),
     check(
       "offers_human_verification_collected",
       sql`${t.humanVerifiedAt} is null or ${t.origin} = 'collected'`,
@@ -260,6 +291,10 @@ export const offers = pgTable(
 )
 
 export const offersRelations = relations(offers, ({ one }) => ({
+  createdBy: one(user, {
+    fields: [offers.createdByUserId],
+    references: [user.id],
+  }),
   company: one(companies, {
     fields: [offers.companyId],
     references: [companies.id],

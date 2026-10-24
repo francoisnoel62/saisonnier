@@ -31,6 +31,7 @@ import {
 } from "@/domain/application"
 import { expiryReason, isActive, todayInParis } from "@/domain/offer-activity"
 import { seasonLabels } from "@/domain/offer-display"
+import { ExternalApplicationBadge } from "@/components/offers/external-application"
 import { requireRole } from "@/lib/dal"
 import { getTracking } from "@/server/candidates/tracking"
 import { getApplicationDetails } from "@/server/offers/application"
@@ -123,6 +124,7 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
       ? null
       : getTracking(user.id, [offer.id]).then((map) => map.get(offer.id)),
   ])
+  const details = toOfferDetailsData(offer)
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
@@ -139,6 +141,11 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
       )}
 
       <header className="flex flex-col gap-2">
+        {details.externalApplication && (
+          <div>
+            <ExternalApplicationBadge />
+          </div>
+        )}
         {offer.season && (
           <Badge variant="secondary">{seasonLabels[offer.season]}</Badge>
         )}
@@ -158,7 +165,9 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
         <p className="text-lg text-muted-foreground">{companyName}</p>
         <OfferProvenance
           offerId={offer.id}
-          origin={offer.origin}
+          provenance={details.provenance}
+          newness={details.newness}
+          humanVerifiedAt={offer.humanVerifiedAt}
           companyName={companyName}
           validityConfirmedAt={offer.validityConfirmedAt}
           sourceCheckedAt={offer.sourceCheckedAt}
@@ -172,11 +181,12 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
             <ApplicationPanel
               offerId={offer.id}
               details={application}
+              externalApplication={details.externalApplication}
               appliedAt={tracking?.appliedAt ?? null}
             />
           )}
         </aside>
-        <OfferDetails offer={toOfferDetailsData(offer)} />
+        <OfferDetails offer={details} />
       </div>
     </div>
   )

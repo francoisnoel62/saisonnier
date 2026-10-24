@@ -33,6 +33,7 @@ export async function getOfferWithRelations(id: string) {
   return db.query.offers.findFirst({
     where: eq(offers.id, id),
     with: {
+      createdBy: { columns: { role: true } },
       company: true,
       occupation: true,
       department: { with: { region: true } },

@@ -5,10 +5,13 @@ import {
 } from "@/domain/application"
 import { findBlockedTargets } from "@/domain/blocked-domains"
 import type { OfferOrigin } from "@/domain/offer"
+import { establishFields } from "@/domain/field-certainty"
+import { isExternalApplication } from "@/domain/offer-labels"
 import {
   previewOfferInput,
   type OfferFormReferentials,
   type OfferFormValues,
+  type AdminOfferFormValues,
 } from "@/domain/offer-input"
 
 import {
@@ -85,7 +88,15 @@ export function draftOfferPreview(
   setting: DraftSetting = employerDraft,
 ): OfferPreviewData {
   const draft = withoutBlocked(
-    previewOfferInput(values),
+    {
+      ...previewOfferInput(values),
+      additionalInfo:
+        (values as AdminOfferFormValues).additionalInfo?.trim() || null,
+      fieldsToConfirm: establishFields(
+        previewOfferInput(values),
+        (values as AdminOfferFormValues).fieldsToConfirm ?? [],
+      ),
+    },
     referentials.blockedDomains,
   )
   const occupation = referentials.occupations.find(
@@ -96,7 +107,15 @@ export function draftOfferPreview(
   )
   const fields = Object.fromEntries(
     offerDetailsFields.map((field) => [field, draft[field]]),
-  ) as Omit<OfferDetailsData, "occupationLabel" | "department" | "regionName">
+  ) as Omit<
+    OfferDetailsData,
+    | "occupationLabel"
+    | "department"
+    | "regionName"
+    | "provenance"
+    | "newness"
+    | "externalApplication"
+  >
   const recruiter = setting.applicationChannel === "recruiter"
   const application: ApplicationFields = {
     applicationChannel: setting.applicationChannel,
@@ -119,6 +138,10 @@ export function draftOfferPreview(
         ? { code: department.code, name: department.name }
         : null,
       regionName: department?.regionName ?? null,
+      provenance:
+        setting.origin === "collected" ? "human_verified" : "deposited",
+      newness: null,
+      externalApplication: isExternalApplication(application),
     },
     applicationExplanation: applicationModeExplanation(application),
     contacts: {

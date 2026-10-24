@@ -17,15 +17,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  contractPeriod,
-  originLabels,
-  seasonLabels,
-} from "@/domain/offer-display"
+import { contractPeriod, seasonLabels } from "@/domain/offer-display"
 import { formatSalary } from "@/domain/salary"
+import { provenanceLabels, newnessLabel } from "@/domain/offer-labels"
+import { isToConfirm } from "@/domain/field-certainty"
 import type { OfferListItem } from "@/server/search/search-offers"
 
 import { InfoValue } from "./info-value"
+import { ExternalApplicationBadge } from "./external-application"
 import { SaveOfferButton } from "./tracking-buttons"
 
 // Carte d'une offre dans les résultats. Logement et repas restent affichés même inconnus ; le
@@ -46,7 +45,8 @@ export function OfferCard({
     <Card className="relative h-full gap-3 has-[a:focus-visible]:ring-3 has-[a:focus-visible]:ring-ring/50">
       <CardHeader className="gap-1.5">
         <div className="mb-1 flex flex-wrap gap-1.5">
-          <Badge variant="outline">{originLabels[offer.origin]}</Badge>
+          <Badge variant="outline">{provenanceLabels[offer.provenance]}</Badge>
+          {offer.externalApplication && <ExternalApplicationBadge />}
           {expired && <Badge variant="destructive">Offre expirée</Badge>}
         </div>
         {saved !== undefined && (
@@ -72,6 +72,11 @@ export function OfferCard({
         <CardDescription>{offer.companyName}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
+        {offer.newness && (
+          <p className="text-xs text-muted-foreground">
+            {newnessLabel(offer.newness)}
+          </p>
+        )}
         <p className="flex items-start gap-2">
           <MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
@@ -90,7 +95,11 @@ export function OfferCard({
           {offer.salary ? (
             <span>{formatSalary(offer.salary)}</span>
           ) : (
-            <span className="text-muted-foreground">Salaire non précisé</span>
+            <span className="text-muted-foreground">
+              {isToConfirm(offer, "salary")
+                ? "Salaire à confirmer"
+                : "Salaire non précisé"}
+            </span>
           )}
         </p>
         <dl className="flex flex-wrap gap-x-4 gap-y-1">
@@ -98,14 +107,20 @@ export function OfferCard({
             <BedDoubleIcon className="size-4 shrink-0" aria-hidden />
             <dt>Logement :</dt>
             <dd>
-              <InfoValue value={offer.housing} />
+              <InfoValue
+                value={offer.housing}
+                toConfirm={isToConfirm(offer, "housing")}
+              />
             </dd>
           </div>
           <div className="flex items-center gap-2">
             <UtensilsIcon className="size-4 shrink-0" aria-hidden />
             <dt>Repas :</dt>
             <dd>
-              <InfoValue value={offer.meals} />
+              <InfoValue
+                value={offer.meals}
+                toConfirm={isToConfirm(offer, "meals")}
+              />
             </dd>
           </div>
         </dl>

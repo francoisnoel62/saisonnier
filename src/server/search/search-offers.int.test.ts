@@ -1,7 +1,7 @@
 import { inArray } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { isActive } from "@/domain/offer-activity"
+import { isActive, todayInParis } from "@/domain/offer-activity"
 import { matchesCriteria, type MatchableOffer } from "@/domain/offer-matching"
 import {
   searchCriteriaSchema,
@@ -59,7 +59,11 @@ function expectedIds(criteria: SearchCriteria, day = today) {
     .filter((offer) => matchesCriteria(offer, criteria, day))
     .sort(
       (a, b) =>
-        b.publishedAt!.getTime() - a.publishedAt!.getTime() ||
+        (b.sourcePublishedDate ?? todayInParis(b.publishedAt!)).localeCompare(
+          a.sourcePublishedDate ?? todayInParis(a.publishedAt!),
+        ) ||
+        (b.sourcePublishedAt ?? b.publishedAt!).getTime() -
+          (a.sourcePublishedAt ?? a.publishedAt!).getTime() ||
         a.id.localeCompare(b.id),
     )
     .map((offer) => offer.id)
@@ -299,6 +303,10 @@ describe("searchOffers — carte d'offre", () => {
         "housing",
         "meals",
         "origin",
+        "provenance",
+        "externalApplication",
+        "newness",
+        "fieldsToConfirm",
       ].sort(),
     )
   })
@@ -326,5 +334,40 @@ describe("searchOffers — carte d'offre", () => {
       meals: "yes",
       origin: "deposited",
     })
+  })
+})
+
+describe("nouveauté et certitude", () => {
+  it("range la reprise initiale à sa date source, conserve la précision et ne divulgue aucun contact", async () => {
+    const { items } = await searchOffers({}, { today, pageSize: 100 })
+    const old = items.find((item) =>
+      item.title.includes("publication ancienne"),
+    )!
+    const automatic = items.find((item) =>
+      item.title.includes("logement à confirmer"),
+    )!
+    const external = items.find((item) =>
+      item.title.includes("formulaire officiel"),
+    )!
+    expect(items.indexOf(old)).toBeGreaterThan(items.indexOf(automatic))
+    expect(old).toMatchObject({
+      provenance: "human_verified",
+      newness: { kind: "employer", precision: "day", date: "2026-06-10" },
+    })
+    expect(automatic).toMatchObject({
+      provenance: "sourced",
+      fieldsToConfirm: ["housing"],
+      housing: "unknown",
+      newness: { kind: "discovered" },
+    })
+    expect(external.externalApplication).toBe(true)
+    const filtered = await searchOffers(
+      { housing: true },
+      { today, pageSize: 100 },
+    )
+    expect(filtered.items.some((item) => item.id === automatic.id)).toBe(false)
+    expect(JSON.stringify(items)).not.toMatch(
+      /applyEmail|applyPhone|applyUrl|sourceUrl|createdBy/,
+    )
   })
 })

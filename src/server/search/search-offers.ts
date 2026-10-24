@@ -1,13 +1,20 @@
-import { asc, desc, eq } from "drizzle-orm"
+import { asc, desc, eq, sql } from "drizzle-orm"
 
 import { publicCompanyName } from "@/domain/application"
 import type { DurationUnit, OfferOrigin, Season } from "@/domain/offer"
 import { todayInParis } from "@/domain/offer-activity"
+import {
+  provenanceOf,
+  newnessOf,
+  type Provenance,
+  type Newness,
+} from "@/domain/offer-labels"
+import type { ConfirmableField } from "@/domain/field-certainty"
 import { displayedSalary, type SalaryStatement } from "@/domain/salary"
 import type { SearchCriteria } from "@/domain/search-criteria"
 import type { TriState } from "@/domain/tri-state"
 import { db } from "@/lib/db"
-import { companies, departments, offers } from "@/lib/db/schema"
+import { companies, departments, offers, user } from "@/lib/db/schema"
 
 import { searchConditions } from "./build-conditions"
 
@@ -31,6 +38,10 @@ export type OfferListItem = {
   housing: TriState
   meals: TriState
   origin: OfferOrigin
+  provenance: Provenance
+  externalApplication: boolean
+  newness: Newness | null
+  fieldsToConfirm: ConfirmableField[]
 }
 
 // Colonnes lues pour une carte, à joindre à companies et departments ; toOfferListItem les réduit
@@ -59,6 +70,14 @@ export const offerListColumns = {
   housing: offers.housing,
   meals: offers.meals,
   origin: offers.origin,
+  humanVerifiedAt: offers.humanVerifiedAt,
+  createdBy: { role: user.role },
+  externalApplication: sql<boolean>`${offers.applicationChannel} = 'employer' and ${offers.applyEmail} is null and ${offers.applyPhone} is null and ${offers.applyUrl} is not null`,
+  sourcePublishedDate: offers.sourcePublishedDate,
+  sourcePublishedAt: offers.sourcePublishedAt,
+  firstDiscoveredAt: offers.firstDiscoveredAt,
+  publishedAt: offers.publishedAt,
+  fieldsToConfirm: offers.fieldsToConfirm,
 }
 
 // Une ligne lue avec offerListColumns (et éventuellement d'autres colonnes).
@@ -68,6 +87,7 @@ function offerListQuery() {
     .from(offers)
     .innerJoin(companies, eq(companies.id, offers.companyId))
     .innerJoin(departments, eq(departments.code, offers.departmentCode))
+    .leftJoin(user, eq(user.id, offers.createdByUserId))
 }
 type OfferListRow = Awaited<ReturnType<typeof offerListQuery>>[number]
 
@@ -87,6 +107,10 @@ export function toOfferListItem(row: OfferListRow): OfferListItem {
     housing: row.housing,
     meals: row.meals,
     origin: row.origin,
+    provenance: provenanceOf(row),
+    externalApplication: row.externalApplication,
+    newness: newnessOf(row),
+    fieldsToConfirm: row.fieldsToConfirm,
   }
 }
 
@@ -123,7 +147,13 @@ export async function searchOffers(
   const [rows, total] = await Promise.all([
     offerListQuery()
       .where(where)
-      .orderBy(desc(offers.publishedAt), asc(offers.id))
+      .orderBy(
+        desc(
+          sql`coalesce(${offers.sourcePublishedDate}, (${offers.publishedAt} at time zone 'Europe/Paris')::date)`,
+        ),
+        desc(sql`coalesce(${offers.sourcePublishedAt}, ${offers.publishedAt})`),
+        asc(offers.id),
+      )
       .limit(pageSize)
       .offset((page - 1) * pageSize),
     db.$count(offers, where),

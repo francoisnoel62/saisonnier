@@ -46,7 +46,7 @@ import { dateFromIso, isoFromDate } from "@/lib/calendar-dates"
 
 export type TextFieldName = Exclude<
   AdminOfferFormField,
-  "seasonalContract" | "languages" | "hideCompanyIdentity"
+  "seasonalContract" | "languages" | "hideCompanyIdentity" | "fieldsToConfirm"
 >
 
 // Identifiant unique sur la page, relié au libellé, à l'aide et à l'erreur.

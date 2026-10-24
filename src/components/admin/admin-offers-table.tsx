@@ -68,8 +68,12 @@ import {
   employerOfferStates,
   type EmployerOfferState,
 } from "@/domain/employer-offer"
-import { offerOrigins, type OfferOrigin } from "@/domain/offer"
-import { originLabels } from "@/domain/offer-display"
+import { type OfferOrigin } from "@/domain/offer"
+import {
+  provenances,
+  provenanceLabels,
+  type Provenance,
+} from "@/domain/offer-labels"
 import { site } from "@/config/site"
 import { formatDate } from "@/lib/format"
 import {
@@ -84,6 +88,7 @@ export type AdminOfferRow = {
   id: string
   title: string
   origin: OfferOrigin
+  provenance: Provenance
   state: EmployerOfferState
   // Raison sociale ou enseigne : l'admin connaît toujours l'entreprise (§7).
   companyName: string
@@ -124,12 +129,6 @@ const stateVariant: Record<
   rejected: "destructive",
 }
 
-// Dans le tableau, l'origine tient en un mot ; le filtre la nomme en entier.
-const originShortLabels: Record<OfferOrigin, string> = {
-  deposited: "Déposée",
-  collected: "Collectée",
-}
-
 const columns = columnHelper.columns([
   columnHelper.accessor("title", {
     header: "Intitulé",
@@ -159,12 +158,12 @@ const columns = columnHelper.columns([
       </div>
     ),
   }),
-  columnHelper.accessor("origin", {
-    header: "Origine",
+  columnHelper.accessor("provenance", {
+    header: "Provenance",
     filterFn: filterFn_equalsString,
     cell: ({ row }) => (
-      <Badge variant="outline" title={originLabels[row.original.origin]}>
-        {originShortLabels[row.original.origin]}
+      <Badge variant="outline">
+        {provenanceLabels[row.original.provenance]}
       </Badge>
     ),
   }),
@@ -302,9 +301,9 @@ export function AdminOffersTable({ rows }: { rows: AdminOfferRow[] }) {
     [rows],
   )
   const total = table.getFilteredRowModel().rows.length
-  const column = (id: "title" | "origin" | "companyName" | "state") =>
+  const column = (id: "title" | "provenance" | "companyName" | "state") =>
     table.getColumn(id)
-  const filterOf = (id: "title" | "origin" | "companyName" | "state") =>
+  const filterOf = (id: "title" | "provenance" | "companyName" | "state") =>
     column(id)?.getFilterValue() as string | undefined
 
   return (
@@ -323,13 +322,13 @@ export function AdminOffersTable({ rows }: { rows: AdminOfferRow[] }) {
           />
         </div>
         <FilterSelect
-          id="origin-filter"
-          label="Origine"
-          value={filterOf("origin")}
-          onChange={(value) => column("origin")?.setFilterValue(value)}
-          options={offerOrigins.map((origin) => ({
-            value: origin,
-            label: originLabels[origin],
+          id="provenance-filter"
+          label="Provenance"
+          value={filterOf("provenance")}
+          onChange={(value) => column("provenance")?.setFilterValue(value)}
+          options={provenances.map((provenance) => ({
+            value: provenance,
+            label: provenanceLabels[provenance],
           }))}
           className="w-64"
         />

@@ -7,7 +7,7 @@ import {
   type BlockedTarget,
 } from "@/domain/blocked-domains"
 import type { ApplicationChannel } from "@/domain/offer"
-import type { OfferInput } from "@/domain/offer-input"
+import type { AdminOfferInput, OfferInput } from "@/domain/offer-input"
 import {
   checkPublicationMinimum,
   type MissingItem,
@@ -19,14 +19,15 @@ import { companies, departments, offers } from "@/lib/db/schema"
 import { getBlockedDomains } from "./application"
 import { isUuid } from "./queries"
 
-export type CollectedOfferInput = OfferInput & {
-  companyId: string
-  sourceUrl: string
-  sourceName: string | null
-  applicationChannel: ApplicationChannel
-  recruiterName: string | null
-  hideCompanyIdentity: boolean
-}
+export type CollectedOfferInput = OfferInput &
+  Partial<Pick<AdminOfferInput, "fieldsToConfirm" | "additionalInfo">> & {
+    companyId: string
+    sourceUrl: string
+    sourceName: string | null
+    applicationChannel: ApplicationChannel
+    recruiterName: string | null
+    hideCompanyIdentity: boolean
+  }
 export type IngestActor = { kind: "admin"; userId: string }
 export type IngestResult =
   | { ok: true; offerId: string; created: boolean }

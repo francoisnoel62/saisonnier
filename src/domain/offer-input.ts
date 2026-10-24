@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { findBlockedTargets } from "./blocked-domains"
+import { confirmableFields, establishFields } from "./field-certainty"
 import { languageCodes } from "./languages"
 import {
   applicationChannels,
@@ -876,6 +877,11 @@ export const adminOfferTextLimits = {
 
 function adminOfferFields(context: OfferInputContext) {
   return offerFields(context).extend({
+    fieldsToConfirm: z
+      .array(z.enum(confirmableFields))
+      .max(confirmableFields.length)
+      .default([]),
+    additionalInfo: text(1000, tooLong("Le texte Divers", 1000)).default(""),
     origin: z.enum(offerOrigins),
     companyId: z.string(),
     sourceUrl: text(
@@ -957,6 +963,11 @@ function toAdminOfferInput(input: RawAdminOfferInput) {
   const recruiter = input.applicationChannel === "recruiter"
   return {
     ...toOfferInput(input),
+    fieldsToConfirm: establishFields(
+      toOfferInput(input),
+      input.fieldsToConfirm,
+    ),
+    additionalInfo: input.additionalInfo || null,
     origin: input.origin,
     companyId: input.companyId,
     sourceUrl: collected ? normalizeWebUrl(input.sourceUrl) : null,
@@ -992,6 +1003,8 @@ export type AdminOfferFields = Pick<
   | "applicationChannel"
   | "recruiterName"
   | "hideCompanyIdentity"
+  | "fieldsToConfirm"
+  | "additionalInfo"
 >
 
 // Saisie d'une annonce collectée, le cas le plus fréquent du back-office : les candidatures vont
@@ -1006,6 +1019,8 @@ export function emptyAdminOfferFormValues(): AdminOfferFormValues {
     applicationChannel: "employer",
     recruiterName: "",
     hideCompanyIdentity: false,
+    fieldsToConfirm: [],
+    additionalInfo: "",
   }
 }
 
@@ -1021,6 +1036,8 @@ export function adminOfferToFormValues(
     applicationChannel: offer.applicationChannel,
     recruiterName: offer.recruiterName ?? "",
     hideCompanyIdentity: offer.hideCompanyIdentity,
+    fieldsToConfirm: offer.fieldsToConfirm ?? [],
+    additionalInfo: offer.additionalInfo ?? "",
   }
 }
 

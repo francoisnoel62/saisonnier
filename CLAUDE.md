@@ -23,7 +23,7 @@
 | `npm run db:generate` | migration SQL depuis `src/lib/db/schema` (`--custom` pour une migration de données) |
 | `npm run db:migrate` / `db:check` / `db:studio` | appliquer, vérifier, explorer |
 | `npm run admin:grant -- <email>` | passer en `admin` un compte existant et vérifié (autre base : préfixer `DATABASE_URL=…`) |
-| `npm run db:seed:demo` | jeu de démonstration dans la base de développement : 8 entreprises fictives et 40 offres datées par rapport à aujourd'hui ; relancer le remet à l'état initial ; refusé si `VERCEL_ENV=production` |
+| `npm run db:seed:demo` | jeu de démonstration dans la base de développement : 8 entreprises fictives et 43 offres datées par rapport à aujourd'hui ; relancer le remet à l'état initial ; refusé si `VERCEL_ENV=production` |
 | `npm run e2e` / `e2e:ui` | tests Playwright (`e2e/*.spec.ts`), projets `chromium` et `mobile` (Pixel 7), sur `saisonnier_test` |
 
 - L'E2E lance son propre `next dev -p 3100` (dossier `.next-e2e`) : il tourne en même temps que `npm run dev`.
@@ -120,6 +120,13 @@
 - `proposalToAdminFormValues` ne préremplit que les champs établis ; les textes publiés sont tronqués à la phrase avec une alerte. `OfferForm mode="review"` appelle `validateScanCandidate`, puis `publishCandidate`. Rejet, doublons et suggestions ont leurs actions admin ; un conflit de version conserve la saisie et demande de recharger.
 - `occupation_aliases` (migration `0013`) conserve les décisions de métiers. `attachOccupationInTransaction` rattache par alias exact ou libellé actif normalisé, sinon crée/réutilise une suggestion. Rejouer une livraison ne compte pas une nouvelle occurrence ; une suggestion rejetée n'est jamais rouverte. `/admin/scan/suggestions` rattache, crée un métier via le service existant ou rejette. Rattacher modifie seulement les métiers vides des annonces concernées et les propositions en attente, sans toucher au statut ni à `humanVerifiedAt`.
 - SH19, décision du fondateur le 24/10/2026 : été/hiver est facultatif, y compris hors scan. `season = NULL` (migration `0014`), radio « Non précisée » et alerte de scan ; aucune saison inventée. La case de contrat explicitement saisonnier reste obligatoire. Les anciennes annonces conservent leur saison.
+
+## Présentation des annonces (plan scan 07)
+
+- `offer-labels.ts` définit les quatre provenances, le formulaire externe et la date de nouveauté. Les lectures candidat dérivent ces valeurs côté serveur ; les contacts restent dans `getApplicationDetails` et ne rejoignent jamais les cartes. Le rôle du déposant est lu par jointure ; un compte supprimé donne « Déposée par l'employeur ».
+- La recherche trie par jour source (sinon jour de publication à Paris), puis instant source/publication et identifiant. Une reprise ancienne garde sa place ; aucune heure n'est attribuée à une date source civile.
+- `fieldsToConfirm` (migration `0015`) accepte seulement les champs de `field-certainty.ts` et impose leur valeur neutre par CHECK. `establishFields` retire une mention dès qu'une valeur est renseignée ; le formulaire admin permet aussi de la retirer. Les contradictions du scan deviennent ces mentions. Les filtres continuent de lire les valeurs neutres.
+- `additionalInfo` porte le bloc « Divers », saisi par l'admin ou repris du scan, au plus 1 000 caractères. L'employeur n'a pas ces contrôles.
 
 ## Authentification
 

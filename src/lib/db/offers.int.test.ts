@@ -89,6 +89,34 @@ afterAll(async () => {
 })
 
 describe("offres : valeurs par défaut", () => {
+  it("refuse les mentions inconnues et toute valeur établie à confirmer", async () => {
+    expect(
+      await rejection(
+        insertOffer({ fieldsToConfirm: ["housing"], housing: "yes" }),
+      ),
+    ).toBe("offers_confirmable_neutral")
+    expect(
+      await rejection(
+        insertOffer({
+          fieldsToConfirm: ["salary"],
+          salaryGrossMinCents: 200000,
+          salaryGrossUnit: "month",
+        }),
+      ),
+    ).toBe("offers_confirmable_neutral")
+    expect(
+      await rejection(insertOffer({ fieldsToConfirm: ["invented"] as never })),
+    ).toBe("offers_fields_to_confirm")
+    expect(
+      await rejection(insertOffer({ fieldsToConfirm: ["housing", "salary"] })),
+    ).toBeNull()
+    expect(await rejection(insertOffer({ additionalInfo: " " }))).toBe(
+      "offers_additional_info",
+    )
+    expect(
+      await rejection(insertOffer({ additionalInfo: "a".repeat(1001) })),
+    ).toBe("offers_additional_info")
+  })
   it("une information non saisie vaut « non précisé », jamais « non »", async () => {
     const [offer] = await insertOffer()
 

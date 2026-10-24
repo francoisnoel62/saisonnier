@@ -13,6 +13,14 @@ import {
 } from "@/domain/salary"
 import type { TriState } from "@/domain/tri-state"
 import type { Offer } from "@/lib/db/schema"
+import { isToConfirm } from "@/domain/field-certainty"
+import {
+  provenanceOf,
+  newnessOf,
+  isExternalApplication,
+  type Newness,
+  type Provenance,
+} from "@/domain/offer-labels"
 
 import { InfoValue } from "./info-value"
 
@@ -53,6 +61,8 @@ export const offerDetailsFields = [
   "couplesWelcome",
   "petsAllowed",
   "otherConstraints",
+  "additionalInfo",
+  "fieldsToConfirm",
 ] as const satisfies readonly (keyof Offer)[]
 
 // L'aperçu du dépôt (plan 14) montre aussi une saisie incomplète : saison et département peuvent
@@ -65,12 +75,29 @@ export type OfferDetailsData = Omit<
   occupationLabel: string | null
   department: { code: string; name: string } | null
   regionName: string | null
+  provenance: Provenance
+  newness: Newness | null
+  externalApplication: boolean
 }
 
 type OfferDetailsSource = Pick<Offer, (typeof offerDetailsFields)[number]> & {
   occupation: { label: string } | null
   department: { code: string; name: string; region?: { name: string } | null }
-}
+} & Partial<
+    Pick<
+      Offer,
+      | "origin"
+      | "humanVerifiedAt"
+      | "applicationChannel"
+      | "applyEmail"
+      | "applyPhone"
+      | "applyUrl"
+      | "sourcePublishedDate"
+      | "sourcePublishedAt"
+      | "firstDiscoveredAt"
+      | "publishedAt"
+    >
+  > & { createdBy?: { role: string } | null }
 
 // Une offre lue en base (getOfferWithRelations) → ce que la fiche affiche, et rien d'autre.
 export function toOfferDetailsData(
@@ -84,6 +111,12 @@ export function toOfferDetailsData(
     occupationLabel: offer.occupation?.label ?? null,
     department: { code: offer.department.code, name: offer.department.name },
     regionName: offer.department.region?.name ?? null,
+    provenance: provenanceOf({ ...offer, origin: offer.origin ?? "deposited" }),
+    newness: newnessOf(offer),
+    externalApplication: isExternalApplication({
+      ...offer,
+      applicationChannel: offer.applicationChannel ?? "employer",
+    }),
   }
 }
 
@@ -106,13 +139,15 @@ function Text({ value }: { value: string | null | undefined }) {
 function Answer({
   value,
   details,
+  toConfirm,
 }: {
   value: TriState
   details?: string | null
+  toConfirm?: boolean
 }) {
   return (
     <>
-      <InfoValue value={value} />
+      <InfoValue value={value} toConfirm={toConfirm} />
       {details?.trim() && (
         <span className="block whitespace-pre-line text-muted-foreground">
           {details}
@@ -227,7 +262,11 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
           {salary ? (
             formatSalary(salary)
           ) : (
-            <NotSpecified>Salaire non précisé</NotSpecified>
+            <NotSpecified>
+              {isToConfirm(offer, "salary")
+                ? "Salaire à confirmer"
+                : "Salaire non précisé"}
+            </NotSpecified>
           )}
         </Row>
         {otherSalary && (
@@ -242,10 +281,18 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
 
       <Section title="Conditions">
         <Row label="Logement fourni">
-          <Answer value={offer.housing} details={offer.housingDetails} />
+          <Answer
+            value={offer.housing}
+            details={offer.housingDetails}
+            toConfirm={isToConfirm(offer, "housing")}
+          />
         </Row>
         <Row label="Repas fournis">
-          <Answer value={offer.meals} details={offer.mealsDetails} />
+          <Answer
+            value={offer.meals}
+            details={offer.mealsDetails}
+            toConfirm={isToConfirm(offer, "meals")}
+          />
         </Row>
       </Section>
 
@@ -254,10 +301,14 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
           <Answer
             value={offer.experienceRequired}
             details={offer.experienceDetails}
+            toConfirm={isToConfirm(offer, "experience")}
           />
         </Row>
         <Row label="Langues exigées">
-          <InfoValue value={offer.languagesRequired} />
+          <InfoValue
+            value={offer.languagesRequired}
+            toConfirm={isToConfirm(offer, "languages")}
+          />
           {offer.languagesRequired === "yes" && offer.languages.length > 0 && (
             <span className="block">
               {offer.languages.map(languageLabel).join(", ")}
@@ -268,6 +319,7 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
           <Answer
             value={offer.drivingLicenseRequired}
             details={offer.drivingLicenseDetails}
+            toConfirm={isToConfirm(offer, "driving_license")}
           />
         </Row>
       </Section>
@@ -275,7 +327,10 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
       <Section title="Organisation">
         <Row label="Temps de travail">
           {offer.workTime === "unknown" ? (
-            <NotSpecified />
+            <InfoValue
+              value="unknown"
+              toConfirm={isToConfirm(offer, "work_time")}
+            />
           ) : (
             workTimeLabels[offer.workTime]
           )}
@@ -294,15 +349,28 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
 
       <Section title="Vie pratique">
         <Row label="Couples acceptés">
-          <InfoValue value={offer.couplesWelcome} />
+          <InfoValue
+            value={offer.couplesWelcome}
+            toConfirm={isToConfirm(offer, "couples")}
+          />
         </Row>
         <Row label="Animaux acceptés">
-          <InfoValue value={offer.petsAllowed} />
+          <InfoValue
+            value={offer.petsAllowed}
+            toConfirm={isToConfirm(offer, "pets")}
+          />
         </Row>
         <Row label="Autres contraintes">
           <Text value={offer.otherConstraints} />
         </Row>
       </Section>
+      {offer.additionalInfo && (
+        <Section title="Divers">
+          <Row label="Précisions">
+            <Text value={offer.additionalInfo} />
+          </Row>
+        </Section>
+      )}
     </div>
   )
 }
