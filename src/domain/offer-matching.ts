@@ -15,6 +15,7 @@ export type MatchableOffer = ActivityFields &
     departmentCode: string
     // Région du département de l'offre.
     regionCode: string
+    extraPlaces?: { departmentCode: string; regionCode: string }[]
     startDate?: string | null
     endDate?: string | null
     housing?: TriState
@@ -42,7 +43,12 @@ const occupation: Rule = (offer, { occupations }) =>
 const location: Rule = (offer, { regions, departments }) =>
   (!selected(regions) && !selected(departments)) ||
   (departments ?? []).includes(offer.departmentCode) ||
-  (regions ?? []).includes(offer.regionCode)
+  (regions ?? []).includes(offer.regionCode) ||
+  (offer.extraPlaces ?? []).some(
+    (place) =>
+      (departments ?? []).includes(place.departmentCode) ||
+      (regions ?? []).includes(place.regionCode),
+  )
 
 // H4 : en mode strict, le contrat tient dans la disponibilité ; en mode flexible, il la chevauche.
 // Une borne seule s'applique seule. Sans dates précises (durée seule), l'offre est exclue.

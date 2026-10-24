@@ -303,7 +303,6 @@ describe("§10 — minimum de publication et automatisation SH4", () => {
   it.each([
     ["company", "company"],
     ["contract", "seasonal_contract"],
-    ["season", "seasonal_contract"],
     ["period", "period"],
     ["locations", "location"],
     ["application", "application"],
@@ -593,7 +592,7 @@ describe("§10 — identité d'un recrutement, aucune fusion implicite", () => {
       "no_content",
     ]))
   it("toutes les définitions ont un libellé et un caractère bloquant", () => {
-    expect(scanIssueCodes).toHaveLength(22)
+    expect(scanIssueCodes).toHaveLength(23)
     expect(
       scanIssueCodes.every(
         (code) =>

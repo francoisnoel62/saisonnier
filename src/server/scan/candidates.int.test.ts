@@ -495,13 +495,11 @@ describe("contraintes des dossiers et revues", () => {
       .insert(scanReviews)
       .values({ kind: "incident", sourceKey: "fixture", groupKey: "incident" })
     await expect(
-      db
-        .insert(scanReviews)
-        .values({
-          kind: "incident",
-          sourceKey: "fixture",
-          groupKey: "incident",
-        }),
+      db.insert(scanReviews).values({
+        kind: "incident",
+        sourceKey: "fixture",
+        groupKey: "incident",
+      }),
     ).rejects.toThrow()
     await expect(
       db.update(scanReviews).set({ status: "resolved" }),

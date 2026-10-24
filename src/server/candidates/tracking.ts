@@ -4,7 +4,13 @@ import { and, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm"
 
 import { isActive, todayInParis } from "@/domain/offer-activity"
 import { db } from "@/lib/db"
-import { companies, departments, offers, offerTracking } from "@/lib/db/schema"
+import {
+  companies,
+  departments,
+  offers,
+  offerTracking,
+  user,
+} from "@/lib/db/schema"
 import { activeOfferConditions } from "@/server/offers/queries"
 import {
   offerListColumns,
@@ -120,6 +126,7 @@ export async function getTrackedOffers(userId: string) {
     .innerJoin(offers, eq(offers.id, offerTracking.offerId))
     .innerJoin(companies, eq(companies.id, offers.companyId))
     .innerJoin(departments, eq(departments.code, offers.departmentCode))
+    .leftJoin(user, eq(user.id, offers.createdByUserId))
     .where(eq(offerTracking.userId, userId))
     .orderBy(desc(offerTracking.updatedAt), desc(offerTracking.createdAt))
 

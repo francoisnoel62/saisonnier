@@ -24,6 +24,7 @@ import type { ScanProbeResult } from "@/domain/scan/probe"
 import type { ScanSourceSummary as SourceRow } from "@/domain/scan/source"
 import { formatDateTime } from "@/lib/format"
 import { probeScanSourceAction } from "@/server/scan/actions"
+import { ScanSampleButton } from "./scan-sample-button"
 import {
   ScanSourceSwitches,
   type ScanSourceState,
@@ -109,6 +110,7 @@ export function ScanSourcesCard({
                   <span className="sr-only"> — {source.label}</span>
                 </Button>
                 <ScanSourceSwitches source={source} />
+                <ScanSampleButton source={source} />
               </li>
             ))}
           </ul>

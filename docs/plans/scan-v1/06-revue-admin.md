@@ -15,6 +15,8 @@ Donner à l'admin :
 
 Une nouvelle arrivée ne remplace jamais le dossier ouvert, ne déplace pas la sélection et ne réinitialise pas une saisie en cours.
 
+**Décision du fondateur pendant l'implémentation, le 24 octobre 2026 :** été/hiver devient facultatif pour la publication. La nature explicitement saisonnière du contrat reste obligatoire. Une saison absente ou contradictoire reste une alerte ; `offers.season` accepte `NULL`, sans valeur inventée. La migration `0014_optional_season.sql` applique ce choix au scan et aux formulaires existants. Cette décision remplace l'exigence antérieure d'été/hiver dans le minimum.
+
 ## Étapes
 
 1. **Pages**, sous le layout admin (`requireRole("admin")`) :
@@ -106,10 +108,12 @@ Une nouvelle arrivée ne remplace jamais le dossier ouvert, ne déplace pas la s
 
 ## Critères d'acceptation
 
-- [ ] Un dossier livré est visible au plus 5 s plus tard (écran visible) et se traite pendant que le passage continue.
-- [ ] Une arrivée ne déplace ni ne réinitialise le dossier ouvert ; un échec d'actualisation est signalé et ne perd rien.
-- [ ] Une validation publie par `publishCandidate`, avec le label humain ; une donnée obligatoire absente la bloque ; un métier inconnu ne la bloque pas.
-- [ ] Une suggestion traitée n'est jamais recréée ; la décision est conservée.
+- [x] Un dossier livré est visible au plus 5 s plus tard (écran visible) et se traite pendant que le passage continue.
+- [x] Une arrivée ne déplace ni ne réinitialise le dossier ouvert ; un échec d'actualisation est signalé et ne perd rien.
+- [x] Une validation publie par `publishCandidate`, avec le label humain ; une donnée obligatoire absente la bloque ; un métier inconnu ne la bloque pas.
+- [x] Une suggestion traitée n'est jamais recréée ; la décision est conservée.
+
+Vérification du 24 octobre 2026 : `lint`, `typecheck`, 902 tests unitaires, 301 tests d'intégration, `db:check`, 23 tests E2E de revue et de back-office (ordinateur et mobile). La cadence de 5 s est mesurée depuis le début de la requête précédente et aucune seconde lecture ne part tant que la première n'est pas terminée. Le cas de saisie mobile vérifie aussi que les champs attendent l'initialisation de React Hook Form avant d'être éditables.
 
 ## Hors périmètre
 

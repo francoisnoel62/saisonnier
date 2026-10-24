@@ -3,7 +3,11 @@
 import { CalendarIcon } from "lucide-react"
 import { useState } from "react"
 import { fr } from "react-day-picker/locale"
-import { Controller, useFormContext } from "react-hook-form"
+import {
+  Controller,
+  useFormContext,
+  type FieldPathByValue,
+} from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -34,19 +38,16 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { isIsoDate } from "@/domain/offer-activity"
 import { formatIsoDate } from "@/domain/offer-display"
-import type {
-  AdminOfferFormField,
-  AdminOfferFormValues,
-} from "@/domain/offer-input"
+import type { AdminOfferFormValues } from "@/domain/offer-input"
 import { dateFromIso, isoFromDate } from "@/lib/calendar-dates"
 
 // Champs du formulaire d'annonce, reliés à react-hook-form (useFormContext). Chaque champ a son
 // libellé, son aide et son erreur, annoncés par aria-describedby. Les champs de l'admin (plan 15)
 // s'ajoutent à ceux de l'employeur : le même typage sert aux deux formulaires.
 
-export type TextFieldName = Exclude<
-  AdminOfferFormField,
-  "seasonalContract" | "languages" | "hideCompanyIdentity"
+export type TextFieldName = FieldPathByValue<
+  AdminOfferFormValues,
+  string | undefined
 >
 
 // Identifiant unique sur la page, relié au libellé, à l'aide et à l'erreur.

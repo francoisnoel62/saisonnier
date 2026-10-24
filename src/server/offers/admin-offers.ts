@@ -6,10 +6,11 @@ import { adminRepublishRefusal, canAdminUnpublish } from "@/domain/admin-offer"
 import { todayInParis } from "@/domain/offer-activity"
 import type { AdminOfferInput } from "@/domain/offer-input"
 import { db } from "@/lib/db"
-import { offers } from "@/lib/db/schema"
+import { offers, offerLocations } from "@/lib/db/schema"
 
 import type { OfferWriteResult } from "./employer-offers"
 import { isUuid } from "./queries"
+import { replaceOfferLocations } from "./locations"
 
 // Back-office (plan 15) : le fondateur gère toutes les annonces. Les annonces collectées
 // s'enregistrent par upsertCollectedOffer (ingest.ts) ; ce module écrit les annonces déposées
@@ -25,6 +26,11 @@ export const adminOfferMessages = {
 export async function listAdminOffers() {
   return db.query.offers.findMany({
     with: {
+      createdBy: { columns: { role: true } },
+      extraLocations: {
+        orderBy: asc(offerLocations.position),
+        with: { department: { with: { region: true } } },
+      },
       company: true,
       occupation: true,
       department: { with: { region: true } },
@@ -37,8 +43,10 @@ export type AdminOffer = Awaited<ReturnType<typeof listAdminOffers>>[number]
 
 // Colonnes d'une annonce déposée, saisies par l'admin : elle n'a pas de source.
 function depositedColumns(input: AdminOfferInput) {
+  const { extraLocations, ...columns } = input
+  void extraLocations
   return {
-    ...input,
+    ...columns,
     origin: "deposited" as const,
     sourceUrl: null,
     sourceName: null,
@@ -52,17 +60,20 @@ export async function createDepositedOfferAsAdmin(
   input: AdminOfferInput,
   now = new Date(),
 ): Promise<OfferWriteResult> {
-  const [offer] = await db
-    .insert(offers)
-    .values({
-      ...depositedColumns(input),
-      status: "published",
-      createdByUserId: adminId,
-      publishedAt: now,
-      validityConfirmedAt: now,
-    })
-    .returning({ id: offers.id, status: offers.status })
-  return { ok: true, ...offer }
+  return db.transaction(async (tx) => {
+    const [offer] = await tx
+      .insert(offers)
+      .values({
+        ...depositedColumns(input),
+        status: "published",
+        createdByUserId: adminId,
+        publishedAt: now,
+        validityConfirmedAt: now,
+      })
+      .returning({ id: offers.id, status: offers.status })
+    await replaceOfferLocations(tx, offer.id, input.extraLocations)
+    return { ok: true, ...offer }
+  })
 }
 
 // Une annonce déposée garde son entreprise, son déposant et son statut. L'admin y applique les
@@ -75,20 +86,23 @@ export async function updateDepositedOfferAsAdmin(
     return { ok: false, message: adminOfferMessages.notFound }
   }
   // L'entreprise ne change pas : la condition sur `companyId` écarte toute autre valeur.
-  const [offer] = await db
-    .update(offers)
-    .set(depositedColumns(input))
-    .where(
-      and(
-        eq(offers.id, offerId),
-        eq(offers.origin, "deposited"),
-        eq(offers.companyId, input.companyId),
-      ),
-    )
-    .returning({ id: offers.id, status: offers.status })
-  return offer
-    ? { ok: true, ...offer }
-    : { ok: false, message: adminOfferMessages.notFound }
+  return db.transaction(async (tx) => {
+    const [offer] = await tx
+      .update(offers)
+      .set(depositedColumns(input))
+      .where(
+        and(
+          eq(offers.id, offerId),
+          eq(offers.origin, "deposited"),
+          eq(offers.companyId, input.companyId),
+        ),
+      )
+      .returning({ id: offers.id, status: offers.status })
+    if (offer) await replaceOfferLocations(tx, offer.id, input.extraLocations)
+    return offer
+      ? { ok: true, ...offer }
+      : { ok: false, message: adminOfferMessages.notFound }
+  })
 }
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]

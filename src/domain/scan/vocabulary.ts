@@ -148,7 +148,11 @@ export const scanIssueDefinitions = {
   duplicate: { label: "Doublon potentiel", blocking: true },
   contract_contradiction: { label: "Contrat contradictoire", blocking: true },
   period_contradiction: { label: "Période contradictoire", blocking: true },
-  season_contradiction: { label: "Saison contradictoire", blocking: true },
+  season_contradiction: {
+    label: "Saison été/hiver à confirmer",
+    blocking: false,
+  },
+  season_unknown: { label: "Saison été/hiver non précisée", blocking: false },
   multiple_positions: {
     label: "Associations entre postes à vérifier",
     blocking: true,
@@ -186,6 +190,8 @@ export type ScanIssue = {
   field?: string
 }
 export function scanIssue(code: ScanIssueCode, field?: string): ScanIssue {
+  if (code === "seasonal_contract" && field === "season")
+    code = "season_unknown"
   return { code, ...scanIssueDefinitions[code], ...(field ? { field } : {}) }
 }
 export function uniqueIssues(issues: readonly ScanIssue[]) {

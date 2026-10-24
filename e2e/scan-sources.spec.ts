@@ -66,3 +66,30 @@ test("Scan — la sonde affiche la liste et trois fiches dans un panneau accessi
   await expect(sheet).not.toBeVisible()
   await expect(trigger).toBeFocused()
 })
+
+test("Scan — l'échantillon affiche les champs établis sans créer de dossier", async ({
+  asAdmin,
+  db,
+}) => {
+  const before = await db.query<{ count: string }>(
+    "select count(*) from scan_candidates",
+  )
+  await asAdmin.goto("/admin/scan")
+  await asAdmin
+    .getByRole("button", { name: /Extraire un échantillon.*Fixtures locales/ })
+    .click()
+  const sheet = asAdmin.getByRole("dialog", {
+    name: "Échantillon — Fixtures locales",
+  })
+  await expect(sheet).toBeVisible()
+  await expect(
+    sheet.getByRole("heading", { name: "Champs établis dans l’échantillon" }),
+  ).toBeVisible({ timeout: 30_000 })
+  await expect(sheet.getByText("Contrat : 3/3", { exact: true })).toBeVisible()
+  await expect(sheet.getByRole("link", { name: "Fiche source" })).toHaveCount(3)
+  await expectNoHorizontalScroll(asAdmin)
+  const after = await db.query<{ count: string }>(
+    "select count(*) from scan_candidates",
+  )
+  expect(after.rows[0].count).toBe(before.rows[0].count)
+})

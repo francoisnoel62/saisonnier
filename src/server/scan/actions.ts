@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/dal"
 
 import { probeScanSource } from "./probe"
+import { sampleScanSource } from "./sample"
 import { scanSourceDefinitions } from "./sources/registry"
 import {
   isScanSourceKey,
@@ -20,6 +21,16 @@ export async function probeScanSourceAction(key: string) {
   return {
     ok: true as const,
     result: await probeScanSource(scanSourceDefinitions[key]),
+  }
+}
+
+export async function sampleScanSourceAction(key: string) {
+  await requireRole("admin")
+  if (typeof key !== "string" || !Object.hasOwn(scanSourceDefinitions, key))
+    return { ok: false as const, message: "Source inconnue." }
+  return {
+    ok: true as const,
+    result: await sampleScanSource(scanSourceDefinitions[key]),
   }
 }
 
