@@ -35,6 +35,7 @@ it("France Travail : recherche conservée pendant la pagination, identité stabl
   expect(valueOf(proposal.period)).toMatchObject({
     duration: { value: 4, unit: "months" },
   })
+  expect(valueOf(proposal.contract)).toBe("seasonal")
   expect(valueOf(proposal.application)).toBeUndefined()
 })
 

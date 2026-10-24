@@ -43,7 +43,7 @@ const postingSchema = z.object({
 })
 export const franceTravailAdapter: ScanAdapter = {
   kind: "france-travail",
-  extractorVersion: "france-travail@2",
+  extractorVersion: "france-travail@3",
   async listPage(ctx, cursor) {
     const page = cursor?.page ?? 0
     if (page >= pageLimit(ctx))
@@ -111,19 +111,27 @@ export const franceTravailAdapter: ScanAdapter = {
           "title",
           plainText(data.intituleOffre),
           evidence("api", url, data.intituleOffre),
-          "france-travail@2",
+          "france-travail@3",
           ctx.now,
         ),
         observed(
           "description",
           plainText(data.descriptif),
           evidence("api", url, data.descriptif),
-          "france-travail@2",
+          "france-travail@3",
           ctx.now,
         ),
       ]
       for (const [field, value] of [
-        ["contract", data.syntheseContrat],
+        // « Saisonnier » est la nature du contrat dans ce champ structuré,
+        // pas une simple mention de saison dans une description générale.
+        [
+          "contract",
+          data.syntheseContrat?.replace(
+            /^\s*saisonnier\b/i,
+            "Contrat saisonnier",
+          ),
+        ],
         ["salary", data.salaire],
         [
           "organization",
@@ -136,7 +144,7 @@ export const franceTravailAdapter: ScanAdapter = {
               field,
               plainText(value),
               evidence("api", url, value),
-              "france-travail@2",
+              "france-travail@3",
               ctx.now,
             ),
           )
@@ -146,7 +154,7 @@ export const franceTravailAdapter: ScanAdapter = {
             "company",
             { name: plainText(data.etablissement.libelleEnseigne) },
             evidence("api", url, data.etablissement.libelleEnseigne),
-            "france-travail@2",
+            "france-travail@3",
             ctx.now,
           ),
         )
@@ -156,7 +164,7 @@ export const franceTravailAdapter: ScanAdapter = {
             "employerWebsite",
             data.etablissement.urlEntreprise,
             evidence("api", url, data.etablissement.urlEntreprise),
-            "france-travail@2",
+            "france-travail@3",
             ctx.now,
           ),
         )
@@ -200,7 +208,7 @@ export const franceTravailAdapter: ScanAdapter = {
                 ? resolution.value
                 : [],
               proof,
-              "france-travail@2",
+              "france-travail@3",
               ctx.now,
             ),
           )
