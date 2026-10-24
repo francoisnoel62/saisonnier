@@ -208,9 +208,13 @@ Le panneau « Extraire un échantillon » sur `/admin/scan` lit dix fiches au pl
 
 | Source | Adaptateur | Tests sur captures réelles anonymisées | Mesure depuis la preview |
 |---|---|---|---|
-| France Travail | `france-travail@1` | Liste et 6 fiches JSON ; filtres de pagination SH17 conservés | À consigner après déploiement du plan 05 |
+| France Travail | `france-travail@1` | Liste et 6 fiches JSON ; filtres de pagination SH17 conservés | 24/10/2026, 06:05:48 UTC : contrat 4/10, période 9/10, lieu 0/10, candidature 0/10, salaire 2/10 |
 | Belambra | `teamtailor@1` | Liste RSS et 6 fiches, dont JSON-LD malformé, période et plusieurs métiers | À consigner après déploiement du plan 05 |
 | VVF | `factorial@1` | Liste et 6 fiches, dont une clôture HTTP 200 | À consigner après déploiement du plan 05 |
 | MS Vacances | `teamtailor@1` | Liste RSS et 6 fiches | À consigner après déploiement du plan 05 |
 
 Les 24 fiches de référence vérifient qu'une valeur établie a une preuve de portée `posting` et qu'aucune balise HTML ne subsiste dans les sorties. Les tests unitaires simulent la réponse du service de communes : ils ne prouvent ni la disponibilité de ce service depuis Vercel ni le rendement réel du réservoir. Les estimations exploratoires du plan 01 restent donc à confirmer par les échantillons de preview.
+
+**France Travail — mesure de preview transmise par le fondateur.** Déploiement exact : <https://saisonnier-5ga2apcmz-francois-noels-projects.vercel.app>, échantillon `france-travail@1` du `2026-10-24T06:05:48.552Z`, dix fiches lues. Les durées sont établies dans neuf fiches ; les deux salaires établis sont ceux des deux offres « #FORUM Commis de cuisine ». Les autres montants restent des précisions sans conversion ni base inventée. Aucun lieu n'est résolu par alias ou commune vérifiée, et aucun canal officiel employeur n'est établi.
+
+Points observés : source officielle à retrouver dans les dix fiches, date de publication inconnue, contrat ou saison à vérifier selon le dossier, activité non établie dans huit fiches. Une fiche de ménage en hôtellerie de plein air comporte une période contradictoire et une année déduite ; une fiche d'écailler comporte une information facultative à confirmer. Un contrat explicite ne suffit pas à déterminer été ou hiver : le point de revue de saison reste distinct. Ces compteurs mesurent le préremplissage, pas le nombre de dossiers qui passeraient l'admission et la déduplication ; ils ne confirment pas à eux seuls le réservoir de cinquante dossiers.
