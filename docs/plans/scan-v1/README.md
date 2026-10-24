@@ -2,7 +2,7 @@
 
 Dix plans pour réaliser la **V1 du scan** décrite par le [plan technique V1–V5](../../plan-technique-scan-v1-v5.md) (§1 à §6), conformément au [cahier des charges du scan](../../cahier-des-charges-scan-saisonnier-v1.md). Ils détaillent les huit lots du §6 du plan technique. Chaque plan tient en une session de travail, se termine par des tests verts et laisse l'application déployable.
 
-Rédigés le 23 octobre 2026 à partir du code de `main` (plans 01 à 17 de l'application terminés). Le plan scan 01 est terminé ([PR #32](https://github.com/francoisnoel62/saisonnier/pull/32)). Les règles du plan 02 sont implémentées et testées ; sa colonne « Statut » sera cochée après fusion de la PR. Les plans 03 à 10 ne sont pas exécutés ; aucun passage de collecte n'est installé ni programmé.
+Rédigés le 23 octobre 2026 à partir du code de `main` (plans 01 à 17 de l'application terminés). Les plans scan 01 ([PR #32](https://github.com/francoisnoel62/saisonnier/pull/32)) et 02 ([PR #34](https://github.com/francoisnoel62/saisonnier/pull/34)) sont terminés. Les plans 03 à 10 ne sont pas exécutés ; aucun passage de collecte n'est installé ni programmé.
 
 ## Résultat attendu
 
@@ -70,7 +70,7 @@ Deux pistes peuvent avancer en parallèle : **01 → 05** (sources et extracteur
 | # | Plan | Dépend de | Taille | Lot du plan technique | Résultat visible | Statut |
 |---|---|---|---|---|---|---|
 | 01 | [Sources, client HTTP sûr et sonde](01-sources-client-http.md) | — | M | 1 | sonde exécutée depuis la preview, registre, fixtures anonymisées, dossier des sources | ☑ |
-| 02 | [Règles du scan](02-regles-scan.md) | — | M | 2 | règles pures testées : 72 h, dates, contrat, période, canal, admission | ☐ |
+| 02 | [Règles du scan](02-regles-scan.md) | — | M | 2 | règles pures testées : 72 h, dates, contrat, période, canal, admission | ☑ |
 | 03 | [Données du scan](03-donnees-scan.md) | 02 | M | 2 | tables, passages uniques, livraison et compteur idempotents | ☐ |
 | 04 | [Publication protégée](04-publication-protegee.md) | 03 | M | 3 | publication unique et rejouable, doublons et divergences en revue, retraits préservés | ☐ |
 | 05 | [Extracteurs](05-extracteurs.md) | 01, 02 | L | 4 | dossiers préremplis depuis les fixtures, qualité mesurée en preview | ☐ |
