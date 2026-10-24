@@ -72,7 +72,7 @@ Deux pistes peuvent avancer en parallèle : **01 → 05** (sources et extracteur
 | 01 | [Sources, client HTTP sûr et sonde](01-sources-client-http.md) | — | M | 1 | sonde exécutée depuis la preview, registre, fixtures anonymisées, dossier des sources | ☑ |
 | 02 | [Règles du scan](02-regles-scan.md) | — | M | 2 | règles pures testées : 72 h, dates, contrat, période, canal, admission | ☑ |
 | 03 | [Données du scan](03-donnees-scan.md) | 02 | M | 2 | tables, passages uniques, livraison et compteur idempotents | ☑ |
-| 04 | [Publication protégée](04-publication-protegee.md) | 03 | M | 3 | publication unique et rejouable, doublons et divergences en revue, retraits préservés | ☐ |
+| 04 | [Publication protégée](04-publication-protegee.md) | 03 | M | 3 | publication unique et rejouable, doublons et divergences en revue, retraits préservés | ☑ |
 | 05 | [Extracteurs](05-extracteurs.md) | 01, 02 | L | 4 | dossiers préremplis depuis les fixtures, qualité mesurée en preview | ☐ |
 | 06 | [Revue admin et suggestions](06-revue-admin.md) | 04 | L | 5 | file « À vérifier » actualisée, revue préremplie, décisions, suggestions de métiers | ☐ |
 | 07 | [Labels et présentation](07-labels-presentation.md) | 04 | M | 6 | labels de provenance, « Candidature externe », dates, « À confirmer », « Divers » | ☐ |

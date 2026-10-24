@@ -305,7 +305,7 @@ describe("offres : contraintes CHECK", () => {
   })
 })
 
-describe("offres collectées : une source, une annonce", () => {
+describe("offres collectées : une page peut porter plusieurs recrutements", () => {
   const collected = (sourceUrl: string) => ({
     origin: "collected" as const,
     sourceUrl,
@@ -313,18 +313,28 @@ describe("offres collectées : une source, une annonce", () => {
     applyUrl: sourceUrl,
   })
 
-  it("refuse une seconde annonce collectée sur la même source", async () => {
+  it("accepte deux annonces collectées sur la même source", async () => {
     const url = `https://www.monhotel.example/emplois/${crypto.randomUUID()}`
     expect(await rejection(insertOffer(collected(url)))).toBeNull()
-    expect(await rejection(insertOffer(collected(url)))).toBe(
-      "offers_collected_source_url_unique",
-    )
+    expect(await rejection(insertOffer(collected(url)))).toBeNull()
   })
 
   it("ne contraint pas les annonces déposées", async () => {
     const url = `https://www.monhotel.example/emplois/${crypto.randomUUID()}`
     expect(await rejection(insertOffer(collected(url)))).toBeNull()
     expect(await rejection(insertOffer({ sourceUrl: url }))).toBeNull()
+  })
+
+  it("réserve la vérification humaine aux annonces collectées", async () => {
+    expect(await rejection(insertOffer({ humanVerifiedAt: new Date() }))).toBe(
+      "offers_human_verification_collected",
+    )
+  })
+
+  it("exige la date civile lorsqu'un instant de publication source est connu", async () => {
+    expect(
+      await rejection(insertOffer({ sourcePublishedAt: new Date() })),
+    ).toBe("offers_source_publication_date")
   })
 })
 

@@ -41,6 +41,7 @@ export type AdminOfferFormResult =
   | {
       ok: false
       message?: string
+      existingOfferId?: string
       fieldErrors?: Partial<Record<AdminOfferFormField, string[]>>
     }
 
@@ -57,7 +58,7 @@ const minimumMessage = (labels: string[]) =>
   `Le minimum de publication n'est pas atteint : ${labels.join(" ; ")}`
 
 // Création (`offerId` null) ou modification d'une annonce par l'admin. Une annonce collectée passe
-// par upsertCollectedOffer, le point d'entrée unique de la collecte (H10). Une annonce modifiée
+// par upsertCollectedOffer, réservé à la saisie admin. Une annonce modifiée
 // garde son origine ; déposée, elle garde aussi son entreprise.
 export async function saveAdminOffer(
   offerId: string | null,
@@ -118,7 +119,11 @@ export async function saveAdminOffer(
     )
     if (result.ok) {
       revalidateOffers()
-      return { ok: true, offerId: result.offerId, status: "published" }
+      return {
+        ok: true,
+        offerId: result.offerId,
+        status: current?.status ?? "published",
+      }
     }
     switch (result.reason) {
       case "rejected":
@@ -129,9 +134,10 @@ export async function saveAdminOffer(
       case "source_taken":
         return {
           ok: false,
+          existingOfferId: result.offerId,
           fieldErrors: {
             sourceUrl: [
-              "Une autre annonce collectée a déjà cette source : modifiez-la plutôt.",
+              "Une annonce collectée a déjà cette source : modifiez-la plutôt.",
             ],
           },
         }

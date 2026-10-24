@@ -377,6 +377,7 @@ export function OfferForm({
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [formError, setFormError] = useState<string | null>(null)
+  const [existingOfferId, setExistingOfferId] = useState<string | null>(null)
   const today = useMemo(() => todayInParis(new Date()), [])
   const admin = props.space === "admin"
   // Les champs de l'employeur sont un sous-ensemble de ceux de l'admin : un seul typage. Dans
@@ -414,6 +415,7 @@ export function OfferForm({
 
   const onSubmit = form.handleSubmit((values) => {
     setFormError(null)
+    setExistingOfferId(null)
     startTransition(async () => {
       let result: OfferFormResult | AdminOfferFormResult
       try {
@@ -430,6 +432,8 @@ export function OfferForm({
       }
 
       if (!result.ok) {
+        if ("existingOfferId" in result)
+          setExistingOfferId(result.existingOfferId ?? null)
         const errors: Partial<Record<AdminOfferFormField, string[]>> =
           result.fieldErrors ?? {}
         const fields = fieldOrder[props.space].filter(
@@ -713,6 +717,14 @@ export function OfferForm({
             <DraftPreview referentials={referentials} subject={subject} />
           </OfferPreviewSheet>
           {formError && <FormAlert>{formError}</FormAlert>}
+          {existingOfferId && (
+            <Link
+              className="text-sm underline"
+              href={`/admin/annonces/${existingOfferId}/modifier`}
+            >
+              Modifier l’annonce qui utilise déjà cette source
+            </Link>
+          )}
           <Button type="submit" disabled={pending} aria-busy={pending}>
             {pending && <Loader2Icon className="animate-spin" aria-hidden />}
             {submitLabel}

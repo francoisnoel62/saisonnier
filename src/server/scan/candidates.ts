@@ -29,6 +29,7 @@ import {
 } from "@/lib/db/schema"
 
 import { withRunClaim, type ScanTransaction } from "./claim"
+import { recordCandidateDivergences } from "./divergences"
 
 export type ListedPosting = {
   identityKey: string
@@ -147,6 +148,15 @@ export type CandidateDelivery = {
 
 async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
   const { extraction, admission, proposal, candidateId, runId, now } = input
+  const [current] = await tx
+    .select()
+    .from(scanCandidates)
+    .where(eq(scanCandidates.id, candidateId))
+    .for("update")
+  if (current && ["published", "rejected"].includes(current.status)) {
+    await recordCandidateDivergences(tx, current, proposal)
+    return { ok: true, delivered: false } as const
+  }
   if (!admission.admitted)
     throw new RangeError("Un dossier non admis ne peut pas être livré")
   const title = (

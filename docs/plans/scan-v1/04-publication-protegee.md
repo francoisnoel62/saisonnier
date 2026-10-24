@@ -87,10 +87,12 @@ Un service de publication unique, transactionnel et rejouable, qui sert à la fo
 
 ## Critères d'acceptation
 
-- [ ] Un dossier donne au plus une annonce, quelles que soient la concurrence et les reprises.
-- [ ] Aucune remise en ligne et aucune modification silencieuse d'une annonce existante, déposée ou collectée.
-- [ ] Les doublons potentiels attendent la décision de l'admin ; aucune fusion automatique.
-- [ ] La saisie au back-office fonctionne toujours et protège les statuts.
+- [x] Un dossier donne au plus une annonce, quelles que soient la concurrence et les reprises.
+- [x] Aucune remise en ligne et aucune modification silencieuse d'une annonce existante, déposée ou collectée.
+- [x] Les doublons potentiels attendent la décision de l'admin ; aucune fusion automatique.
+- [x] La saisie au back-office fonctionne toujours et protège les statuts.
+
+Vérification du 24 octobre 2026 : `lint`, `typecheck`, 852 tests unitaires, 292 tests d'intégration (dont les contrôles SQL ajoutés), `db:check` et les 11 tests E2E du back-office (ordinateur et mobile). Les scénarios de publication, doublons et divergences sont dans `publication.int.test.ts` et `duplicates.int.test.ts` ; les protections de saisie dans `ingest.int.test.ts`.
 
 ## Hors périmètre
 

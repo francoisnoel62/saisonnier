@@ -10,7 +10,6 @@ import {
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
   uuid,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core"
@@ -149,6 +148,13 @@ export const offers = pgTable(
     sourceUrl: text(),
     sourceName: text(),
     sourceCheckedAt: timestamp({ withTimezone: true }),
+    sourcePublishedDate: date(),
+    sourcePublishedAt: timestamp({ withTimezone: true }),
+    firstDiscoveredAt: timestamp({ withTimezone: true }),
+    humanVerifiedAt: timestamp({ withTimezone: true }),
+    humanVerifiedByUserId: text().references(() => user.id, {
+      onDelete: "set null",
+    }),
 
     // Cycle de vie
     publishedAt: timestamp({ withTimezone: true }),
@@ -159,6 +165,14 @@ export const offers = pgTable(
     ...timestamps,
   },
   (t) => [
+    check(
+      "offers_human_verification_collected",
+      sql`${t.humanVerifiedAt} is null or ${t.origin} = 'collected'`,
+    ),
+    check(
+      "offers_source_publication_date",
+      sql`${t.sourcePublishedAt} is null or ${t.sourcePublishedDate} is not null`,
+    ),
     // Invariants, vrais pour toute ligne : les formulaires les vérifient avant d'enregistrer.
     check(
       "offers_text_not_blank",
@@ -238,8 +252,8 @@ export const offers = pgTable(
     index().on(t.startDate, t.endDate),
     index().on(t.publishedAt),
     index().using("gin", t.languages),
-    // Une source, une annonce collectée : clé de déduplication de la collecte (plan 15).
-    uniqueIndex("offers_collected_source_url_unique")
+    // Une page peut porter plusieurs recrutements ou être réutilisée une autre saison.
+    index("offers_collected_source_url")
       .on(t.sourceUrl)
       .where(sql`${t.origin} = 'collected'`),
   ],
