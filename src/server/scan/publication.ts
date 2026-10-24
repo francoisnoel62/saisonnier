@@ -31,6 +31,7 @@ import { isUuid } from "@/server/offers/queries"
 
 import { withRunClaim, type ScanTransaction } from "./claim"
 import { scanSourceDefinitions } from "./sources/registry"
+import { attachOccupationInTransaction } from "./occupations"
 
 export type PublicationRequest = { candidateId: string; now?: Date } & (
   | { kind: "admin"; userId: string; version: number; input: AdminOfferInput }
@@ -161,8 +162,7 @@ async function publish(
     ...(expiryReason(input, today) ? [scanIssue("activity")] : []),
     ...(!candidate.lastFetchedAt ? [scanIssue("detail_unreadable")] : []),
   ])
-  if (issues.length || !input.season || !company)
-    return { ok: false, reason: "blocked", issues }
+  if (issues.length || !company) return { ok: false, reason: "blocked", issues }
   if (request.kind === "scan") {
     const [state] = await tx
       .select()
@@ -192,12 +192,20 @@ async function publish(
       }
   }
   // Ne jamais insérer de champ de décision dans les colonnes de l'annonce.
+  const attached =
+    request.kind === "scan"
+      ? await attachOccupationInTransaction(tx, candidate)
+      : candidate
   const { seasonalContractConfirmed: confirmed, ...values } = input
   void confirmed
   const [offer] = await tx
     .insert(offers)
     .values({
       ...values,
+      occupationId:
+        request.kind === "scan"
+          ? (attached.proposal?.occupationId ?? null)
+          : values.occupationId,
       season: input.season,
       companyId: company.id,
       origin: "collected",

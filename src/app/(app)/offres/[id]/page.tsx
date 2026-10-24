@@ -139,7 +139,9 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
       )}
 
       <header className="flex flex-col gap-2">
-        <Badge variant="secondary">{seasonLabels[offer.season]}</Badge>
+        {offer.season && (
+          <Badge variant="secondary">{seasonLabels[offer.season]}</Badge>
+        )}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="text-2xl font-semibold tracking-tight">
             {offer.title}

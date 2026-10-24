@@ -2,6 +2,8 @@
 
 Implémentation du [plan 02](../plans/scan-v1/02-regles-scan.md), dans `src/domain/scan/`. Aucun appel réseau, horloge implicite, accès à la base ou écriture. Les dates de référence et les politiques viennent de l'appelant.
 
+**Mise à jour SH19 du 24 octobre 2026, décidée par le fondateur pendant le plan 06 :** la nature saisonnière du contrat reste obligatoire, mais été/hiver devient facultatif. Une saison absente ou contradictoire produit une alerte ; elle n'est pas inventée et ne bloque plus la publication. Les règles de preuve et de dates restent applicables.
+
 ## Contrat pour les adaptateurs et les services suivants
 
 - `Observation<T>` associe une valeur à son champ, sa preuve, sa version d'extracteur et sa date de collecte. `Evidence.scope = "site"` ne prouve ni contrat, ni période, ni saison, ni condition du poste. Les adaptateurs doivent retirer le pied de page du `usefulText` et marquer séparément les textes généraux.

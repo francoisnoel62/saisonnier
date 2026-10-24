@@ -30,6 +30,7 @@ import {
 
 import { withRunClaim, type ScanTransaction } from "./claim"
 import { recordCandidateDivergences } from "./divergences"
+import { attachOccupationInTransaction } from "./occupations"
 
 export type ListedPosting = {
   identityKey: string
@@ -219,6 +220,7 @@ async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
     )
     .returning()
   if (!candidate) return { ok: true, delivered: false } as const
+  const attached = await attachOccupationInTransaction(tx, candidate)
   // Le passage est déjà verrouillé : un seul incrément et une seule date de seuil, même avec 60 livraisons simultanées.
   await tx
     .update(scanRuns)
@@ -240,7 +242,7 @@ async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
     )
     .returning()
   if (!source) throw new Error("Source du passage non initialisée")
-  return { ok: true, delivered: true, candidate } as const
+  return { ok: true, delivered: true, candidate: attached } as const
 }
 
 export function deliverCandidate(input: CandidateDelivery) {

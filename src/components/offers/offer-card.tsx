@@ -81,7 +81,8 @@ export function OfferCard({
         <p className="flex items-start gap-2">
           <CalendarDaysIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
-            {seasonLabels[offer.season]} · {contractPeriod(offer)}
+            {offer.season ? `${seasonLabels[offer.season]} · ` : ""}
+            {contractPeriod(offer)}
           </span>
         </p>
         <p className="flex items-start gap-2">

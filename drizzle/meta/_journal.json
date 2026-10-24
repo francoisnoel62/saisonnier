@@ -92,6 +92,20 @@
       "when": 1792815025275,
       "tag": "0012_scan_existing_human_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792822209896,
+      "tag": "0013_scan_review_occupations",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792823930931,
+      "tag": "0014_optional_season",
+      "breakpoints": true
     }
   ]
 }

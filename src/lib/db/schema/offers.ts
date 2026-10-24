@@ -83,7 +83,7 @@ export const offers = pgTable(
     missions: text(),
 
     // Contrat et période : des dates précises, ou une durée seule.
-    season: seasonEnum().notNull(),
+    season: seasonEnum(),
     startDate: date(),
     endDate: date(),
     durationValue: integer(),

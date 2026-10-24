@@ -20,7 +20,7 @@ export type OfferListItem = {
   companyName: string
   communeName: string
   department: { code: string; name: string }
-  season: Season
+  season: Season | null
   // Des dates précises, ou une durée seule.
   startDate: string | null
   endDate: string | null

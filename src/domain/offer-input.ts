@@ -237,7 +237,7 @@ function offerFields(context: OfferInputContext) {
     season: z
       .string()
       .refine(
-        (value) => isOneOf(seasons, value),
+        (value) => value === "" || isOneOf(seasons, value),
         "Choisissez la saison : été ou hiver.",
       ),
     periodKind: z.enum(periodKinds),
@@ -540,7 +540,7 @@ function toOfferInput(input: RawOfferInput) {
     description: input.description || null,
     missions: input.missions || null,
 
-    season: input.season as Season,
+    season: input.season ? (input.season as Season) : null,
     startDate: input.startDate || null,
     endDate: dates ? input.endDate : null,
     durationValue: dates ? null : Number(input.durationValue.trim()),
@@ -663,7 +663,7 @@ export function offerToFormValues(offer: OfferInput): OfferFormValues {
     missions: textOf(offer.missions),
     // Une annonce enregistrée est saisonnière : la case a été cochée à son dépôt.
     seasonalContract: true,
-    season: offer.season,
+    season: offer.season ?? "",
     periodKind: dates ? "dates" : "duration",
     startDate: textOf(offer.startDate),
     endDate: dates ? textOf(offer.endDate) : "",

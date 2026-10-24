@@ -38,6 +38,7 @@ export function proposalToOfferInput(proposal: ScanProposal) {
   return {
     ...previewOfferInput(emptyOfferFormValues()),
     title: truncatePostingText(valueOf(proposal.title) ?? "", 150),
+    occupationId: proposal.occupationId ?? null,
     description: valueOf(proposal.description)
       ? truncatePostingText(valueOf(proposal.description)!, 5000)
       : null,
@@ -105,7 +106,7 @@ export function reviewedPublicationProposal(
     title: field(input.title),
     company: field({ name: companyName }),
     contract: field("seasonal"),
-    season: field(input.season),
+    season: input.season ? field(input.season) : absent(),
     period: field({
       ...(input.startDate ? { startDate: input.startDate } : {}),
       ...(input.endDate ? { endDate: input.endDate } : {}),

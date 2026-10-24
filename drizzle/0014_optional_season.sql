@@ -1,0 +1,1 @@
+ALTER TABLE "offers" ALTER COLUMN "season" DROP NOT NULL;

@@ -38,6 +38,7 @@ import {
 import { user } from "./auth"
 import { notBlank, timestamps } from "./columns"
 import { offers } from "./offers"
+import { occupations } from "./reference"
 
 export const scanModeEnum = pgEnum("scan_mode", scanModes)
 export const scanRunStatusEnum = pgEnum("scan_run_status", scanRunStatuses)
@@ -286,5 +287,19 @@ export const scanReviews = pgTable(
 )
 
 export type ScanRun = typeof scanRuns.$inferSelect
+export const occupationAliases = pgTable(
+  "occupation_aliases",
+  {
+    normalizedLabel: text().primaryKey(),
+    occupationId: uuid()
+      .notNull()
+      .references(() => occupations.id),
+    createdByUserId: actor(),
+    createdAt: instant().notNull().defaultNow(),
+  },
+  (t) => [
+    check("occupation_aliases_label_not_blank", notBlank(t.normalizedLabel)),
+  ],
+)
 export type ScanRunSource = typeof scanRunSources.$inferSelect
 export type ScanCandidate = typeof scanCandidates.$inferSelect

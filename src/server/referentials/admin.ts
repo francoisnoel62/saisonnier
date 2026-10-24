@@ -50,8 +50,13 @@ export async function listOccupationFamilies() {
 
 // Nouveau métier, actif, placé après les derniers de sa famille. Son identifiant d'URL est
 // dérivé de l'intitulé, et rendu unique.
-export async function addOccupation({ label, family }: OccupationInput) {
-  return db.transaction(async (tx) => {
+export async function addOccupation(
+  { label, family }: OccupationInput,
+  transaction?: Parameters<Parameters<typeof db.transaction>[0]>[0],
+) {
+  const create = async (
+    tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  ) => {
     const base = occupationSlug(label)
     const taken = new Set(
       (await tx.select({ slug: occupations.slug }).from(occupations)).map(
@@ -78,7 +83,8 @@ export async function addOccupation({ label, family }: OccupationInput) {
       .values({ slug, label, family, sortOrder })
       .returning()
     return created
-  })
+  }
+  return transaction ? create(transaction) : db.transaction(create)
 }
 
 // Renommer : l'identifiant d'URL ne change pas, les recherches partagées restent valables.

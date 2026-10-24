@@ -56,7 +56,7 @@ export const offerDetailsFields = [
 ] as const satisfies readonly (keyof Offer)[]
 
 // L'aperçu du dépôt (plan 14) montre aussi une saisie incomplète : saison et département peuvent
-// encore manquer. Une offre enregistrée a toujours les deux.
+// encore manquer. Le département enregistré est obligatoire ; été/hiver reste facultatif.
 export type OfferDetailsData = Omit<
   Pick<Offer, (typeof offerDetailsFields)[number]>,
   "season"

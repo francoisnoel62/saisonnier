@@ -113,6 +113,14 @@
 - `resolvePlace` (`places.ts`) utilise les alias vérifiés, puis geo.api.gouv.fr (5 s), avec cache par contexte. Un résultat unique doit appartenir au référentiel et avoir un code INSEE préfixé par le département ; les autres résultats restent `to_verify` avec leurs candidats. Le contexte reçoit les codes du référentiel sans lecture de base par les adaptateurs.
 - `sampleScanSourceAction` vérifie le rôle admin ; son service lit au plus dix fiches et renvoie les champs établis et les points de revue, sans coordonnées et sans écriture. Le panneau d'échantillon de `/admin/scan` indique le déploiement, l'heure et la version de l'extracteur. Les mesures de preview se consignent dans `docs/scan/sources-v1.md` ; les tests sur captures ne remplacent pas ces mesures.
 
+## Scan — revue admin (plan scan 06)
+
+- `/admin/scan/dossiers` et `/[id]` partagent une file conservée dans le layout. `useScanSnapshot` lit l'API toutes les 5 s pendant un passage visible, sans requêtes concurrentes ni `router.refresh()`. Focus/retour visible déclenchent une lecture ; les erreurs gardent la saisie et attendent 5, 10, 20, 40 puis 60 s. Le dossier ouvert reste affiché s'il est traité ailleurs. Mobile : liste ou dossier, avec lien de retour.
+- `GET /api/admin/scan/etat` vérifie `authorizeRoute("admin")`, répond sans cache et sans coordonnées/texte de page. Curseur `readyForReviewAt|id`, 50 résultats au plus ; `suivis` permet de relire le statut d'au plus 50 dossiers affichés sans réordonner la file.
+- `proposalToAdminFormValues` ne préremplit que les champs établis ; les textes publiés sont tronqués à la phrase avec une alerte. `OfferForm mode="review"` appelle `validateScanCandidate`, puis `publishCandidate`. Rejet, doublons et suggestions ont leurs actions admin ; un conflit de version conserve la saisie et demande de recharger.
+- `occupation_aliases` (migration `0013`) conserve les décisions de métiers. `attachOccupationInTransaction` rattache par alias exact ou libellé actif normalisé, sinon crée/réutilise une suggestion. Rejouer une livraison ne compte pas une nouvelle occurrence ; une suggestion rejetée n'est jamais rouverte. `/admin/scan/suggestions` rattache, crée un métier via le service existant ou rejette. Rattacher modifie seulement les métiers vides des annonces concernées et les propositions en attente, sans toucher au statut ni à `humanVerifiedAt`.
+- SH19, décision du fondateur le 24/10/2026 : été/hiver est facultatif, y compris hors scan. `season = NULL` (migration `0014`), radio « Non précisée » et alerte de scan ; aucune saison inventée. La case de contrat explicitement saisonnier reste obligatoire. Les anciennes annonces conservent leur saison.
+
 ## Authentification
 
 - Better Auth 1.7 (`src/lib/auth.ts`), email + mot de passe, vérification d'email obligatoire. Rôles `candidate` / `employer` / `admin` sur `user.role` (`input: false` : jamais fourni par le client ; contrainte CHECK en base).

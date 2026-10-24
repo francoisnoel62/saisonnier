@@ -75,7 +75,7 @@ function toRow(
     state,
     note: noteFor(offer, state, today, canEdit),
     location: `${offer.communeName} (${offer.departmentCode})`,
-    season: seasonLabels[offer.season],
+    season: offer.season ? seasonLabels[offer.season] : "Non précisée",
     period: contractPeriod(offer),
     validityConfirmedAt: offer.validityConfirmedAt?.toISOString() ?? null,
     awaitsValidity:

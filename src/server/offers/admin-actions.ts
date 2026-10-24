@@ -37,7 +37,7 @@ import { upsertCollectedOffer } from "./ingest"
 import { getOfferWithRelations, isUuid } from "./queries"
 
 export type AdminOfferFormResult =
-  | { ok: true; offerId: string; status: OfferStatus }
+  | { ok: true; offerId: string; status: OfferStatus; next?: string }
   | {
       ok: false
       message?: string

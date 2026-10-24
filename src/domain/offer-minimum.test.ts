@@ -42,6 +42,11 @@ describe("checkPublicationMinimum", () => {
       missing: [],
     })
   })
+  it("un contrat saisonnier confirmé ne requiert pas le choix été/hiver", () => {
+    expect(
+      checkPublicationMinimum({ ...minimal, season: null }, deposited),
+    ).toEqual({ ok: true, missing: [] })
+  })
 
   it("liste tout ce qui manque à une annonce vide, en français", () => {
     expect(checkPublicationMinimum({}, deposited)).toEqual({
@@ -51,7 +56,7 @@ describe("checkPublicationMinimum", () => {
         {
           requirement: "seasonal_contract",
           label:
-            "Un contrat explicitement saisonnier : saison indiquée et case « contrat saisonnier » cochée",
+            "Un contrat explicitement saisonnier : case « contrat saisonnier » cochée",
         },
         {
           requirement: "location",
@@ -76,7 +81,6 @@ describe("checkPublicationMinimum", () => {
       { seasonalContractConfirmed: false },
       "seasonal_contract",
     ],
-    ["confirmation sans saison", { season: null }, "seasonal_contract"],
     ["commune faite d'espaces", { communeName: "  " }, "location"],
     ["sans département", { departmentCode: null }, "location"],
     ["durée sans unité", { durationUnit: null }, "period"],

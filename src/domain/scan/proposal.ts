@@ -32,6 +32,7 @@ export type ProposedPlace = {
   postalCode?: string
 }
 export type ScanProposal = {
+  occupationId?: string
   title: ProposalField<string>
   company: ProposalField<ProposedCompany>
   description: ProposalField<string>
@@ -298,7 +299,9 @@ export function buildProposal(
   return proposal
 }
 export function proposalIssues(proposal: ScanProposal): ScanIssue[] {
-  const issues = [...proposal.issues]
+  const issues = proposal.issues.map((issue) =>
+    scanIssue(issue.code, issue.field),
+  )
   if (proposal.title.status !== "established" || !proposal.title.value.trim())
     issues.push(scanIssue("detail_unreadable", "title"))
   if (proposal.company.status !== "established")
@@ -314,7 +317,7 @@ export function proposalIssues(proposal: ScanProposal): ScanIssue[] {
   if (proposal.period.status === "contradictory")
     issues.push(scanIssue("period_contradiction"))
   if (proposal.season.status !== "established")
-    issues.push(scanIssue("seasonal_contract", "season"))
+    issues.push(scanIssue("season_unknown", "season"))
   if (proposal.season.status === "contradictory")
     issues.push(scanIssue("season_contradiction"))
   if (

@@ -221,6 +221,7 @@ export async function decideDuplicate(
   decision: "duplicate" | "distinct",
   adminId: string,
   note?: string,
+  targetCandidateId?: string,
 ) {
   if (!isUuid(reviewId) || !["duplicate", "distinct"].includes(decision))
     return { ok: false, reason: "conflict" } as const
@@ -233,11 +234,16 @@ export async function decideDuplicate(
       )
     if (!reference?.candidateId)
       return { ok: false, reason: "conflict" } as const
+    const candidateId = targetCandidateId ?? reference.candidateId
+    if (
+      ![reference.candidateId, reference.otherCandidateId].includes(candidateId)
+    )
+      return { ok: false, reason: "conflict" } as const
     // Même ordre que la publication : dossier puis revue.
     const [candidate] = await tx
       .select()
       .from(scanCandidates)
-      .where(eq(scanCandidates.id, reference.candidateId))
+      .where(eq(scanCandidates.id, candidateId))
       .for("update")
     const [review] = await tx
       .select()

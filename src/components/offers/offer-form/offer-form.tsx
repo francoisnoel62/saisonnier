@@ -154,8 +154,8 @@ function SeasonalContractField() {
             </FieldLabel>
           </Field>
           <FieldDescription id={`${id}-hint`}>
-            Seuls les contrats explicitement saisonniers, pour l&rsquo;été ou
-            l&rsquo;hiver, sont publiés.
+            Seuls les contrats explicitement saisonniers sont publiés. Été ou
+            hiver peut rester non précisé.
           </FieldDescription>
           <FieldError id={`${id}-error`} errors={[fieldState.error]} />
         </Field>
@@ -371,7 +371,7 @@ export function OfferForm({
   referentials,
   ...props
 }: {
-  mode: "create" | "edit"
+  mode: "create" | "edit" | "review"
   referentials: OfferFormReferentials
 } & (EmployerFormProps | AdminFormProps)) {
   const router = useRouter()
@@ -450,7 +450,9 @@ export function OfferForm({
         return
       }
 
-      if (mode === "edit") {
+      if (mode === "review") {
+        toast.success("Annonce publiée — vérifiée par un humain")
+      } else if (mode === "edit") {
         toast.success("Modifications enregistrées.")
       } else if (result.status === "published") {
         toast.success("Annonce publiée : elle est visible des candidats.")
@@ -459,7 +461,13 @@ export function OfferForm({
           "Annonce enregistrée : elle sera publiée après la vérification de votre rattachement.",
         )
       }
-      router.push(returnPaths[props.space])
+      router.push(
+        mode === "review"
+          ? "next" in result && result.next
+            ? result.next
+            : "/admin/scan/dossiers"
+          : returnPaths[props.space],
+      )
     })
   })
 
@@ -467,11 +475,13 @@ export function OfferForm({
   // Les sections de l'admin commencent par l'origine et l'entreprise.
   const first = admin ? 2 : 1
   const submitLabel =
-    mode === "edit"
-      ? "Enregistrer les modifications"
-      : publishesDirectly
-        ? "Publier l'annonce"
-        : "Enregistrer l'annonce"
+    mode === "review"
+      ? "Valider et publier"
+      : mode === "edit"
+        ? "Enregistrer les modifications"
+        : publishesDirectly
+          ? "Publier l'annonce"
+          : "Enregistrer l'annonce"
 
   return (
     <FormProvider {...form}>
@@ -480,265 +490,274 @@ export function OfferForm({
         noValidate
         className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start"
       >
-        <div className="flex min-w-0 flex-col gap-6">
-          {props.space === "admin" && (
-            <Section number={1} title="Origine et entreprise" required>
-              <AdminOriginFields
-                companies={props.companies}
-                originLocked={props.originLocked}
-                companyLocked={props.companyLocked}
+        {/* Éviter la saisie avant l'initialisation des valeurs contrôlées (hydratation mobile). */}
+        <fieldset className="contents" disabled={!form.formState.isReady}>
+          <div className="flex min-w-0 flex-col gap-6">
+            {props.space === "admin" && (
+              <Section number={1} title="Origine et entreprise" required>
+                <AdminOriginFields
+                  companies={props.companies}
+                  originLocked={props.originLocked}
+                  companyLocked={props.companyLocked}
+                />
+              </Section>
+            )}
+            <Section number={first} title="Poste" required>
+              <TextField
+                name="title"
+                label="Intitulé du poste"
+                hint="Par exemple : Serveur / serveuse, Moniteur de ski."
+                maxLength={offerTextLimits.title}
+              />
+              <SelectField
+                name="occupationId"
+                label="Métier (facultatif)"
+                hint="Il permet aux candidats de trouver l'annonce par métier."
+                placeholder="Choisir un métier"
+                emptyLabel="Aucun"
+                options={groupByFamily(referentials.occupations)}
+              />
+              <TextField
+                name="description"
+                label="Description (facultatif)"
+                hint="L'établissement, l'équipe, ce qui rend le poste intéressant."
+                multiline
+                rows={6}
+                maxLength={offerTextLimits.description}
+              />
+              <TextField
+                name="missions"
+                label="Missions (facultatif)"
+                multiline
+                rows={4}
+                maxLength={offerTextLimits.missions}
               />
             </Section>
-          )}
-          <Section number={first} title="Poste" required>
-            <TextField
-              name="title"
-              label="Intitulé du poste"
-              hint="Par exemple : Serveur / serveuse, Moniteur de ski."
-              maxLength={offerTextLimits.title}
-            />
-            <SelectField
-              name="occupationId"
-              label="Métier (facultatif)"
-              hint="Il permet aux candidats de trouver l'annonce par métier."
-              placeholder="Choisir un métier"
-              emptyLabel="Aucun"
-              options={groupByFamily(referentials.occupations)}
-            />
-            <TextField
-              name="description"
-              label="Description (facultatif)"
-              hint="L'établissement, l'équipe, ce qui rend le poste intéressant."
-              multiline
-              rows={6}
-              maxLength={offerTextLimits.description}
-            />
-            <TextField
-              name="missions"
-              label="Missions (facultatif)"
-              multiline
-              rows={4}
-              maxLength={offerTextLimits.missions}
-            />
-          </Section>
 
-          <Section number={first + 1} title="Contrat" required>
-            <SeasonalContractField />
-            <RadioField
-              name="season"
-              legend="Saison"
-              options={seasons.map((season) => ({
-                value: season,
-                label: seasonLabels[season],
-              }))}
-            />
-            <RadioField
-              name="periodKind"
-              legend="Période du contrat"
-              options={[
-                { value: "dates", label: "Dates de début et de fin" },
-                { value: "duration", label: "Une durée" },
-              ]}
-            />
-            <PeriodFields today={today} />
-            <DateField
-              name="applicationDeadline"
-              label="Date limite de candidature (facultatif)"
-              hint="Passée cette date, l'annonce est retirée des résultats."
-              minDate={today}
-              clearable
-            />
-          </Section>
+            <Section number={first + 1} title="Contrat" required>
+              <SeasonalContractField />
+              <RadioField
+                name="season"
+                legend="Saison (facultatif)"
+                options={[
+                  { value: "", label: "Non précisée" },
+                  ...seasons.map((season) => ({
+                    value: season,
+                    label: seasonLabels[season],
+                  })),
+                ]}
+              />
+              <RadioField
+                name="periodKind"
+                legend="Période du contrat"
+                options={[
+                  { value: "dates", label: "Dates de début et de fin" },
+                  { value: "duration", label: "Une durée" },
+                ]}
+              />
+              <PeriodFields today={today} />
+              <DateField
+                name="applicationDeadline"
+                label="Date limite de candidature (facultatif)"
+                hint="Passée cette date, l'annonce est retirée des résultats."
+                minDate={today}
+                clearable
+              />
+            </Section>
 
-          <Section number={first + 2} title="Lieu" required>
-            <CommuneField departments={referentials.departments} />
-            <TextField
-              name="locationDetails"
-              label="Précisions sur le lieu (facultatif)"
-              hint="Station, lieu-dit, établissement."
-              maxLength={offerTextLimits.locationDetails}
-            />
-          </Section>
+            <Section number={first + 2} title="Lieu" required>
+              <CommuneField departments={referentials.departments} />
+              <TextField
+                name="locationDetails"
+                label="Précisions sur le lieu (facultatif)"
+                hint="Station, lieu-dit, établissement."
+                maxLength={offerTextLimits.locationDetails}
+              />
+            </Section>
 
-          <Section
-            number={first + 3}
-            title="Rémunération"
-            description="Si vous le connaissez, indiquez le salaire net mensuel avant impôt : c'est celui que les candidats comparent. Le brut, s'il est indiqué, reste distinct."
-          >
-            <SalaryFields />
-            <TextField
-              name="salaryNotes"
-              label="Précisions sur la rémunération (facultatif)"
-              hint="Pourboires, primes, heures supplémentaires…"
-              multiline
-              rows={2}
-              maxLength={offerTextLimits.salaryNotes}
-            />
-          </Section>
-
-          <Section number={first + 4} title="Conditions">
-            <TriStateField name="housing" legend="Logement fourni" />
-            <TextField
-              name="housingDetails"
-              label="Conditions du logement (facultatif)"
-              hint="Chambre individuelle ou partagée, participation demandée…"
-              multiline
-              rows={2}
-              maxLength={offerTextLimits.details}
-            />
-            <TriStateField name="meals" legend="Repas fournis" />
-            <TextField
-              name="mealsDetails"
-              label="Conditions des repas (facultatif)"
-              multiline
-              rows={2}
-              maxLength={offerTextLimits.details}
-            />
-          </Section>
-
-          <Section number={first + 5} title="Profil">
-            <TriStateField
-              name="experienceRequired"
-              legend="Expérience exigée"
-            />
-            <TextField
-              name="experienceDetails"
-              label="Précisions sur l'expérience (facultatif)"
-              maxLength={offerTextLimits.details}
-            />
-            <TriStateField name="languagesRequired" legend="Langues exigées" />
-            <LanguagesField />
-            <TriStateField
-              name="drivingLicenseRequired"
-              legend="Permis de conduire exigé"
-            />
-            <TextField
-              name="drivingLicenseDetails"
-              label="Précisions sur le permis (facultatif)"
-              maxLength={offerTextLimits.details}
-            />
-          </Section>
-
-          <Section number={first + 6} title="Organisation">
-            <RadioField
-              name="workTime"
-              legend="Temps de travail"
-              options={workTimes.map((workTime) => ({
-                value: workTime,
-                label: workTimeLabels[workTime],
-              }))}
-            />
-            <TextField
-              name="weeklyHours"
-              label="Heures par semaine (facultatif)"
-              hint="Par exemple 35 ou 37,5."
-              inputMode="decimal"
-              maxLength={5}
-              className="sm:max-w-48"
-            />
-            <TextField
-              name="scheduleDetails"
-              label="Horaires (facultatif)"
-              hint="Coupures, travail de nuit, jours de repos…"
-              multiline
-              rows={2}
-              maxLength={offerTextLimits.details}
-            />
-          </Section>
-
-          <Section number={first + 7} title="Vie pratique">
-            <TriStateField name="couplesWelcome" legend="Couples acceptés" />
-            <TriStateField name="petsAllowed" legend="Animaux acceptés" />
-            <TextField
-              name="otherConstraints"
-              label="Autres contraintes pratiques (facultatif)"
-              hint="Uniquement celles que vous pouvez documenter : accès, tenue, vaccinations…"
-              multiline
-              rows={3}
-              maxLength={offerTextLimits.otherConstraints}
-            />
-          </Section>
-
-          <Section
-            number={first + 8}
-            title="Candidature"
-            required
-            description={
-              !admin
-                ? "Au moins un email ou un téléphone : les candidats vous contactent directement. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
-                : origin === "collected"
-                  ? "Un email, un téléphone ou le lien officiel de candidature. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
-                  : "Au moins un email ou un téléphone. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
-            }
-          >
-            {admin && <AdminApplicationFields />}
-            <TextField
-              name="applyEmail"
-              label="Email de candidature"
-              type="email"
-              autoComplete="email"
-              maxLength={offerTextLimits.applyEmail}
-            />
-            <TextField
-              name="applyPhone"
-              label="Téléphone de candidature"
-              type="tel"
-              autoComplete="tel"
-              maxLength={offerTextLimits.applyPhone}
-            />
-            <TextField
-              name="applyUrl"
-              label="Lien officiel de candidature (facultatif)"
-              hint={
-                admin
-                  ? "La page emploi du site ou du portail de recrutement de l'employeur."
-                  : "La page emploi de votre site ou de votre portail de recrutement."
-              }
-              type="url"
-              inputMode="url"
-              maxLength={offerTextLimits.applyUrl}
-            />
-          </Section>
-        </div>
-
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-4">
-          <LiveMinimum
-            subject={subject}
-            blockedDomains={referentials.blockedDomains}
-          />
-          <OfferPreviewSheet
-            trigger={
-              <Button type="button" variant="outline">
-                <EyeIcon data-icon="inline-start" aria-hidden />
-                Aperçu candidat
-              </Button>
-            }
-          >
-            <DraftPreview referentials={referentials} subject={subject} />
-          </OfferPreviewSheet>
-          {formError && <FormAlert>{formError}</FormAlert>}
-          {existingOfferId && (
-            <Link
-              className="text-sm underline"
-              href={`/admin/annonces/${existingOfferId}/modifier`}
+            <Section
+              number={first + 3}
+              title="Rémunération"
+              description="Si vous le connaissez, indiquez le salaire net mensuel avant impôt : c'est celui que les candidats comparent. Le brut, s'il est indiqué, reste distinct."
             >
-              Modifier l’annonce qui utilise déjà cette source
-            </Link>
-          )}
-          <Button type="submit" disabled={pending} aria-busy={pending}>
-            {pending && <Loader2Icon className="animate-spin" aria-hidden />}
-            {submitLabel}
-          </Button>
-          {!publishesDirectly && mode === "create" && (
-            <p className="text-sm text-muted-foreground">
-              Votre rattachement est en cours de vérification : l&rsquo;annonce
-              sera publiée dès sa validation.
-            </p>
-          )}
-          <Button asChild variant="ghost">
-            <Link href={returnPaths[props.space]}>Annuler</Link>
-          </Button>
-        </aside>
+              <SalaryFields />
+              <TextField
+                name="salaryNotes"
+                label="Précisions sur la rémunération (facultatif)"
+                hint="Pourboires, primes, heures supplémentaires…"
+                multiline
+                rows={2}
+                maxLength={offerTextLimits.salaryNotes}
+              />
+            </Section>
+
+            <Section number={first + 4} title="Conditions">
+              <TriStateField name="housing" legend="Logement fourni" />
+              <TextField
+                name="housingDetails"
+                label="Conditions du logement (facultatif)"
+                hint="Chambre individuelle ou partagée, participation demandée…"
+                multiline
+                rows={2}
+                maxLength={offerTextLimits.details}
+              />
+              <TriStateField name="meals" legend="Repas fournis" />
+              <TextField
+                name="mealsDetails"
+                label="Conditions des repas (facultatif)"
+                multiline
+                rows={2}
+                maxLength={offerTextLimits.details}
+              />
+            </Section>
+
+            <Section number={first + 5} title="Profil">
+              <TriStateField
+                name="experienceRequired"
+                legend="Expérience exigée"
+              />
+              <TextField
+                name="experienceDetails"
+                label="Précisions sur l'expérience (facultatif)"
+                maxLength={offerTextLimits.details}
+              />
+              <TriStateField
+                name="languagesRequired"
+                legend="Langues exigées"
+              />
+              <LanguagesField />
+              <TriStateField
+                name="drivingLicenseRequired"
+                legend="Permis de conduire exigé"
+              />
+              <TextField
+                name="drivingLicenseDetails"
+                label="Précisions sur le permis (facultatif)"
+                maxLength={offerTextLimits.details}
+              />
+            </Section>
+
+            <Section number={first + 6} title="Organisation">
+              <RadioField
+                name="workTime"
+                legend="Temps de travail"
+                options={workTimes.map((workTime) => ({
+                  value: workTime,
+                  label: workTimeLabels[workTime],
+                }))}
+              />
+              <TextField
+                name="weeklyHours"
+                label="Heures par semaine (facultatif)"
+                hint="Par exemple 35 ou 37,5."
+                inputMode="decimal"
+                maxLength={5}
+                className="sm:max-w-48"
+              />
+              <TextField
+                name="scheduleDetails"
+                label="Horaires (facultatif)"
+                hint="Coupures, travail de nuit, jours de repos…"
+                multiline
+                rows={2}
+                maxLength={offerTextLimits.details}
+              />
+            </Section>
+
+            <Section number={first + 7} title="Vie pratique">
+              <TriStateField name="couplesWelcome" legend="Couples acceptés" />
+              <TriStateField name="petsAllowed" legend="Animaux acceptés" />
+              <TextField
+                name="otherConstraints"
+                label="Autres contraintes pratiques (facultatif)"
+                hint="Uniquement celles que vous pouvez documenter : accès, tenue, vaccinations…"
+                multiline
+                rows={3}
+                maxLength={offerTextLimits.otherConstraints}
+              />
+            </Section>
+
+            <Section
+              number={first + 8}
+              title="Candidature"
+              required
+              description={
+                !admin
+                  ? "Au moins un email ou un téléphone : les candidats vous contactent directement. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
+                  : origin === "collected"
+                    ? "Un email, un téléphone ou le lien officiel de candidature. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
+                    : "Au moins un email ou un téléphone. Les adresses et liens des job-boards (Indeed, LinkedIn…) ne sont pas acceptés."
+              }
+            >
+              {admin && <AdminApplicationFields />}
+              <TextField
+                name="applyEmail"
+                label="Email de candidature"
+                type="email"
+                autoComplete="email"
+                maxLength={offerTextLimits.applyEmail}
+              />
+              <TextField
+                name="applyPhone"
+                label="Téléphone de candidature"
+                type="tel"
+                autoComplete="tel"
+                maxLength={offerTextLimits.applyPhone}
+              />
+              <TextField
+                name="applyUrl"
+                label="Lien officiel de candidature (facultatif)"
+                hint={
+                  admin
+                    ? "La page emploi du site ou du portail de recrutement de l'employeur."
+                    : "La page emploi de votre site ou de votre portail de recrutement."
+                }
+                type="url"
+                inputMode="url"
+                maxLength={offerTextLimits.applyUrl}
+              />
+            </Section>
+          </div>
+
+          <aside className="flex flex-col gap-4 lg:sticky lg:top-4">
+            <LiveMinimum
+              subject={subject}
+              blockedDomains={referentials.blockedDomains}
+            />
+            <OfferPreviewSheet
+              trigger={
+                <Button type="button" variant="outline">
+                  <EyeIcon data-icon="inline-start" aria-hidden />
+                  Aperçu candidat
+                </Button>
+              }
+            >
+              <DraftPreview referentials={referentials} subject={subject} />
+            </OfferPreviewSheet>
+            {formError && <FormAlert>{formError}</FormAlert>}
+            {existingOfferId && (
+              <Link
+                className="text-sm underline"
+                href={`/admin/annonces/${existingOfferId}/modifier`}
+              >
+                Modifier l’annonce qui utilise déjà cette source
+              </Link>
+            )}
+            <Button type="submit" disabled={pending} aria-busy={pending}>
+              {pending && <Loader2Icon className="animate-spin" aria-hidden />}
+              {submitLabel}
+            </Button>
+            {!publishesDirectly && mode === "create" && (
+              <p className="text-sm text-muted-foreground">
+                Votre rattachement est en cours de vérification :
+                l&rsquo;annonce sera publiée dès sa validation.
+              </p>
+            )}
+            <Button asChild variant="ghost">
+              <Link href={returnPaths[props.space]}>Annuler</Link>
+            </Button>
+          </aside>
+        </fieldset>
       </form>
     </FormProvider>
   )
