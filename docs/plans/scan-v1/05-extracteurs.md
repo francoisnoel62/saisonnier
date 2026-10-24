@@ -103,9 +103,9 @@ Un adaptateur observe : il ne décide ni de l'admission ni de la publication, n'
 
 ## Critères d'acceptation
 
-- [ ] Chaque source retenue a son adaptateur, ses fixtures et ses tests de référence.
+- [x] Chaque source retenue a son adaptateur, ses fixtures et ses tests de référence.
 - [ ] La qualité du préremplissage, mesurée depuis la preview, est consignée par source ; le réservoir estimé est confirmé ou des sources de réserve sont ajoutées.
-- [ ] Aucune valeur sans preuve ; aucun HTML stocké ni affiché.
+- [x] Aucune valeur sans preuve ; aucun HTML stocké ni affiché.
 
 ## Hors périmètre
 
