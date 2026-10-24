@@ -222,3 +222,18 @@ Points observés : source officielle à retrouver dans les dix fiches, date de p
 **Correction après la mesure `@1`.** Le fondateur a signalé la [fiche 215QHWT](https://candidat.francetravail.fr/offres/recherche/detail/215QHWT) : « Huez (38) » et l'employeur « LA FOLIE DOUCE SAINT GERVAIS » y sont explicitement indiqués. Lecture du service officiel le 24/10/2026 : `lieuTravail.libelleCommuneLieuTravail = "Huez"`, `codeDepartementLieuTravail = "38"`, `etablissement.libelleEnseigne = "LA FOLIE DOUCE SAINT GERVAIS"`. `france-travail@2` accepte ce couple commune/département s'il appartient au référentiel, sans exiger de code postal ou inventer de code INSEE. L'employeur était déjà extrait ; il est désormais visible dans l'échantillon. Le test de régression a échoué sur `@1`, puis réussi sur `@2`. La mesure de lieu 0/10 ci-dessus décrit donc un défaut de `@1`, pas une absence de lieu sur les fiches France Travail.
 
 **Nature du contrat (`@3`).** Le champ structuré `syntheseContrat` peut commencer par « Saisonnier — 4 Mois — Contrat travail ». Comme l'a précisé le fondateur, il établit la nature du contrat indépendamment de la rédaction de la description. L'adaptateur exprime ce libellé par « Contrat saisonnier » pour les règles communes, en conservant le texte original dans la preuve. La durée reste extraite sans conversion. Cela n'établit pas été ou hiver et ne transforme pas un CDD seul en contrat saisonnier. Le test sur la capture `posting-1.json` a échoué avant la correction, puis réussi.
+
+### Contrôle réel complémentaire en local — 24/10/2026
+
+Exécution en lecture seule du service d'échantillon au commit `3272675`, contre les sources publiques avec le client du scan ; dix fiches au plus par source, aucune annonce ni aucun dossier enregistré. **Ce contrôle local ne remplace pas la mesure depuis Vercel**, notamment pour le service de communes. Les ratios ci-dessous portent sur les champs établis, pas sur l'admission d'un dossier.
+
+| Source | Heure UTC | Fiches lisibles | Contrat | Période | Lieu | Candidature | Salaire |
+|---|---|---|---|---|---|---|---|
+| France Travail `@3` | 07:34:22 | 0 (liste en erreur réseau) | — | — | — | — | — |
+| Belambra `teamtailor@1` | 07:34:23 | 10/10 | 10/10 | 0/10 | 10/10 | 10/10 | 0/10 |
+| VVF `factorial@1` | 07:34:53 | 10/10 | 7/10 | 3/10 | 7/10 | 10/10 | 3/10 |
+| MS Vacances `teamtailor@1` | 07:35:17 | 10/10 | 3/10 | 0/10 | 9/10 | 1/10 | 0/10 |
+
+Belambra : les dix fiches courantes donnent le caractère saisonnier et le formulaire, mais aucune période complète établie. La [fiche 8588693](https://recrute.belambra.fr/jobs/8588693-second-de-cuisine-h-f) a été relue séparément : « Type de contrat : CDD saison », sans dates ni durée trouvées dans le texte utile. Les salaires sans base restent en précision. VVF : périodes ou lieux manquants dans une partie de l'échantillon, contradictions de contrat et absence de date source dans certaines fiches. MS Vacances : stages ou contrats ambigus, périodes absentes ou avec année à vérifier, un lieu non résolu et des canaux non établis dans neuf fiches.
+
+L'erreur France Travail décrit cette exécution locale, sans conclusion sur la disponibilité depuis Vercel. Ces résultats ne confirment pas l'extrapolation exploratoire du plan 01 : les fiches courantes diffèrent et des champs indispensables restent à établir. La PR du plan 05 reste en brouillon jusqu'aux quatre mesures de preview et à la réévaluation documentée du réservoir.
