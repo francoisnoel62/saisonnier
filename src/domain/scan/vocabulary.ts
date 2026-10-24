@@ -1,4 +1,10 @@
-// Source unique des valeurs du scan (également utilisée par les futurs enums SQL).
+// Source unique des valeurs du scan, également utilisée par les enums SQL.
+export const scanRunTriggers = ["admin", "cron"] as const
+export type ScanRunTrigger = (typeof scanRunTriggers)[number]
+export const scanRunTriggerLabels: Record<ScanRunTrigger, string> = {
+  admin: "Administrateur",
+  cron: "Tâche planifiée",
+}
 export const scanModes = ["bootstrap", "daily"] as const
 export type ScanMode = (typeof scanModes)[number]
 export const scanModeLabels: Record<ScanMode, string> = {

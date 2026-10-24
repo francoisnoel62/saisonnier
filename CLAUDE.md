@@ -86,6 +86,17 @@
 - Contacts généraux distincts des canaux prouvés de recrutement ; formulaire désigné officiel par l'adaptateur, domaines exclus contrôlés par `findBlockedTargets`. Absence de preuve de clôture ≠ preuve d'activité.
 - Contrat d'intégration, couverture et arbitrages déterministes SH18 : [docs/scan/rules-v1.md](docs/scan/rules-v1.md). Tests fictifs dans `dates-rules.test.ts`, `extraction-rules.test.ts`, `decisions-rules.test.ts`.
 
+## Scan — données et écritures (plan scan 03)
+
+- Schéma `src/lib/db/schema/scan.ts`, migration `0010_scan.sql` : `scan_sources` (état seul, désactivée sans ligne), `scan_runs`, `scan_run_sources`, `scan_candidates`, `scan_reviews`. Aucun référentiel ni source inséré par migration ; `REFERENCE_TABLES` inchangé. Les enums reprennent `vocabulary.ts` ; CHECK et index unique partiel garantissent les états cohérents, un seul remplissage initial, un quotidien par jour de Paris et un seul passage actif.
+- Écritures dans `src/server/scan/` : `runs.ts`, `run-sources.ts`, `candidates.ts`. Chaque écriture de workflow porte le jeton du passage et le verrouille **avant** les autres lignes (`withRunClaim`, `claim.ts`). Un jeton remplacé ou un passage terminal ne permet plus d'écrire. `initRunSources` exige aussi le jeton ; les contrôles admin ne sont pas des écritures de workflow.
+- `renewClaim` conserve T0, échéance, fenêtre, compteur et seuil. Depuis un passage actif, l'appelant doit d'abord constater la perte du Workflow et fournir `{ lostClaimToken }` : comparaison atomique du jeton observé. Un passage `completed` ne se reprend pas.
+- La livraison passe de `discovered`/`failed` à `to_review` et incrémente les compteurs du passage et de la source dans la même transaction courte. Son rejeu préserve contenu et décision. `firstDeliveredAt` et `targetReachedAt` ne sont posés qu'une fois ; un rejet ne diminue jamais le cumul. `getRunReport` calcule séparément le seuil confirmé sans les rejets d'admission.
+- `recordFailure` exige `expectedAttempts` lu avant l'essai : le rejeu ne consomme pas un autre essai (trois au plus). Une piste écartée ou en échec définitif ne se relit qu'après changement du hash de liste ; une décision humaine reste intacte. Une autre période démontrée crée une nouvelle génération, livrée avec `reused_identity`.
+- `boundText`/`boundObservations` bornent le contenu à l'écriture ; une troncature ajoute un point de revue. `waitBeforeNextRequest` calcule un délai depuis `lastRequestAt`, sans dormir dans une transaction.
+- `/admin/scan` fusionne le registre et l'état stocké (`sources/state.ts`). Les deux interrupteurs sont indépendants ; les actions vérifient le rôle admin et revalident la page. Le remplissage initial ne publie jamais automatiquement.
+- E2E : `resetScan(db)` (`e2e/helpers/scan.ts`) efface les références aux revues puis les seules lignes `scan_*`, par DELETE en transaction, jamais `TRUNCATE CASCADE`. Les offres déjà publiées restent ; chaque test leur donne un intitulé propre. Helpers `insertScanRun`, `insertScanCandidate`, `enableScanSource`.
+
 ## Authentification
 
 - Better Auth 1.7 (`src/lib/auth.ts`), email + mot de passe, vérification d'email obligatoire. Rôles `candidate` / `employer` / `admin` sur `user.role` (`input: false` : jamais fourni par le client ; contrainte CHECK en base).

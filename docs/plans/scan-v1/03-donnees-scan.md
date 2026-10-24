@@ -121,10 +121,10 @@ Les invariants sont des contraintes en base, commentées dans le schéma, comme 
 
 ## Critères d'acceptation
 
-- [ ] Un seul remplissage initial, un seul passage actif, un passage quotidien par jour : la base les garantit.
-- [ ] Une livraison est une transaction courte et idempotente ; le compteur ne double jamais ; `targetReachedAt` n'est posé qu'une fois.
-- [ ] Un workflow dont le jeton a été remplacé n'écrit plus rien.
-- [ ] Les volumes stockés par dossier sont bornés.
+- [x] Un seul remplissage initial, un seul passage actif, un passage quotidien par jour : la base les garantit.
+- [x] Une livraison est une transaction courte et idempotente ; le compteur ne double jamais ; `targetReachedAt` n'est posé qu'une fois.
+- [x] Un workflow dont le jeton a été remplacé n'écrit plus rien.
+- [x] Les volumes stockés par dossier sont bornés.
 
 ## Hors périmètre
 
