@@ -1,8 +1,8 @@
-import { and, eq, gte, isNull, or } from "drizzle-orm"
+import { and, asc, eq, gte, isNull, or } from "drizzle-orm"
 
 import { assertIsoDate } from "@/domain/offer-activity"
 import { db } from "@/lib/db"
-import { offers } from "@/lib/db/schema"
+import { offers, offerLocations } from "@/lib/db/schema"
 
 // Offres visibles des candidats au jour `today` (AAAA-MM-JJ, calculé par todayInParis) : la règle
 // isActive de src/domain/offer-activity.ts, évaluée en SQL. Toute lecture côté candidat passe par
@@ -34,6 +34,10 @@ export async function getOfferWithRelations(id: string) {
     where: eq(offers.id, id),
     with: {
       createdBy: { columns: { role: true } },
+      extraLocations: {
+        orderBy: asc(offerLocations.position),
+        with: { department: { with: { region: true } } },
+      },
       company: true,
       occupation: true,
       department: { with: { region: true } },

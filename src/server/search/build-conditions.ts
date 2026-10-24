@@ -7,12 +7,19 @@ import {
   isNotNull,
   lte,
   or,
+  exists,
+  sql,
   type SQL,
 } from "drizzle-orm"
 
 import type { SearchCriteria } from "@/domain/search-criteria"
 import { db } from "@/lib/db"
-import { departments, occupations, offers } from "@/lib/db/schema"
+import {
+  departments,
+  occupations,
+  offers,
+  offerLocations,
+} from "@/lib/db/schema"
 import { activeOfferConditions } from "@/server/offers/queries"
 
 // Critères de recherche → SQL : une fonction par critère, chacune renvoyant `undefined` quand le
@@ -39,17 +46,35 @@ const occupation: Condition = ({ occupations: slugs }) =>
 // Le département de l'offre est choisi, ou sa région l'est.
 const location: Condition = ({ regions, departments: codes }) => {
   if (!selected(regions) && !selected(codes)) return undefined
+  const selectedDepartment = (
+    column: typeof offers.departmentCode | typeof offerLocations.departmentCode,
+  ) =>
+    or(
+      selected(codes) ? inArray(column, codes) : undefined,
+      selected(regions)
+        ? inArray(
+            column,
+            db
+              .select({ code: departments.code })
+              .from(departments)
+              .where(inArray(departments.regionCode, regions)),
+          )
+        : undefined,
+    )
   return or(
-    selected(codes) ? inArray(offers.departmentCode, codes) : undefined,
-    selected(regions)
-      ? inArray(
-          offers.departmentCode,
-          db
-            .select({ code: departments.code })
-            .from(departments)
-            .where(inArray(departments.regionCode, regions)),
-        )
-      : undefined,
+    selectedDepartment(offers.departmentCode),
+    // Garder l'identité externe qualifiée, y compris dans les count mono-table de Drizzle.
+    exists(
+      db
+        .select({ id: offerLocations.id })
+        .from(offerLocations)
+        .where(
+          and(
+            eq(offerLocations.offerId, sql`"offers"."id"`),
+            selectedDepartment(offerLocations.departmentCode),
+          ),
+        ),
+    ),
   )
 }
 

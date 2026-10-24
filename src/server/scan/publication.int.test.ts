@@ -3,11 +3,12 @@ import { afterEach, beforeEach, expect, it } from "vitest"
 
 import { insertScanCandidate } from "../../../e2e/helpers/scan"
 
-import { absent } from "@/domain/scan/field"
+import { absent, established } from "@/domain/scan/field"
 import { db } from "@/lib/db"
 import {
   blockedDomains,
   offers,
+  offerLocations,
   scanCandidates,
   scanReviews,
   scanRuns,
@@ -80,6 +81,93 @@ it("version périmée : refuse sans modifier le dossier", async () => {
     await publishCandidate({ ...fixture.request, version: 99 }),
   ).toMatchObject({ ok: false, reason: "conflict" })
   expect(await stored()).toEqual(fixture.candidate)
+})
+
+it("la revue publie tous les lieux atomiquement et le rejeu ne les duplique pas", async () => {
+  const request = {
+    ...fixture.request,
+    input: {
+      ...fixture.input,
+      extraLocations: [
+        {
+          communeName: "Lacanau",
+          communeInseeCode: "33214",
+          departmentCode: "33",
+          postalCode: "33680",
+          locationDetails: "Au lac",
+        },
+      ],
+    },
+  }
+  const result = await publishCandidate(request)
+  expect(result.ok).toBe(true)
+  if (!result.ok) return
+  await publishCandidate(request)
+  const locations = await db
+    .select()
+    .from(offerLocations)
+    .where(eq(offerLocations.offerId, result.offerId))
+  expect(locations).toHaveLength(1)
+  expect(locations[0]).toMatchObject({ position: 1, communeName: "Lacanau" })
+})
+
+it("un département supplémentaire inconnu bloque avant publication", async () => {
+  const result = await publishCandidate({
+    ...fixture.request,
+    input: {
+      ...fixture.input,
+      extraLocations: [
+        {
+          communeName: "Inconnue",
+          departmentCode: "00",
+          communeInseeCode: null,
+          postalCode: null,
+          locationDetails: null,
+        },
+      ],
+    },
+  })
+  expect(result).toMatchObject({ ok: false, reason: "blocked" })
+  expect(
+    await db
+      .select()
+      .from(offers)
+      .where(eq(offers.companyId, fixture.company.id)),
+  ).toEqual([])
+})
+
+it("la publication automatique conserve tous les lieux établis", async () => {
+  await fixture.cleanup()
+  fixture = await createPublicationFixture("daily")
+  await fixture.discovered()
+  await db
+    .update(scanCandidates)
+    .set({
+      proposal: {
+        ...fixture.proposal,
+        locations: established(
+          [
+            {
+              communeName: "Chamonix",
+              departmentCode: "74",
+              country: "France",
+            },
+            { communeName: "Lacanau", departmentCode: "33", country: "France" },
+          ],
+          fixture.proposal.locations.evidence,
+        ),
+      },
+    })
+    .where(eq(scanCandidates.id, fixture.candidate.id))
+  const result = await publishCandidate(fixture.scanRequest)
+  expect(result.ok).toBe(true)
+  if (!result.ok) return
+  expect(
+    await db
+      .select()
+      .from(offerLocations)
+      .where(eq(offerLocations.offerId, result.offerId)),
+  ).toMatchObject([{ communeName: "Lacanau", departmentCode: "33" }])
 })
 
 it("un formulaire humain complet résout les manques de la proposition originale", async () => {
@@ -224,14 +312,12 @@ it("un doublon ouvert bloque aussi le second dossier du rapprochement", async ()
     firstRunId: fixture.run.id,
     status: "to_review",
   })
-  await db
-    .insert(scanReviews)
-    .values({
-      kind: "duplicate",
-      groupKey: "other-side",
-      candidateId: other.id,
-      otherCandidateId: fixture.candidate.id,
-    })
+  await db.insert(scanReviews).values({
+    kind: "duplicate",
+    groupKey: "other-side",
+    candidateId: other.id,
+    otherCandidateId: fixture.candidate.id,
+  })
   expect(await publishCandidate(fixture.request)).toMatchObject({
     ok: false,
     reason: "blocked",

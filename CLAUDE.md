@@ -23,7 +23,7 @@
 | `npm run db:generate` | migration SQL depuis `src/lib/db/schema` (`--custom` pour une migration de données) |
 | `npm run db:migrate` / `db:check` / `db:studio` | appliquer, vérifier, explorer |
 | `npm run admin:grant -- <email>` | passer en `admin` un compte existant et vérifié (autre base : préfixer `DATABASE_URL=…`) |
-| `npm run db:seed:demo` | jeu de démonstration dans la base de développement : 8 entreprises fictives et 43 offres datées par rapport à aujourd'hui ; relancer le remet à l'état initial ; refusé si `VERCEL_ENV=production` |
+| `npm run db:seed:demo` | jeu de démonstration dans la base de développement : 8 entreprises fictives et 44 offres datées par rapport à aujourd'hui ; relancer le remet à l'état initial ; refusé si `VERCEL_ENV=production` |
 | `npm run e2e` / `e2e:ui` | tests Playwright (`e2e/*.spec.ts`), projets `chromium` et `mobile` (Pixel 7), sur `saisonnier_test` |
 
 - L'E2E lance son propre `next dev -p 3100` (dossier `.next-e2e`) : il tourne en même temps que `npm run dev`.
@@ -127,6 +127,13 @@
 - La recherche trie par jour source (sinon jour de publication à Paris), puis instant source/publication et identifiant. Une reprise ancienne garde sa place ; aucune heure n'est attribuée à une date source civile.
 - `fieldsToConfirm` (migration `0015`) accepte seulement les champs de `field-certainty.ts` et impose leur valeur neutre par CHECK. `establishFields` retire une mention dès qu'une valeur est renseignée ; le formulaire admin permet aussi de la retirer. Les contradictions du scan deviennent ces mentions. Les filtres continuent de lire les valeurs neutres.
 - `additionalInfo` porte le bloc « Divers », saisi par l'admin ou repris du scan, au plus 1 000 caractères. L'employeur n'a pas ces contrôles.
+
+## Lieux multiples (plan scan 08)
+
+- Le lieu principal reste dans `offers`. `offer_locations` (migration `0016`) conserve au plus vingt lieux supplémentaires saisis par l'admin, ordonnés par position ; aucune reprise des offres existantes. FK avec suppression en cascade, position positive, un seul code INSEE connu par offre et préfixe du département vérifié.
+- `offerPlaces` et `placesSummary` (`domain/offer-places.ts`) décrivent l'ordre et le résumé ; les cartes et le suivi exposent seulement `placesCount`, la fiche reçoit une projection explicite des lieux. Les relations chargent les départements et régions, sans contacts supplémentaires.
+- La condition SQL de lieu utilise `EXISTS` sur les autres lieux, sans jointure : résultat et compteur restent uniques. Garder `"offers"."id"` qualifié dans cette sous-requête et dans le décompte de lieux, car Drizzle déqualifie les colonnes d'un count mono-table. L'oracle lit `extraPlaces` ; le catalogue de 44 offres inclut un poste dans trois lieux et deux régions.
+- `extraLocations` est réservé au schéma et au formulaire admin (`useFieldArray`). `CommuneField.prefix` isole la recherche et le repli manuel de chaque lieu. Le scan ne préremplit que les lieux établis ; les écritures admin et `publishCandidate` remplacent la liste dans la transaction de l'annonce. Le dépôt employeur conserve un seul lieu.
 
 ## Authentification
 

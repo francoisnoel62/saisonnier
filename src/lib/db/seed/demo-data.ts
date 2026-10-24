@@ -2,16 +2,18 @@ import { inArray } from "drizzle-orm"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 
 import { assertIsoDate } from "@/domain/offer-activity"
+import type { ExtraLocationInput } from "@/domain/offer-input"
 import type * as schema from "@/lib/db/schema"
 import {
   companies,
   occupations,
   offers,
+  offerLocations,
   type NewCompany,
   type NewOffer,
 } from "@/lib/db/schema"
 
-// Jeu de démonstration : 8 entreprises fictives et 43 offres, datées par rapport à `today`.
+// Jeu de démonstration : 8 entreprises fictives et 44 offres, datées par rapport à `today`.
 // Il sert à la base de développement (npm run db:seed:demo) et d'oracle aux tests de la
 // recherche (plan 08). Les contacts ne joignent personne : domaines en .example (RFC 2606),
 // numéros des tranches réservées aux œuvres de fiction (01 99 00, 02 61 91, 04 65 71,
@@ -153,6 +155,7 @@ export type DemoOffer = Omit<NewOffer, "id" | "occupationId"> &
   Required<Pick<NewOffer, "status">> & {
     id: string
     occupationSlug: string | null
+    extraLocations?: ExtraLocationInput[]
   }
 
 function addDays(date: string, days: number) {
@@ -161,7 +164,7 @@ function addDays(date: string, days: number) {
   return value.toISOString().slice(0, 10)
 }
 
-// Les 43 offres, pour une date du jour donnée (AAAA-MM-JJ, Europe/Paris). Même date, même jeu.
+// Les 44 offres, pour une date du jour donnée (AAAA-MM-JJ, Europe/Paris). Même date, même jeu.
 export function demoOffers(today: string): DemoOffer[] {
   assertIsoDate(today)
   const day = (offset: number) => addDays(today, offset)
@@ -1249,6 +1252,41 @@ export function demoOffers(today: string): DemoOffer[] {
       humanVerifiedAt: at(0),
       applyUrl: `${ecume.site}/candidature`,
     },
+    {
+      id: offerId(44),
+      ...collected(
+        0,
+        `${serac.site}/emplois/equipe-mobile`,
+        "Site officiel du Grand Sérac",
+      ),
+      companyId: serac.id,
+      title: "Agent polyvalent — trois lieux",
+      occupationSlug: null,
+      season: "summer",
+      durationValue: 3,
+      durationUnit: "months",
+      communeName: "Praz-sur-Arly",
+      communeInseeCode: "74215",
+      postalCode: "74120",
+      departmentCode: "74",
+      applyEmail: serac.email,
+      extraLocations: [
+        {
+          communeName: "Tignes",
+          communeInseeCode: "73296",
+          postalCode: "73320",
+          departmentCode: "73",
+          locationDetails: "Accueil du village",
+        },
+        {
+          communeName: "Lacanau",
+          communeInseeCode: "33214",
+          postalCode: "33680",
+          departmentCode: "33",
+          locationDetails: "Établissement du lac",
+        },
+      ],
+    },
   ]
 }
 
@@ -1288,11 +1326,24 @@ export async function seedDemo(
       ),
     )
     await tx.insert(offers).values(
-      demo.map(({ occupationSlug, ...offer }) => ({
-        ...offer,
-        occupationId: occupationSlug ? occupationIds.get(occupationSlug) : null,
+      demo.map(({ occupationSlug, extraLocations, ...offer }) => {
+        void extraLocations
+        return {
+          ...offer,
+          occupationId: occupationSlug
+            ? occupationIds.get(occupationSlug)
+            : null,
+        }
+      }),
+    )
+    const locations = demo.flatMap((offer) =>
+      (offer.extraLocations ?? []).map((place, index) => ({
+        ...place,
+        offerId: offer.id,
+        position: index + 1,
       })),
     )
+    if (locations.length) await tx.insert(offerLocations).values(locations)
   })
 
   return { companies: demoCompanies.length, offers: demo.length }

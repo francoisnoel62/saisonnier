@@ -7,6 +7,7 @@ import { findBlockedTargets } from "@/domain/blocked-domains"
 import type { OfferOrigin } from "@/domain/offer"
 import { establishFields } from "@/domain/field-certainty"
 import { isExternalApplication } from "@/domain/offer-labels"
+import { offerPlaces } from "@/domain/offer-places"
 import {
   previewOfferInput,
   type OfferFormReferentials,
@@ -115,6 +116,7 @@ export function draftOfferPreview(
     | "provenance"
     | "newness"
     | "externalApplication"
+    | "places"
   >
   const recruiter = setting.applicationChannel === "recruiter"
   const application: ApplicationFields = {
@@ -142,6 +144,38 @@ export function draftOfferPreview(
         setting.origin === "collected" ? "human_verified" : "deposited",
       newness: null,
       externalApplication: isExternalApplication(application),
+      places: offerPlaces(
+        {
+          ...draft,
+          department: department
+            ? {
+                ...department,
+                region: department.regionName
+                  ? { name: department.regionName }
+                  : null,
+              }
+            : null,
+        },
+        ((values as AdminOfferFormValues).extraLocations ?? []).map(
+          (place, index) => {
+            const department = referentials.departments.find(
+              (item) => item.code === place.departmentCode,
+            )
+            return {
+              ...place,
+              position: index + 1,
+              department: department
+                ? {
+                    ...department,
+                    region: department.regionName
+                      ? { name: department.regionName }
+                      : null,
+                  }
+                : null,
+            }
+          },
+        ),
+      ),
     },
     applicationExplanation: applicationModeExplanation(application),
     contacts: {

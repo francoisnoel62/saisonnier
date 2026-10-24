@@ -18,9 +18,15 @@ import { companies, departments, offers } from "@/lib/db/schema"
 
 import { getBlockedDomains } from "./application"
 import { isUuid } from "./queries"
+import { replaceOfferLocations } from "./locations"
 
 export type CollectedOfferInput = OfferInput &
-  Partial<Pick<AdminOfferInput, "fieldsToConfirm" | "additionalInfo">> & {
+  Partial<
+    Pick<
+      AdminOfferInput,
+      "fieldsToConfirm" | "additionalInfo" | "extraLocations"
+    >
+  > & {
     companyId: string
     sourceUrl: string
     sourceName: string | null
@@ -102,7 +108,8 @@ export async function upsertCollectedOffer(
     )
     if (taken) return { ok: false, reason: "source_taken", offerId: taken.id }
 
-    const values = { ...input, sourceUrl, sourceCheckedAt: now }
+    const { extraLocations = [], ...columns } = input
+    const values = { ...columns, sourceUrl, sourceCheckedAt: now }
     if (offerId !== undefined) {
       if (!isUuid(offerId)) return { ok: false, reason: "not_found" }
       const [current] = await tx
@@ -113,6 +120,7 @@ export async function upsertCollectedOffer(
       if (!current) return { ok: false, reason: "not_found" }
       // Le cycle de vie et la vérification humaine ne sont jamais réécrits ici.
       await tx.update(offers).set(values).where(eq(offers.id, offerId))
+      await replaceOfferLocations(tx, offerId, extraLocations)
       return { ok: true, offerId, created: false }
     }
     const [saved] = await tx
@@ -127,6 +135,7 @@ export async function upsertCollectedOffer(
         humanVerifiedByUserId: actor.userId,
       })
       .returning({ id: offers.id })
+    await replaceOfferLocations(tx, saved.id, extraLocations)
     return { ok: true, offerId: saved.id, created: true }
   })
 }

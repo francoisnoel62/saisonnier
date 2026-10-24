@@ -3,6 +3,7 @@ import type { Pool } from "pg"
 import { expect, test } from "./fixtures"
 import { insertCollectedOffer } from "./helpers/offers"
 import { provenanceLabels, type Provenance } from "../src/domain/offer-labels"
+import { stubCommuneSearch } from "./helpers/offer-form"
 
 const card = (page: Page, title: string) =>
   page
@@ -96,7 +97,7 @@ for (const provenance of ["human_verified", "sourced"] as const) {
       ),
     ).toBeVisible()
     await expect(
-        page.getByRole("link", { name: "Compléter mon dossier" }),
+      page.getByRole("link", { name: "Compléter mon dossier" }),
     ).toBeVisible()
     await expect(
       page.getByRole("link", { name: /Site officiel :/ }),
@@ -132,5 +133,109 @@ test("Scan §5 — logement à confirmer : indication et exclusion du filtre log
   await page.goto("/offres?logement=oui")
   await expect(
     page.getByRole("link", { name: title, exact: true }),
+  ).toHaveCount(0)
+})
+
+test("Scan §6 — un poste dans plusieurs lieux : une seule fiche trouvée et comptée une fois", async ({
+  asCandidate: page,
+  db,
+}) => {
+  await db.query("delete from offers")
+  const { id, title } = await presentationOffer(db, "human_verified")
+  await db.query(
+    "update offers set commune_name = 'Praz-sur-Arly', commune_insee_code = '74215', postal_code = '74120', department_code = '74' where id = $1",
+    [id],
+  )
+  await db.query(
+    `insert into offer_locations (offer_id, position, commune_name, department_code, location_details) values ($1, 1, 'Tignes', '73', 'Accueil du village'), ($1, 2, 'Lacanau', '33', 'Au bord du lac')`,
+    [id],
+  )
+  for (const query of [
+    "dept=74",
+    "dept=73",
+    "dept=33",
+    "dept=73,33",
+    "region=75",
+  ]) {
+    await page.goto(`/offres?${query}`)
+    await expect(page.locator("#resultats-nombre")).toHaveText("1 offre")
+    await expect(
+      page.getByRole("link", { name: title, exact: true }),
+    ).toHaveCount(1)
+    await expect(
+      card(page, title).getByText(
+        "Praz-sur-Arly · Haute-Savoie (74) et 2 autres lieux",
+      ),
+    ).toBeVisible()
+  }
+  await page.goto(`/offres/${id}`)
+  await expect(
+    page.getByRole("heading", { name: "Lieux", exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByText("Tignes · Savoie (73)", { exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByText("Lacanau · Gironde (33)", { exact: true }),
+  ).toBeVisible()
+  await expect(page.getByText("Au bord du lac", { exact: true })).toBeVisible()
+})
+
+test("Scan §6 — l'admin ajoute un lieu, le préremplit en modification puis le retire", async ({
+  asAdmin: page,
+  asCandidate,
+  db,
+}) => {
+  const { id } = await presentationOffer(db, "human_verified")
+  await stubCommuneSearch(page, [
+    {
+      nom: "Tignes",
+      code: "73296",
+      codesPostaux: ["73320"],
+      codeDepartement: "73",
+    },
+  ])
+  await page.goto(`/admin/annonces/${id}/modifier`, {
+    waitUntil: "networkidle",
+  })
+  await page.getByLabel("Nom de la source").fill("Site officiel fictif")
+  await page
+    .getByRole("button", { name: "Ajouter un lieu", exact: true })
+    .click()
+  const extra = page.getByRole("group", { name: "Autre lieu 1", exact: true })
+  await extra
+    .getByRole("combobox", { name: "Commune", exact: true })
+    .fill("Tig")
+  await extra.getByRole("option", { name: /Tignes/ }).click()
+  await extra
+    .getByLabel("Précisions sur le lieu (facultatif)")
+    .fill("Au centre de la station")
+  await page
+    .getByRole("button", { name: "Enregistrer les modifications" })
+    .click()
+  await expect(page).toHaveURL("/admin/annonces")
+  await asCandidate.goto(`/offres/${id}`)
+  await expect(
+    asCandidate.getByText("Tignes · Savoie (73)", { exact: true }),
+  ).toBeVisible()
+  await expect(
+    asCandidate.getByText("Au centre de la station", { exact: true }),
+  ).toBeVisible()
+  await page.goto(`/admin/annonces/${id}/modifier`, {
+    waitUntil: "networkidle",
+  })
+  await expect(
+    page
+      .getByRole("group", { name: "Autre lieu 1", exact: true })
+      .getByText("Tignes (73320)", { exact: true }),
+  ).toBeVisible()
+  await page.getByRole("button", { name: "Retirer le lieu 1" }).click()
+  await page
+    .getByRole("button", { name: "Enregistrer les modifications" })
+    .click()
+  await expect(page).toHaveURL("/admin/annonces")
+  await asCandidate.reload()
+  await expect(
+    asCandidate.getByText("Tignes · Savoie (73)", { exact: true }),
   ).toHaveCount(0)
 })

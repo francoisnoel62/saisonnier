@@ -65,7 +65,7 @@ describe("activeOfferConditions", () => {
     const active = await activeDemoIds(today)
     const published = demo.filter((offer) => offer.status === "published")
 
-    expect(active).toHaveLength(36)
+    expect(active).toHaveLength(37)
     expect(published.length - active.length).toBe(3)
   })
 
@@ -117,13 +117,13 @@ describe("seedDemo", () => {
       .set({ displayName: "Enseigne modifiée" })
       .where(eq(companies.id, first.companyId))
 
-    expect(await seedDemo(db, today)).toEqual({ companies: 8, offers: 43 })
+    expect(await seedDemo(db, today)).toEqual({ companies: 8, offers: 44 })
 
     const rows = await db
       .select({ id: offers.id, title: offers.title })
       .from(offers)
       .where(inArray(offers.id, demoIds))
-    expect(rows).toHaveLength(43)
+    expect(rows).toHaveLength(44)
     expect(rows.find((row) => row.id === first.id)?.title).toBe(first.title)
     const [company] = await db
       .select({ displayName: companies.displayName })

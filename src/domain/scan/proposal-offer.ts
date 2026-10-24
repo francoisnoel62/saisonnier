@@ -33,7 +33,8 @@ export function truncatePostingText(text: string, limit: number) {
 // Seules les valeurs établies alimentent les colonnes. Les inconnues restent absentes.
 export function proposalToOfferInput(proposal: ScanProposal) {
   const period = valueOf(proposal.period)
-  const place = valueOf(proposal.locations)?.[0]
+  const places = valueOf(proposal.locations) ?? []
+  const place = places[0]
   const application = valueOf(proposal.application)
   const salary = valueOf(proposal.salary) ?? []
   const net = salary.find((s) => s.basis === "net")
@@ -59,6 +60,13 @@ export function proposalToOfferInput(proposal: ScanProposal) {
     communeInseeCode: place?.inseeCode ?? null,
     departmentCode: place?.departmentCode ?? "",
     postalCode: place?.postalCode ?? null,
+    extraLocations: places.slice(1).map((place) => ({
+      communeName: place.communeName ?? "",
+      communeInseeCode: place.inseeCode ?? null,
+      departmentCode: place.departmentCode ?? "",
+      postalCode: place.postalCode ?? null,
+      locationDetails: null,
+    })),
     salaryNetMinCents: net?.minCents ?? null,
     salaryNetMaxCents: net?.maxCents ?? null,
     salaryNetUnit: net?.unit ?? null,
@@ -143,6 +151,11 @@ export function reviewedPublicationProposal(
         departmentCode: input.departmentCode,
         country: "France",
       },
+      ...input.extraLocations.map((place) => ({
+        communeName: place.communeName,
+        departmentCode: place.departmentCode,
+        country: "France",
+      })),
     ]),
     officialUrl: field(input.sourceUrl ?? ""),
     application: field({

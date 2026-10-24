@@ -1,6 +1,7 @@
 import { expect, it } from "vitest"
 
-import { absent } from "./field"
+import { absent, established } from "./field"
+import { proposalToAdminFormValues } from "./proposal-form"
 import { buildProposal } from "./proposal"
 import {
   proposalToOfferInput,
@@ -92,4 +93,32 @@ it("transmet les contradictions facultatives à la publication et à la revue", 
     housing: "unknown",
     fieldsToConfirm: ["housing"],
   })
+})
+
+it("préremplit tous les lieux établis du même poste, sans inventer les lieux incertains", () => {
+  const proposal = buildProposal(posting(), { referenceDate: "2026-10-24" })
+  proposal.locations = established(
+    [
+      { communeName: "Huez", departmentCode: "38" },
+      { communeName: "Tignes", departmentCode: "73", inseeCode: "73296" },
+    ],
+    [observation("Lieux du poste : Huez et Tignes.").evidence],
+  )
+  expect(proposalToOfferInput(proposal)).toMatchObject({
+    communeName: "Huez",
+    extraLocations: [{ communeName: "Tignes", communeInseeCode: "73296" }],
+  })
+  expect(
+    proposalToAdminFormValues(proposal, { companyId: null }).extraLocations,
+  ).toEqual([
+    {
+      communeName: "Tignes",
+      communeInseeCode: "73296",
+      departmentCode: "73",
+      postalCode: "",
+      locationDetails: "",
+    },
+  ])
+  proposal.locations = absent()
+  expect(proposalToOfferInput(proposal).extraLocations).toEqual([])
 })

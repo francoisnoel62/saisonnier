@@ -21,6 +21,7 @@ import { contractPeriod, seasonLabels } from "@/domain/offer-display"
 import { formatSalary } from "@/domain/salary"
 import { provenanceLabels, newnessLabel } from "@/domain/offer-labels"
 import { isToConfirm } from "@/domain/field-certainty"
+import { otherPlacesLabel } from "@/domain/offer-places"
 import type { OfferListItem } from "@/server/search/search-offers"
 
 import { InfoValue } from "./info-value"
@@ -81,6 +82,7 @@ export function OfferCard({
           <MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
             {`${offer.communeName} · ${offer.department.name} (${offer.department.code})`}
+            {otherPlacesLabel(offer.placesCount - 1)}
           </span>
         </p>
         <p className="flex items-start gap-2">

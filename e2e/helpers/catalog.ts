@@ -22,6 +22,10 @@ export async function seedDemoCatalog(db: Pool) {
   const offers = demoOffers(today).map((offer) => ({
     ...offer,
     regionCode: regionOf.get(offer.departmentCode)!,
+    extraPlaces: (offer.extraLocations ?? []).map((place) => ({
+      departmentCode: place.departmentCode,
+      regionCode: regionOf.get(place.departmentCode)!,
+    })),
   }))
   const matching = (criteria: SearchCriteria) =>
     offers.filter((offer) => matchesCriteria(offer, criteria, today))

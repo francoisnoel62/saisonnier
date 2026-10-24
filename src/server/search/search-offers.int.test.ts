@@ -39,6 +39,10 @@ beforeAll(async () => {
   oracleOffers = demo.map((offer) => ({
     ...offer,
     regionCode: regionOf.get(offer.departmentCode)!,
+    extraPlaces: (offer.extraLocations ?? []).map((place) => ({
+      departmentCode: place.departmentCode,
+      regionCode: regionOf.get(place.departmentCode)!,
+    })),
   }))
 })
 
@@ -307,6 +311,7 @@ describe("searchOffers — carte d'offre", () => {
         "externalApplication",
         "newness",
         "fieldsToConfirm",
+        "placesCount",
       ].sort(),
     )
   })

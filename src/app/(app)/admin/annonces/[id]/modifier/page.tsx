@@ -53,7 +53,7 @@ export default async function AdminEditOfferPage({
         <p className="max-w-3xl text-sm text-muted-foreground">
           {offer.origin === "deposited"
             ? "Son statut ne change pas : une annonce en ligne le reste, une annonce en attente attend toujours la vérification de son déposant."
-            : "L'enregistrement remet l'annonce en ligne et date la vérification de sa source à aujourd'hui."}
+            : "La modification conserve le statut de l'annonce et date la consultation de sa source à aujourd'hui."}
         </p>
       </div>
       <OfferForm

@@ -1,9 +1,12 @@
 import "server-only"
 
-import { and, eq, or } from "drizzle-orm"
+import { and, eq, or, inArray } from "drizzle-orm"
 
 import { expiryReason, todayInParis } from "@/domain/offer-activity"
-import type { AdminOfferInput } from "@/domain/offer-input"
+import {
+  areExtraLocationsValid,
+  type AdminOfferInput,
+} from "@/domain/offer-input"
 import { checkPublicationMinimum } from "@/domain/offer-minimum"
 import { valueOf } from "@/domain/scan/field"
 import {
@@ -28,6 +31,7 @@ import {
 } from "@/lib/db/schema"
 import { getBlockedDomains } from "@/server/offers/application"
 import { isUuid } from "@/server/offers/queries"
+import { replaceOfferLocations } from "@/server/offers/locations"
 
 import { withRunClaim, type ScanTransaction } from "./claim"
 import { scanSourceDefinitions } from "./sources/registry"
@@ -144,10 +148,18 @@ async function publish(
       potentialDuplicate: duplicates.length > 0,
     },
   )
-  const [department] = await tx
+  const knownDepartments = await tx
     .select({ code: departments.code })
     .from(departments)
-    .where(eq(departments.code, input.departmentCode))
+    .where(
+      inArray(departments.code, [
+        input.departmentCode,
+        ...input.extraLocations.map((place) => place.departmentCode),
+      ]),
+    )
+  const department = knownDepartments.find(
+    (row) => row.code === input.departmentCode,
+  )
   const minimum = checkPublicationMinimum(
     { ...input, companyId: company?.id, departmentCode: department?.code },
     { origin: "collected", blockedDomains },
@@ -161,6 +173,13 @@ async function publish(
     ),
     ...(expiryReason(input, today) ? [scanIssue("activity")] : []),
     ...(!candidate.lastFetchedAt ? [scanIssue("detail_unreadable")] : []),
+    ...(!areExtraLocationsValid(
+      input,
+      input.extraLocations,
+      knownDepartments.map((row) => row.code),
+    )
+      ? [scanIssue("location")]
+      : []),
   ])
   if (issues.length || !company) return { ok: false, reason: "blocked", issues }
   if (request.kind === "scan") {
@@ -196,7 +215,11 @@ async function publish(
     request.kind === "scan"
       ? await attachOccupationInTransaction(tx, candidate)
       : candidate
-  const { seasonalContractConfirmed: confirmed, ...values } = input
+  const {
+    seasonalContractConfirmed: confirmed,
+    extraLocations,
+    ...values
+  } = input
   void confirmed
   const [offer] = await tx
     .insert(offers)
@@ -220,6 +243,7 @@ async function publish(
       humanVerifiedByUserId: request.kind === "admin" ? request.userId : null,
     })
     .returning({ id: offers.id })
+  await replaceOfferLocations(tx, offer.id, extraLocations)
   await tx
     .update(scanCandidates)
     .set({

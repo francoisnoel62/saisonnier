@@ -15,6 +15,12 @@ import type { TriState } from "@/domain/tri-state"
 import type { Offer } from "@/lib/db/schema"
 import { isToConfirm } from "@/domain/field-certainty"
 import {
+  offerPlaces,
+  placesSummary,
+  type OfferPlace,
+  type PlaceSource,
+} from "@/domain/offer-places"
+import {
   provenanceOf,
   newnessOf,
   isExternalApplication,
@@ -78,11 +84,14 @@ export type OfferDetailsData = Omit<
   provenance: Provenance
   newness: Newness | null
   externalApplication: boolean
+  places: OfferPlace[]
 }
 
 type OfferDetailsSource = Pick<Offer, (typeof offerDetailsFields)[number]> & {
   occupation: { label: string } | null
   department: { code: string; name: string; region?: { name: string } | null }
+  extraLocations?: (PlaceSource & { position: number })[]
+  communeInseeCode?: string | null
 } & Partial<
     Pick<
       Offer,
@@ -117,6 +126,10 @@ export function toOfferDetailsData(
       ...offer,
       applicationChannel: offer.applicationChannel ?? "employer",
     }),
+    places: offerPlaces(
+      { ...offer, departmentCode: offer.department.code },
+      offer.extraLocations,
+    ),
   }
 }
 
@@ -230,7 +243,7 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
         </Row>
       </Section>
 
-      <Section title="Lieu">
+      <Section title={offer.places.length > 1 ? "Lieux" : "Lieu"}>
         <Row label="Commune">
           {!offer.communeName.trim() ? (
             <NotSpecified>Non précisée</NotSpecified>
@@ -255,6 +268,18 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
             <Text value={offer.locationDetails} />
           </Row>
         )}
+        {offer.places.slice(1).map((place, index) => (
+          <Row key={index} label={`Autre lieu ${index + 1}`}>
+            <p>{placesSummary([place])}</p>
+            {place.postalCode && <p>Code postal : {place.postalCode}</p>}
+            {place.regionName && (
+              <p className="text-muted-foreground">{place.regionName}</p>
+            )}
+            {place.locationDetails && (
+              <p className="whitespace-pre-line">{place.locationDetails}</p>
+            )}
+          </Row>
+        ))}
       </Section>
 
       <Section title="Rémunération">

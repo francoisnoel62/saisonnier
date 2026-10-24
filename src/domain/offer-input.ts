@@ -16,6 +16,11 @@ import {
   type WorkTime,
 } from "./offer"
 import { isIsoDate } from "./offer-activity"
+import {
+  duplicatePlaceIndices,
+  MAX_EXTRA_LOCATIONS,
+  type PlaceSource,
+} from "./offer-places"
 import { blockedTargetMessage, type PublicationInput } from "./offer-minimum"
 import { isPhoneNumber } from "./phone"
 import { salaryUnits, type SalaryUnit } from "./salary"
@@ -439,25 +444,7 @@ function checkOfferInput(
     )
   }
 
-  // Lieu : le département existe, et la commune choisie en fait partie. Sans code INSEE (saisie
-  // manuelle), le département est choisi dans la liste.
-  if (input.communeName) {
-    const insee = input.communeInseeCode
-    const reselect =
-      "Commune non reconnue : choisissez-la à nouveau dans la liste."
-    if (!context.departmentCodes.includes(input.departmentCode)) {
-      if (insee) issue("communeName", reselect)
-      else issue("departmentCode", "Choisissez le département du poste.")
-    } else if (
-      insee &&
-      (!INSEE_CODE.test(insee) || !insee.startsWith(input.departmentCode))
-    ) {
-      issue("communeName", reselect)
-    }
-    if (input.postalCode && !POSTAL_CODE.test(input.postalCode)) {
-      issue("communeName", reselect)
-    }
-  }
+  checkPlace(input, ctx, context)
 
   // Rémunération : un montant va avec son unité ; une fourchette va du bas vers le haut.
   for (const basis of salaryBases) {
@@ -875,8 +862,107 @@ export const adminOfferTextLimits = {
   recruiterName: 100,
 } as const
 
+type PlaceFormValues = Pick<
+  OfferFormValues,
+  | "communeName"
+  | "communeInseeCode"
+  | "postalCode"
+  | "departmentCode"
+  | "locationDetails"
+>
+function checkPlace(
+  input: PlaceFormValues,
+  ctx: z.RefinementCtx,
+  context: OfferInputContext,
+) {
+  const issue = (field: keyof PlaceFormValues, message: string) =>
+    ctx.addIssue({ code: "custom", path: [field], message })
+  if (!input.communeName) return
+  const insee = input.communeInseeCode
+  const reselect =
+    "Commune non reconnue : choisissez-la à nouveau dans la liste."
+  if (!context.departmentCodes.includes(input.departmentCode)) {
+    issue(
+      insee ? "communeName" : "departmentCode",
+      insee ? reselect : "Choisissez le département du poste.",
+    )
+  } else if (
+    insee &&
+    (!INSEE_CODE.test(insee) || !insee.startsWith(input.departmentCode))
+  )
+    issue("communeName", reselect)
+  if (input.postalCode && !POSTAL_CODE.test(input.postalCode))
+    issue("communeName", reselect)
+}
+function extraLocationFields(context: OfferInputContext) {
+  return offerFields(context)
+    .pick({
+      communeName: true,
+      communeInseeCode: true,
+      postalCode: true,
+      departmentCode: true,
+      locationDetails: true,
+    })
+    .superRefine((input, ctx) => checkPlace(input, ctx, context))
+}
+function toExtraLocation(input: PlaceFormValues) {
+  return {
+    communeName: input.communeName,
+    communeInseeCode: input.communeInseeCode || null,
+    postalCode: input.postalCode || null,
+    departmentCode: input.departmentCode,
+    locationDetails: input.locationDetails || null,
+  }
+}
+export type ExtraLocationInput = ReturnType<typeof toExtraLocation>
+export function extraLocationToFormValues(
+  place: ExtraLocationInput,
+): PlaceFormValues {
+  return {
+    communeName: place.communeName,
+    communeInseeCode: place.communeInseeCode ?? "",
+    postalCode: place.postalCode ?? "",
+    departmentCode: place.departmentCode,
+    locationDetails: place.locationDetails ?? "",
+  }
+}
+export function areExtraLocationsValid(
+  primary: PlaceSource,
+  locations: ExtraLocationInput[],
+  departmentCodes: string[],
+) {
+  const schema = z
+    .array(
+      extraLocationFields({
+        today: "",
+        departmentCodes,
+        occupationIds: [],
+        blockedDomains: [],
+      }),
+    )
+    .max(MAX_EXTRA_LOCATIONS)
+  return (
+    schema.safeParse(locations.map(extraLocationToFormValues)).success &&
+    duplicatePlaceIndices(primary, locations).length === 0
+  )
+}
+export const emptyExtraLocation = (): PlaceFormValues => ({
+  communeName: "",
+  communeInseeCode: "",
+  postalCode: "",
+  departmentCode: "",
+  locationDetails: "",
+})
+
 function adminOfferFields(context: OfferInputContext) {
   return offerFields(context).extend({
+    extraLocations: z
+      .array(extraLocationFields(context))
+      .max(
+        MAX_EXTRA_LOCATIONS,
+        `Ajoutez au plus ${MAX_EXTRA_LOCATIONS} autres lieux.`,
+      )
+      .default([]),
     fieldsToConfirm: z
       .array(z.enum(confirmableFields))
       .max(confirmableFields.length)
@@ -917,6 +1003,13 @@ function checkAdminOfferInput(
 ) {
   const issue = (path: AdminOfferFormField, message: string) =>
     ctx.addIssue({ code: "custom", path: [path], message })
+
+  for (const index of duplicatePlaceIndices(input, input.extraLocations))
+    ctx.addIssue({
+      code: "custom",
+      path: ["extraLocations", index, "communeName"],
+      message: "Cette commune figure déjà dans les lieux du poste.",
+    })
 
   if (!input.companyId) {
     issue("companyId", "Choisissez l'entreprise, ou créez sa fiche.")
@@ -963,6 +1056,7 @@ function toAdminOfferInput(input: RawAdminOfferInput) {
   const recruiter = input.applicationChannel === "recruiter"
   return {
     ...toOfferInput(input),
+    extraLocations: input.extraLocations.map(toExtraLocation),
     fieldsToConfirm: establishFields(
       toOfferInput(input),
       input.fieldsToConfirm,
@@ -1005,6 +1099,7 @@ export type AdminOfferFields = Pick<
   | "hideCompanyIdentity"
   | "fieldsToConfirm"
   | "additionalInfo"
+  | "extraLocations"
 >
 
 // Saisie d'une annonce collectée, le cas le plus fréquent du back-office : les candidatures vont
@@ -1021,6 +1116,7 @@ export function emptyAdminOfferFormValues(): AdminOfferFormValues {
     hideCompanyIdentity: false,
     fieldsToConfirm: [],
     additionalInfo: "",
+    extraLocations: [],
   }
 }
 
@@ -1038,6 +1134,7 @@ export function adminOfferToFormValues(
     hideCompanyIdentity: offer.hideCompanyIdentity,
     fieldsToConfirm: offer.fieldsToConfirm ?? [],
     additionalInfo: offer.additionalInfo ?? "",
+    extraLocations: (offer.extraLocations ?? []).map(extraLocationToFormValues),
   }
 }
 

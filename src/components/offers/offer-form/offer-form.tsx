@@ -77,6 +77,7 @@ import {
 import { PublicationMinimum } from "./publication-minimum"
 import { SalaryFields } from "./salary-fields"
 import { CertaintyFields } from "./certainty-fields"
+import { ExtraLocations } from "./extra-locations"
 import { TriStateField } from "./tri-state-field"
 
 type Company = { id: string; legalName: string; displayName: string | null }
@@ -574,6 +575,9 @@ export function OfferForm({
                 hint="Station, lieu-dit, établissement."
                 maxLength={offerTextLimits.locationDetails}
               />
+              {admin && (
+                <ExtraLocations departments={referentials.departments} />
+              )}
             </Section>
 
             <Section

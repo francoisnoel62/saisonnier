@@ -42,6 +42,7 @@ export type OfferListItem = {
   externalApplication: boolean
   newness: Newness | null
   fieldsToConfirm: ConfirmableField[]
+  placesCount: number
 }
 
 // Colonnes lues pour une carte, à joindre à companies et departments ; toOfferListItem les réduit
@@ -78,6 +79,10 @@ export const offerListColumns = {
   firstDiscoveredAt: offers.firstDiscoveredAt,
   publishedAt: offers.publishedAt,
   fieldsToConfirm: offers.fieldsToConfirm,
+  placesCount:
+    sql<number>`1 + (select count(*)::int from offer_locations where offer_id = "offers"."id")`.mapWith(
+      Number,
+    ),
 }
 
 // Une ligne lue avec offerListColumns (et éventuellement d'autres colonnes).
@@ -111,6 +116,7 @@ export function toOfferListItem(row: OfferListRow): OfferListItem {
     externalApplication: row.externalApplication,
     newness: newnessOf(row),
     fieldsToConfirm: row.fieldsToConfirm,
+    placesCount: row.placesCount,
   }
 }
 

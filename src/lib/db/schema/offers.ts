@@ -11,6 +11,8 @@ import {
   text,
   timestamp,
   uuid,
+  unique,
+  uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core"
 
@@ -290,7 +292,59 @@ export const offers = pgTable(
   ],
 )
 
-export const offersRelations = relations(offers, ({ one }) => ({
+export const offerLocations = pgTable(
+  "offer_locations",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    offerId: uuid()
+      .notNull()
+      .references(() => offers.id, { onDelete: "cascade" }),
+    position: integer().notNull(),
+    communeName: text().notNull(),
+    communeInseeCode: text(),
+    postalCode: text(),
+    departmentCode: text()
+      .notNull()
+      .references(() => departments.code),
+    locationDetails: text(),
+  },
+  (t) => [
+    check("offer_locations_position_positive", sql`${t.position} >= 1`),
+    check(
+      "offer_locations_text_not_blank",
+      notBlank(
+        t.communeName,
+        t.communeInseeCode,
+        t.postalCode,
+        t.locationDetails,
+      ),
+    ),
+    check(
+      "offer_locations_commune_in_department",
+      sql`${t.communeInseeCode} is null or starts_with(${t.communeInseeCode}, ${t.departmentCode})`,
+    ),
+    unique("offer_locations_order").on(t.offerId, t.position),
+    uniqueIndex("offer_locations_known_commune")
+      .on(t.offerId, t.communeInseeCode)
+      .where(sql`${t.communeInseeCode} is not null`),
+    index().on(t.departmentCode),
+    index().on(t.offerId),
+  ],
+)
+
+export const offerLocationsRelations = relations(offerLocations, ({ one }) => ({
+  offer: one(offers, {
+    fields: [offerLocations.offerId],
+    references: [offers.id],
+  }),
+  department: one(departments, {
+    fields: [offerLocations.departmentCode],
+    references: [departments.code],
+  }),
+}))
+
+export const offersRelations = relations(offers, ({ one, many }) => ({
+  extraLocations: many(offerLocations),
   createdBy: one(user, {
     fields: [offers.createdByUserId],
     references: [user.id],

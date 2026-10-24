@@ -411,8 +411,8 @@ export function AdminOriginFields({
             maxLength={adminOfferTextLimits.sourceName}
           />
           <p className="text-sm text-muted-foreground">
-            L&rsquo;enregistrement publie l&rsquo;annonce et date la
-            vérification de sa source à aujourd&rsquo;hui.
+            Vérifiez cette page officielle avant de valider les informations de
+            l&rsquo;annonce.
           </p>
         </>
       )}
