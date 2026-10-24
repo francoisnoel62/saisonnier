@@ -29,6 +29,7 @@ Un service de publication unique, transactionnel et rejouable, qui sert à la fo
    - `IngestActor` ne garde que l'admin : le scan a son propre service (étape 3).
    - **Création** : si une annonce collectée a déjà cette source (URL canonique, `canonicalUrl` du plan 02), refus `source_taken` (« Une annonce collectée a déjà cette source : modifiez-la plutôt »), avec un lien vers elle. Plus d'`onConflictDoUpdate`.
    - **Modification** (`offerId`) : le contenu et `sourceCheckedAt` changent ; `status`, `publishedAt`, `unpublishedAt` et `expiredAt` sont conservés. Une annonce hors ligne reste hors ligne ; « Republier » reste le seul chemin de remise en ligne (H18).
+   - Quand plusieurs recrutements partagent déjà légitimement la même page, garder cette URL lors d'une modification reste autorisé. Le refus `source_taken` vise une création ou le déplacement vers la source d'une autre annonce, pas une correction du contenu avec une URL inchangée.
    - **Création par l'admin** : `humanVerifiedAt = now`, `humanVerifiedByUserId = admin`. Une modification ne touche pas ces colonnes.
    - Le commentaire de `seasonalContractConfirmed` dit pourquoi la valeur est vraie ici : la case est exigée par `adminOfferInputSchema`.
    - Mettre à jour `CLAUDE.md` (paragraphe « Back-office ») et les tests du plan 15 qui supposaient l'upsert.
@@ -42,7 +43,7 @@ Un service de publication unique, transactionnel et rejouable, qui sert à la fo
      3. vérifier l'état : `to_review` et `version` identique pour l'admin ; `discovered` ou `failed` avec un jeton valide pour le scan ; sinon `conflict` ;
      4. recalculer `publicationReadiness` avec les valeurs à publier, les domaines exclus lus en base (`getBlockedDomains`) et les revues `duplicate` ouvertes, lues dans la transaction ; tout point bloquant refuse, et la réponse le nomme ;
      5. pour le scan, exiger `canAutoPublish` : mode quotidien, source autorisée, aucun point bloquant ;
-     6. contrôles finaux : `checkPublicationMinimum` (origine `collected`), entreprise existante, hôte de `sourceUrl` dans les `officialHosts` de la source, aucune échéance passée (`expiryReason`) ;
+     6. contrôles finaux : `checkPublicationMinimum` (origine `collected`), entreprise existante, hôte de `sourceUrl` dans les `officialHosts` d'une source employeur, aucune échéance passée (`expiryReason`). Pour une source de découverte telle que France Travail, seule la revue humaine peut attester une nouvelle URL officielle employeur ; l'hôte de découverte et les domaines exclus restent refusés. Aucun hôte n'est autorisé automatiquement pour une source de découverte ;
      7. insérer l'annonce : `origin = collected`, `status = published`, `publishedAt = now`, `sourceCheckedAt` (dernière lecture de la fiche), `sourcePublished*`, `firstDiscoveredAt = firstSeenAt` ; `humanVerifiedAt` et `humanVerifiedByUserId` pour l'admin ;
      8. passer le dossier à `published` avec `offerId`, `publicationKind`, `decidedAt` et `decidedByUserId`, et la version + 1.
    - **Concurrence** : le verrou `for update` du dossier sérialise deux validations simultanées. La seconde relit le dossier une fois la première validée, le trouve `published` et renvoie l'annonce existante. L'unicité de `scan_candidates.offer_id` garde la base cohérente si une écriture contournait ce chemin.
@@ -58,6 +59,7 @@ Un service de publication unique, transactionnel et rejouable, qui sert à la fo
      - `duplicate` : le dossier passe `rejected` (`rejectionReason = "duplicate"`) ; l'autre annonce ou l'autre dossier n'est pas modifié ;
      - `distinct` : la revue est close, la publication redevient possible.
    - Aucune fusion, aucune copie de champs d'une annonce vers l'autre (cahier §7). Une annonce **déposée** n'est jamais modifiée par le scan.
+   - Après le plan 08, la comparaison de lieu prend en compte le lieu principal et les lieux supplémentaires de chaque annonce.
 5. **Divergences** `recordDivergence(candidate, field, observed, current)`.
    - Une redécouverte d'un dossier publié, ou d'un dossier déjà décidé, dont une valeur établie a changé crée une revue `divergence` non bloquante : champ, valeur publiée, valeur observée, extrait.
    - Son `groupKey` (dossier, champ, empreinte de la valeur observée) empêche de la recréer chaque jour.
@@ -73,6 +75,7 @@ Un service de publication unique, transactionnel et rejouable, qui sert à la fo
 - « remplissage initial : publication automatique refusée, même pour un dossier complet » ;
 - « passage quotidien, source non autorisée : le dossier reste en revue » ;
 - « source hors des hôtes officiels : publication refusée » ;
+- « dossier France Travail : publication humaine après établissement de la source employeur, job-boards refusés et aucune publication automatique » ;
 - « doublon potentiel ouvert : publication refusée ; décision « distincts » : publication possible » ;
 - « doublon confirmé : le dossier est rejeté, l'autre annonce n'est pas modifiée » ;
 - « recrutement déjà déposé dans l'application : rapprochement soumis, annonce déposée intacte » ;
@@ -93,6 +96,10 @@ Un service de publication unique, transactionnel et rejouable, qui sert à la fo
 - [x] La saisie au back-office fonctionne toujours et protège les statuts.
 
 Vérification du 24 octobre 2026 : `lint`, `typecheck`, 852 tests unitaires, 292 tests d'intégration (dont les contrôles SQL ajoutés), `db:check` et les 11 tests E2E du back-office (ordinateur et mobile). Les scénarios de publication, doublons et divergences sont dans `publication.int.test.ts` et `duplicates.int.test.ts` ; les protections de saisie dans `ingest.int.test.ts`.
+
+Audit final des plans 04 à 08 : le test d'un dossier France Travail complété par un admin a d'abord reproduit un blocage systématique de source officielle. Le correctif distingue l'attestation humaine d'une source employeur et les hôtes du registre utilisés automatiquement ; les 19 tests de publication passent, dont quatre scénarios France Travail.
+
+Les tests complémentaires de revue de la PR 37 ont également reproduit puis vérifié deux corrections : modifier une annonce dont la page source est partagée et rapprocher un dossier sur un lieu supplémentaire d'une annonce existante. Les 41 tests ciblés de publication, ingestion, doublons et revue passent ensemble.
 
 ## Hors périmètre
 

@@ -94,30 +94,39 @@ export async function upsertCollectedOffer(
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtext('admin-collected-source'), hashtext(${sourceUrl}))`,
     )
-    const sources = await tx
-      .select({ id: offers.id, sourceUrl: offers.sourceUrl })
-      .from(offers)
-      .where(
-        and(
-          eq(offers.origin, "collected"),
-          offerId && isUuid(offerId) ? ne(offers.id, offerId) : undefined,
-        ),
+    if (offerId !== undefined && !isUuid(offerId))
+      return { ok: false, reason: "not_found" }
+    const [current] =
+      offerId === undefined
+        ? []
+        : await tx
+            .select({ id: offers.id, sourceUrl: offers.sourceUrl })
+            .from(offers)
+            .where(and(eq(offers.id, offerId), eq(offers.origin, "collected")))
+            .for("update")
+    if (offerId !== undefined && !current)
+      return { ok: false, reason: "not_found" }
+    // Plusieurs recrutements peuvent déjà partager une page. Leur correction
+    // reste possible ; seule une création ou un changement de source est contrôlé.
+    if (!current?.sourceUrl || canonicalUrl(current.sourceUrl) !== sourceUrl) {
+      const sources = await tx
+        .select({ id: offers.id, sourceUrl: offers.sourceUrl })
+        .from(offers)
+        .where(
+          and(
+            eq(offers.origin, "collected"),
+            offerId ? ne(offers.id, offerId) : undefined,
+          ),
+        )
+      const taken = sources.find(
+        (row) => row.sourceUrl && canonicalUrl(row.sourceUrl) === sourceUrl,
       )
-    const taken = sources.find(
-      (row) => row.sourceUrl && canonicalUrl(row.sourceUrl) === sourceUrl,
-    )
-    if (taken) return { ok: false, reason: "source_taken", offerId: taken.id }
+      if (taken) return { ok: false, reason: "source_taken", offerId: taken.id }
+    }
 
     const { extraLocations = [], ...columns } = input
     const values = { ...columns, sourceUrl, sourceCheckedAt: now }
     if (offerId !== undefined) {
-      if (!isUuid(offerId)) return { ok: false, reason: "not_found" }
-      const [current] = await tx
-        .select({ id: offers.id })
-        .from(offers)
-        .where(and(eq(offers.id, offerId), eq(offers.origin, "collected")))
-        .for("update")
-      if (!current) return { ok: false, reason: "not_found" }
       // Le cycle de vie et la vérification humaine ne sont jamais réécrits ici.
       await tx.update(offers).set(values).where(eq(offers.id, offerId))
       await replaceOfferLocations(tx, offerId, extraLocations)

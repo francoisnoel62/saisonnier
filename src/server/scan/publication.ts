@@ -2,6 +2,7 @@ import "server-only"
 
 import { and, eq, or, inArray } from "drizzle-orm"
 
+import { isBlockedHost } from "@/domain/blocked-domains"
 import { expiryReason, todayInParis } from "@/domain/offer-activity"
 import {
   areExtraLocationsValid,
@@ -132,6 +133,18 @@ async function publish(
       ),
     )
   const source = scanSourceDefinitions[candidate.sourceKey]
+  let officialHosts = source?.kind === "employer" ? source.officialHosts : []
+  if (
+    source?.kind === "discovery" &&
+    request.kind === "admin" &&
+    request.input.sourceUrl &&
+    URL.canParse(request.input.sourceUrl)
+  ) {
+    // La revue humaine atteste la nouvelle source employeur. L'hôte de
+    // découverte ne peut pas devenir officiel ; les exclusions restent relues.
+    const host = new URL(request.input.sourceUrl).hostname
+    if (!isBlockedHost(host, source.officialHosts)) officialHosts = [host]
+  }
   const readiness = publicationReadiness(
     request.kind === "admin"
       ? reviewedPublicationProposal(
@@ -141,7 +154,7 @@ async function publish(
         )
       : proposal,
     {
-      officialHosts: source?.kind === "employer" ? source.officialHosts : [],
+      officialHosts,
       blockedDomains,
       today,
       now: now.toISOString(),

@@ -1,7 +1,10 @@
 import { eq } from "drizzle-orm"
 import { afterEach, beforeEach, expect, it } from "vitest"
 
-import { insertScanCandidate } from "../../../e2e/helpers/scan"
+import {
+  enableScanSource,
+  insertScanCandidate,
+} from "../../../e2e/helpers/scan"
 
 import { absent, established } from "@/domain/scan/field"
 import { db } from "@/lib/db"
@@ -37,6 +40,87 @@ async function stored() {
       .where(eq(scanCandidates.id, fixture.candidate.id))
   )[0]
 }
+
+async function discoveredOnFranceTravail() {
+  await enableScanSource(db.$client, "france-travail", { autoPublish: true })
+  await db
+    .update(scanCandidates)
+    .set({
+      sourceKey: "france-travail",
+      discoveryUrl:
+        "https://candidat.francetravail.fr/offres/recherche/detail/215QHWT",
+      officialUrl: null,
+      proposal: { ...fixture.proposal, officialUrl: absent() },
+    })
+    .where(eq(scanCandidates.id, fixture.candidate.id))
+}
+
+it("un dossier France Travail peut être publié après vérification humaine de la source employeur", async () => {
+  await discoveredOnFranceTravail()
+  const sourceUrl = "https://recrutement.hotel.example/jobs/serveur"
+  const result = await publishCandidate({
+    ...fixture.request,
+    input: { ...fixture.input, sourceUrl, sourceName: "Employeur fictif" },
+  })
+  expect(result).toMatchObject({ ok: true, created: true })
+  if (!result.ok) return
+  const [offer] = await db
+    .select()
+    .from(offers)
+    .where(eq(offers.id, result.offerId))
+  expect(offer).toMatchObject({
+    sourceUrl,
+    humanVerifiedAt: publicationNow,
+    humanVerifiedByUserId: fixture.adminId,
+  })
+  expect(await stored()).toMatchObject({
+    sourceKey: "france-travail",
+    discoveryUrl:
+      "https://candidat.francetravail.fr/offres/recherche/detail/215QHWT",
+    publicationKind: "human",
+  })
+})
+
+it.each([
+  "https://candidat.francetravail.fr/offres/recherche/detail/215QHWT",
+  "https://fr.indeed.com/viewjob?jk=123",
+])(
+  "la revue France Travail refuse une source job-board : %s",
+  async (sourceUrl) => {
+    await discoveredOnFranceTravail()
+    expect(
+      await publishCandidate({
+        ...fixture.request,
+        input: { ...fixture.input, sourceUrl },
+      }),
+    ).toMatchObject({
+      ok: false,
+      reason: "blocked",
+      issues: expect.arrayContaining([
+        expect.objectContaining({ code: "blocked_domain" }),
+      ]),
+    })
+    expect(await stored()).toMatchObject({ status: "to_review", offerId: null })
+  },
+)
+
+it("France Travail reste sans publication automatique, même avec une URL employeur proposée", async () => {
+  await fixture.cleanup()
+  fixture = await createPublicationFixture("daily")
+  await discoveredOnFranceTravail()
+  await fixture.discovered()
+  await db
+    .update(scanCandidates)
+    .set({ proposal: fixture.proposal })
+    .where(eq(scanCandidates.id, fixture.candidate.id))
+  expect(await publishCandidate(fixture.scanRequest)).toMatchObject({
+    ok: false,
+    reason: "blocked",
+    issues: expect.arrayContaining([
+      expect.objectContaining({ code: "official_source" }),
+    ]),
+  })
+})
 
 it("deux validations simultanées et leur rejeu donnent une seule annonce vérifiée par un humain", async () => {
   const results = await Promise.all([

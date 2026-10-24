@@ -77,17 +77,21 @@ export async function findDuplicateSuspects(
       .select({ id: scanCandidates.id, offerId: scanCandidates.offerId })
       .from(scanCandidates)
       .where(isNotNull(scanCandidates.offerId))
-    const knownOffers = await tx
-      .select()
-      .from(offers)
-      .where(ne(offers.status, "rejected"))
+    const knownOffers = await tx.query.offers.findMany({
+      where: ne(offers.status, "rejected"),
+      with: { extraLocations: true },
+    })
     for (const offer of knownOffers) {
       const sameUrl =
         !!sourceUrl &&
         !!offer.sourceUrl &&
         canonicalUrl(offer.sourceUrl) === sourceUrl
       const samePlace = places.some(
-        (place) => place.departmentCode === offer.departmentCode,
+        (place) =>
+          place.departmentCode === offer.departmentCode ||
+          offer.extraLocations.some(
+            (extra) => place.departmentCode === extra.departmentCode,
+          ),
       )
       const period: Period = {
         ...(offer.startDate ? { startDate: offer.startDate } : {}),
