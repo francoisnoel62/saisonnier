@@ -1,5 +1,5 @@
 {
-  "retrievedAt": "2026-10-24T08:53:59.547Z",
+  "retrievedAt": "2026-10-24T09:07:09.918Z",
   "retrievedFrom": "Vercel runtime logs",
   "samples": [
     {
@@ -1113,6 +1113,384 @@
         },
         "application": {
           "established": 1,
+          "total": 10
+        },
+        "salary": {
+          "established": 0,
+          "total": 10
+        }
+      }
+    },
+    {
+      "sourceKey": "ms-vacances",
+      "deploymentUrl": "https://saisonnier-na5bs9wn2-francois-noels-projects.vercel.app",
+      "sampledAt": "2026-10-24T09:03:24.658Z",
+      "extractorVersion": "teamtailor@2",
+      "items": [
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8566962-assistant-e-responsable-service-reservation",
+          "title": "Assistant(e) Responsable Service Réservation",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Longeville-sur-Mer (85)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Non précisé"
+            }
+          },
+          "issues": [
+            "Contrat saisonnier à établir",
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8557942-stage-receptionniste-h-f",
+          "title": "Stage Réceptionniste (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Longeville-sur-Mer (85)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Rémunération (brut) : 4.35€\n4,35 €/heure, base non précisée par la source\n4.35 € par heure, base non précisée par la source"
+            }
+          },
+          "issues": [
+            "Contrat contradictoire",
+            "Année déduite à vérifier",
+            "Contrat saisonnier à établir",
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8552923-responsable-agent-d-entretien-h-f",
+          "title": "Responsable Agent d'entretien (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": true,
+              "text": "Saisonnier explicite"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Vendays-Montalivet (33)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "2 530 €/mois, base non précisée par la source\n2530 € par mois, base non précisée par la source"
+            }
+          },
+          "issues": [
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8549717-responsable-reception-h-f",
+          "title": "Responsable Réception (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Biscarrosse (40)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Non précisé"
+            }
+          },
+          "issues": [
+            "Contrat contradictoire",
+            "Contrat saisonnier à établir",
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8544199-responsable-reception-h-f",
+          "title": "Responsable Réception (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": true,
+              "text": "Saisonnier explicite"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Biscarrosse (40)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Non précisé"
+            }
+          },
+          "issues": [
+            "Année déduite à vérifier",
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8515304-responsable-epicerie-h-f",
+          "title": "Responsable épicerie (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Longeville-sur-Mer (85)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Non précisé"
+            }
+          },
+          "issues": [
+            "Contrat saisonnier à établir",
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8514707-responsable-agent-d-entretien-h-f",
+          "title": "Responsable Agent d'entretien (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": true,
+              "text": "Saisonnier explicite"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Vielle-Saint-Girons (40)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Rémunération (brut) : 2100€"
+            }
+          },
+          "issues": [
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8490042-stage-receptionniste-h-f",
+          "title": "Stage Réceptionniste (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Rémunération (brut) : 4.35€\n4,35 €/heure, base non précisée par la source"
+            }
+          },
+          "issues": [
+            "Contrat contradictoire",
+            "Année déduite à vérifier",
+            "Contrat saisonnier à établir",
+            "Période ou durée à établir",
+            "Lieu à résoudre",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8489997-stage-receptionniste-h-f",
+          "title": "Stage Réceptionniste (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Le Barcarès (66)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Rémunération (brut) : 4.35€\n4,35 €/heure, base non précisée par la source\n4.35 € par heure, base non précisée par la source"
+            }
+          },
+          "issues": [
+            "Contrat contradictoire",
+            "Année déduite à vérifier",
+            "Contrat saisonnier à établir",
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        },
+        {
+          "url": "https://emploi.ms-vacances.com/jobs/8489902-stage-receptionniste-h-f",
+          "title": "Stage Réceptionniste (H/F)",
+          "companyName": "MS Vacances",
+          "readable": true,
+          "fields": {
+            "contract": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "period": {
+              "established": false,
+              "text": "À vérifier"
+            },
+            "locations": {
+              "established": true,
+              "text": "Narbonne (11)"
+            },
+            "application": {
+              "established": true,
+              "text": "Formulaire officiel"
+            },
+            "salary": {
+              "established": false,
+              "text": "Rémunération (brut) : 4.35€\n4,35 €/heure, base non précisée par la source\n4.35 € par heure, base non précisée par la source"
+            }
+          },
+          "issues": [
+            "Contrat contradictoire",
+            "Année déduite à vérifier",
+            "Contrat saisonnier à établir",
+            "Période ou durée à établir",
+            "Saison été/hiver non précisée",
+            "Candidature externe"
+          ]
+        }
+      ],
+      "coverage": {
+        "contract": {
+          "established": 3,
+          "total": 10
+        },
+        "period": {
+          "established": 0,
+          "total": 10
+        },
+        "locations": {
+          "established": 9,
+          "total": 10
+        },
+        "application": {
+          "established": 10,
           "total": 10
         },
         "salary": {

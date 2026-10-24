@@ -2,7 +2,7 @@
 
 Dix plans pour réaliser la **V1 du scan** décrite par le [plan technique V1–V5](../../plan-technique-scan-v1-v5.md) (§1 à §6), conformément au [cahier des charges du scan](../../cahier-des-charges-scan-saisonnier-v1.md). Ils détaillent les huit lots du §6 du plan technique. Chaque plan tient en une session de travail, se termine par des tests verts et laisse l'application déployable.
 
-Rédigés le 23 octobre 2026 à partir du code de `main` (plans 01 à 17 de l'application terminés). Les plans scan 01 ([PR #32](https://github.com/francoisnoel62/saisonnier/pull/32)) et 02 ([PR #34](https://github.com/francoisnoel62/saisonnier/pull/34)) sont terminés ; l'état courant des plans suivants figure dans le tableau ci-dessous. À la demande du fondateur le 24/10/2026, les plans 04 à 08 sont regroupés dans la [PR #37](https://github.com/francoisnoel62/saisonnier/pull/37), qui remplace les PR empilées #38 à #41. Les quatre mesures de preview et la réévaluation du réservoir sont consignées ; le plan 05 attend la confirmation MS Vacances `teamtailor@2` après correction du bouton de candidature détectée par cette mesure. Aucun passage de collecte n'est installé ni programmé avant les plans 09 et 10.
+Rédigés le 23 octobre 2026 à partir du code de `main` (plans 01 à 17 de l'application terminés). Les plans scan 01 ([PR #32](https://github.com/francoisnoel62/saisonnier/pull/32)) et 02 ([PR #34](https://github.com/francoisnoel62/saisonnier/pull/34)) sont terminés ; l'état courant des plans suivants figure dans le tableau ci-dessous. À la demande du fondateur le 24/10/2026, les plans 04 à 08 sont regroupés dans la [PR #37](https://github.com/francoisnoel62/saisonnier/pull/37), qui remplace les PR empilées #38 à #41. Les quatre mesures de preview, la confirmation du correctif MS Vacances `teamtailor@2` et la réévaluation du réservoir sont consignées. Aucun passage de collecte n'est installé ni programmé avant les plans 09 et 10.
 
 ## Résultat attendu
 
@@ -73,7 +73,7 @@ Deux pistes peuvent avancer en parallèle : **01 → 05** (sources et extracteur
 | 02 | [Règles du scan](02-regles-scan.md) | — | M | 2 | règles pures testées : 72 h, dates, contrat, période, canal, admission | ☑ |
 | 03 | [Données du scan](03-donnees-scan.md) | 02 | M | 2 | tables, passages uniques, livraison et compteur idempotents | ☑ |
 | 04 | [Publication protégée](04-publication-protegee.md) | 03 | M | 3 | publication unique et rejouable, doublons et divergences en revue, retraits préservés | ☑ |
-| 05 | [Extracteurs](05-extracteurs.md) | 01, 02 | L | 4 | dossiers préremplis depuis les fixtures, qualité mesurée en preview | ☐ |
+| 05 | [Extracteurs](05-extracteurs.md) | 01, 02 | L | 4 | dossiers préremplis depuis les fixtures, qualité mesurée en preview | ☑ |
 | 06 | [Revue admin et suggestions](06-revue-admin.md) | 04 | L | 5 | file « À vérifier » actualisée, revue préremplie, décisions, suggestions de métiers | ☑ |
 | 07 | [Labels et présentation](07-labels-presentation.md) | 04 | M | 6 | labels de provenance, « Candidature externe », dates, « À confirmer », « Divers » | ☑ |
 | 08 | [Lieux multiples](08-lieux-multiples.md) | 07 | M | 6 | une fiche à plusieurs lieux, trouvée par chacun, comptée une fois | ☑ |
