@@ -6,6 +6,7 @@ import { and, eq, inArray } from "drizzle-orm"
 import { scanLimits } from "@/domain/scan/limits"
 import { activeRunStatuses, type TerminalRunStatus } from "@/domain/scan/run"
 import { validCivilDate } from "@/domain/scan/source-date"
+import type { ScanRunTrigger } from "@/domain/scan/vocabulary"
 import { db } from "@/lib/db"
 import { scanRuns, type ScanRun } from "@/lib/db/schema"
 
@@ -61,7 +62,7 @@ export function createDailyRun({
 }: {
   date: string
   now: Date
-  trigger: "admin" | "cron"
+  trigger: ScanRunTrigger
   requestedBy?: string
 }) {
   if (!validCivilDate(date)) throw new RangeError("Jour de Paris invalide")

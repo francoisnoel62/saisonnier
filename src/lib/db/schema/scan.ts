@@ -31,6 +31,7 @@ import {
   scanReviewStatuses,
   scanRunSourceStatuses,
   scanRunStatuses,
+  scanRunTriggers,
   type ScanIssue,
 } from "@/domain/scan/vocabulary"
 
@@ -40,7 +41,7 @@ import { offers } from "./offers"
 
 export const scanModeEnum = pgEnum("scan_mode", scanModes)
 export const scanRunStatusEnum = pgEnum("scan_run_status", scanRunStatuses)
-export const scanTriggerEnum = pgEnum("scan_trigger", ["admin", "cron"])
+export const scanTriggerEnum = pgEnum("scan_trigger", scanRunTriggers)
 export const scanRunSourceStatusEnum = pgEnum(
   "scan_run_source_status",
   scanRunSourceStatuses,
