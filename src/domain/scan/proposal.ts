@@ -177,6 +177,11 @@ export function buildProposal(
           : []
       }),
   )
+  const locationCandidates = postingObservations(observations).filter(
+    (observation) =>
+      observation.field === "locationCandidates" &&
+      Array.isArray(observation.value),
+  )
   const activityFacts: { value: "active" | "closed"; evidence: Evidence }[] = []
   for (const observation of textObservations(observations, [
     "activity",
@@ -235,7 +240,18 @@ export function buildProposal(
       ["applicationDeadline", "validThrough"],
       rules.timeZone,
     ),
-    locations,
+    locations:
+      locations.status === "absent" && locationCandidates.length
+        ? {
+            status: "to_verify",
+            value: locationCandidates.flatMap(
+              (observation) => observation.value as ProposedPlace[],
+            ),
+            evidence: locationCandidates.map(
+              (observation) => observation.evidence,
+            ),
+          }
+        : locations,
     salary: salary.field,
     salaryPrecision: salary.precision,
     conditions: conditions.fields,

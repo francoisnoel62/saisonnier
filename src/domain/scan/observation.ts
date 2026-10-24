@@ -26,6 +26,7 @@ export type ExtractedPosting = {
   discoveryUrl: string
   officialUrl?: string
   externalId?: string
+  index?: number
   collectedAt: string
   sourceDate?: SourceDate | null
   usefulText: string

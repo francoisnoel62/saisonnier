@@ -105,6 +105,14 @@
 - Une redécouverte livrée sur un dossier décidé passe par `recordCandidateDivergences` : revue non bloquante, clé dossier/champ/empreinte, valeurs publiées et observées. Ni le contenu décidé ni l'annonce ne sont remplacés. Une source déjà saisie manuellement est écartée `already_known` avant livraison, avec son lien.
 - Les migrations `0011` et `0012` ajoutent les dates de source, découverte et validation humaine ; les anciennes annonces collectées reçoivent la date de publication (ou de création), sans auteur.
 
+## Scan — extraction et échantillons (plan scan 05)
+
+- `ScanAdapter` et `AdapterContext` (`src/server/scan/sources/adapter.ts`) séparent liste, lecture et échecs. `scanAdapter` choisit Teamtailor (Belambra/MS Vacances), Factorial (VVF), France Travail ou l'adaptateur local conditionné par `SCAN_TEST_SOURCE_URL`. Aucun adaptateur SmartRecruiters : cette source a été écartée au plan 01.
+- Les adaptateurs n'accèdent pas à la base et n'admettent ni ne publient un dossier. Les lectures passent par `scanFetch` ; les URL de source sont limitées aux hôtes du registre. Une fiche 404/410 donne `gone`, les autres erreurs `unreadable`. Les identités et empreintes sont stables ; la pagination est bornée et la recherche France Travail conserve les filtres SH17.
+- Outils dans `src/server/scan/extract/` : JSON-LD validé et contrôles bruts réparés dans les chaînes seulement, HTML/RSS décodés en texte, contacts de recrutement distincts de l'accueil et du site, preuves bornées. Les rubriques d'avantages généraux restent de portée `site`. Les tableaux ou blocs explicitement associés se séparent par poste et période ; un même poste et une même période à plusieurs lieux restent un seul dossier.
+- `resolvePlace` (`places.ts`) utilise les alias vérifiés, puis geo.api.gouv.fr (5 s), avec cache par contexte. Un résultat unique doit appartenir au référentiel et avoir un code INSEE préfixé par le département ; les autres résultats restent `to_verify` avec leurs candidats. Le contexte reçoit les codes du référentiel sans lecture de base par les adaptateurs.
+- `sampleScanSourceAction` vérifie le rôle admin ; son service lit au plus dix fiches et renvoie les champs établis et les points de revue, sans coordonnées et sans écriture. Le panneau d'échantillon de `/admin/scan` indique le déploiement, l'heure et la version de l'extracteur. Les mesures de preview se consignent dans `docs/scan/sources-v1.md` ; les tests sur captures ne remplacent pas ces mesures.
+
 ## Authentification
 
 - Better Auth 1.7 (`src/lib/auth.ts`), email + mot de passe, vérification d'email obligatoire. Rôles `candidate` / `employer` / `admin` sur `user.role` (`input: false` : jamais fourni par le client ; contrainte CHECK en base).

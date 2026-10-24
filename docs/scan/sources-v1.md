@@ -201,3 +201,16 @@ Décision prise par délégation explicite du fondateur, après la revue de la P
 2. obtenir un avis juridique écrit, ou l'accord de France Travail, qui couvre la lecture du composant public.
 
 Le plan 09 vérifie cette condition avant d'autoriser la source dans un passage programmé ; l'admin peut toujours lancer la sonde.
+
+## Qualité du préremplissage — plan 05
+
+Le panneau « Extraire un échantillon » sur `/admin/scan` lit dix fiches au plus, sans enregistrer de dossier. Il montre les champs établis (contrat, période, lieu, candidature et salaire), les points à vérifier, l'heure, le déploiement et la version de l'extracteur. Un montant sans base reste une précision et ne compte pas comme salaire établi. Les dates de dernière modification France Travail ne deviennent pas des dates de publication ; son URL de découverte ne devient pas une source officielle employeur.
+
+| Source | Adaptateur | Tests sur captures réelles anonymisées | Mesure depuis la preview |
+|---|---|---|---|
+| France Travail | `france-travail@1` | Liste et 6 fiches JSON ; filtres de pagination SH17 conservés | À consigner après déploiement du plan 05 |
+| Belambra | `teamtailor@1` | Liste RSS et 6 fiches, dont JSON-LD malformé, période et plusieurs métiers | À consigner après déploiement du plan 05 |
+| VVF | `factorial@1` | Liste et 6 fiches, dont une clôture HTTP 200 | À consigner après déploiement du plan 05 |
+| MS Vacances | `teamtailor@1` | Liste RSS et 6 fiches | À consigner après déploiement du plan 05 |
+
+Les 24 fiches de référence vérifient qu'une valeur établie a une preuve de portée `posting` et qu'aucune balise HTML ne subsiste dans les sorties. Les tests unitaires simulent la réponse du service de communes : ils ne prouvent ni la disponibilité de ce service depuis Vercel ni le rendement réel du réservoir. Les estimations exploratoires du plan 01 restent donc à confirmer par les échantillons de preview.
