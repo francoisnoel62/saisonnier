@@ -24,8 +24,16 @@ import type { ScanProbeResult } from "@/domain/scan/probe"
 import type { ScanSourceSummary as SourceRow } from "@/domain/scan/source"
 import { formatDateTime } from "@/lib/format"
 import { probeScanSourceAction } from "@/server/scan/actions"
+import {
+  ScanSourceSwitches,
+  type ScanSourceState,
+} from "./scan-source-switches"
 
-export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
+export function ScanSourcesCard({
+  sources,
+}: {
+  sources: (SourceRow & ScanSourceState)[]
+}) {
   const [selected, setSelected] = useState<SourceRow | null>(null)
   const [result, setResult] = useState<ScanProbeResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -100,6 +108,7 @@ export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
                   Tester l’accès depuis ce déploiement
                   <span className="sr-only"> — {source.label}</span>
                 </Button>
+                <ScanSourceSwitches source={source} />
               </li>
             ))}
           </ul>
