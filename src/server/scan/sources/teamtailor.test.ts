@@ -12,6 +12,31 @@ import {
 } from "./adapter-test-fixtures"
 import { teamtailorAdapter } from "./teamtailor"
 
+it.each([false, true])(
+  "MS Vacances : le bouton POSTULER > établit le formulaire seulement s'il est actif (disabled=%s)",
+  async (disabled) => {
+    const url =
+      "https://emploi.ms-vacances.com/jobs/8552923-responsable-agent-d-entretien-h-f"
+    const capture = fixtureFile("ms-vacances", "posting-3.html")
+    const ctx = context(testDefinitions["ms-vacances"], {
+      [url]: disabled
+        ? capture.replace(/<button\b/g, "<button disabled")
+        : capture,
+    })
+    const listed = listedPosting(ctx, url, {}, "8552923")!
+    const read = await teamtailorAdapter.readPosting(ctx, listed)
+    if (read.kind !== "extracted") throw new Error(read.kind)
+    const proposal = buildProposal(read.posting, {
+      referenceDate: "2026-10-24",
+    })
+    expect(valueOf(proposal.application)?.formUrl).toBe(
+      disabled ? undefined : url,
+    )
+    if (!disabled)
+      expect(read.posting.formUrl?.evidence.excerpt).toBe("POSTULER >")
+  },
+)
+
 it("Teamtailor : liste RSS identifiée, contrat explicite, salaire sans base en précision et avantages généraux hors du poste", async () => {
   const ctx = context(testDefinitions.belambra, {
     "https://recrute.belambra.fr/jobs.rss": fixtureFile("belambra", "list.xml"),

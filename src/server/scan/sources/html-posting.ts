@@ -275,21 +275,22 @@ export async function extractHtmlPosting(
     )
     .first()
     .attr("href")
+  const applyButtonLabel =
+    ctx.source.adapter === "teamtailor"
+      ? /^postuler(?:\s*[>›»→])?$/i
+      : /^postuler$/i
   const button = $("button:not([disabled])")
-    .filter((_i, node) => /^postuler$/i.test($(node).text().trim()))
+    .filter((_i, node) => applyButtonLabel.test($(node).text().trim()))
     .first()
   const formUrl = applyLink
     ? new URL(applyLink, listed.url).href
     : button.length || ctx.source.adapter === "fixture"
       ? listed.url
       : undefined
-  if (formUrl)
-    add(
-      "activity",
-      "active",
-      "html_label",
-      applyLink ? "Postulez maintenant" : "Postuler",
-    )
+  const applicationExcerpt = applyLink
+    ? "Postulez maintenant"
+    : button.text().trim() || "Postuler"
+  if (formUrl) add("activity", "active", "html_label", applicationExcerpt)
   const posting: ExtractedPosting = {
     title,
     discoveryUrl: listed.url,
@@ -306,7 +307,7 @@ export async function extractHtmlPosting(
             value: formUrl,
             official:
               new URL(formUrl).hostname === new URL(listed.url).hostname,
-            evidence: proof("html_label", "Postuler"),
+            evidence: proof("html_label", applicationExcerpt),
           },
         }
       : {}),

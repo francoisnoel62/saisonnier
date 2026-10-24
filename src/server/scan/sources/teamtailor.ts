@@ -56,9 +56,10 @@ export async function htmlListPage(
         : null,
   }
 }
+const extractorVersion = "teamtailor@2"
 export const teamtailorAdapter: ScanAdapter = {
   kind: "teamtailor",
-  extractorVersion: "teamtailor@1",
+  extractorVersion,
   async listPage(ctx, cursor) {
     if (cursor?.format === "html") return htmlListPage(ctx, cursor)
     const url = new URL("/jobs.rss", ctx.source.listUrls[0]).href
@@ -80,7 +81,12 @@ export const teamtailorAdapter: ScanAdapter = {
     const result = await readDocument(ctx, listed.url)
     if (!result.ok) return postingFailure(result)
     try {
-      return await extractHtmlPosting(ctx, listed, result.body, "teamtailor@1")
+      return await extractHtmlPosting(
+        ctx,
+        listed,
+        result.body,
+        extractorVersion,
+      )
     } catch {
       return { kind: "unreadable", reason: "invalid_document" }
     }
