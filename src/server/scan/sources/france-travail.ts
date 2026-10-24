@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { established } from "@/domain/scan/field"
 
 import { franceTravailPostingDataUrl } from "@/domain/scan/france-travail"
 import { parseSourceDate } from "@/domain/scan/source-date"
@@ -42,7 +43,7 @@ const postingSchema = z.object({
 })
 export const franceTravailAdapter: ScanAdapter = {
   kind: "france-travail",
-  extractorVersion: "france-travail@1",
+  extractorVersion: "france-travail@2",
   async listPage(ctx, cursor) {
     const page = cursor?.page ?? 0
     if (page >= pageLimit(ctx))
@@ -110,14 +111,14 @@ export const franceTravailAdapter: ScanAdapter = {
           "title",
           plainText(data.intituleOffre),
           evidence("api", url, data.intituleOffre),
-          "france-travail@1",
+          "france-travail@2",
           ctx.now,
         ),
         observed(
           "description",
           plainText(data.descriptif),
           evidence("api", url, data.descriptif),
-          "france-travail@1",
+          "france-travail@2",
           ctx.now,
         ),
       ]
@@ -135,7 +136,7 @@ export const franceTravailAdapter: ScanAdapter = {
               field,
               plainText(value),
               evidence("api", url, value),
-              "france-travail@1",
+              "france-travail@2",
               ctx.now,
             ),
           )
@@ -145,7 +146,7 @@ export const franceTravailAdapter: ScanAdapter = {
             "company",
             { name: plainText(data.etablissement.libelleEnseigne) },
             evidence("api", url, data.etablissement.libelleEnseigne),
-            "france-travail@1",
+            "france-travail@2",
             ctx.now,
           ),
         )
@@ -155,20 +156,39 @@ export const franceTravailAdapter: ScanAdapter = {
             "employerWebsite",
             data.etablissement.urlEntreprise,
             evidence("api", url, data.etablissement.urlEntreprise),
-            "france-travail@1",
+            "france-travail@2",
             ctx.now,
           ),
         )
       if (data.lieuTravail?.libelleCommuneLieuTravail) {
-        const resolution = await resolvePlace(
-          {
-            communeName: data.lieuTravail.libelleCommuneLieuTravail,
-            postalCode: data.lieuTravail.codePostalLieuTravail,
-            country: "France",
-            proof: evidence("api", url, JSON.stringify(data.lieuTravail)),
-          },
-          ctx,
-        )
+        // La commune et le département explicitement fournis par France Travail
+        // suffisent au lieu de l'annonce ; le code INSEE reste facultatif.
+        const sourcePlace = data.lieuTravail
+        const proof = evidence("api", url, JSON.stringify(sourcePlace))
+        const resolution =
+          sourcePlace.codeDepartementLieuTravail &&
+          ctx.departmentCodes.includes(sourcePlace.codeDepartementLieuTravail)
+            ? established(
+                [
+                  {
+                    communeName: plainText(
+                      sourcePlace.libelleCommuneLieuTravail!,
+                    ),
+                    departmentCode: sourcePlace.codeDepartementLieuTravail,
+                    country: "France",
+                  },
+                ],
+                [proof],
+              )
+            : await resolvePlace(
+                {
+                  communeName: data.lieuTravail.libelleCommuneLieuTravail,
+                  postalCode: data.lieuTravail.codePostalLieuTravail,
+                  country: "France",
+                  proof,
+                },
+                ctx,
+              )
         for (const proof of resolution.evidence)
           observations.push(
             observed(
@@ -180,7 +200,7 @@ export const franceTravailAdapter: ScanAdapter = {
                 ? resolution.value
                 : [],
               proof,
-              "france-travail@1",
+              "france-travail@2",
               ctx.now,
             ),
           )

@@ -9,6 +9,7 @@ export type SampleField = (typeof sampleFields)[number]
 export type ExtractionSampleItem = {
   url: string
   title: string
+  companyName?: string | null
   readable: boolean
   fields: Record<SampleField, { established: boolean; text: string }>
   issues: string[]

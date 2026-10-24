@@ -113,6 +113,7 @@ export function ScanSampleButton({
                     className="grid gap-2 rounded-lg border p-3"
                   >
                     <h3 className="font-medium">{item.title}</h3>
+                    {item.companyName && <p>Employeur : {item.companyName}</p>}
                     <a
                       className="wrap-anywhere underline"
                       href={item.url}

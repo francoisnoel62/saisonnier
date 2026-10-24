@@ -102,6 +102,7 @@ export async function sampleScanSource(
         items.push({
           url: listed.url,
           title: valueOf(proposal.title) ?? listed.title ?? "Sans intitulé",
+          companyName: valueOf(proposal.company)?.name ?? null,
           readable: true,
           fields: {
             contract: {
