@@ -208,7 +208,7 @@ Le panneau « Extraire un échantillon » sur `/admin/scan` lit dix fiches au pl
 
 | Source | Adaptateur | Tests sur captures réelles anonymisées | Mesure depuis la preview |
 |---|---|---|---|
-| France Travail | `france-travail@3` | Liste et 6 fiches JSON ; filtres SH17, Huez (38) sans code postal, nature saisonnière structurée | Mesure `@1` ci-dessous ; lieu corrigé en `@2`, contrat en `@3`, nouvelle mesure à consigner |
+| France Travail | `france-travail@3` | Liste et 6 fiches JSON ; filtres SH17, Huez (38) sans code postal, nature saisonnière structurée | Mesures `@1` puis `@3` ci-dessous ; contrat et lieu établis dans 10/10 fiches sur `@3` |
 | Belambra | `teamtailor@1` | Liste RSS et 6 fiches, dont JSON-LD malformé, période et plusieurs métiers | À consigner après déploiement du plan 05 |
 | VVF | `factorial@1` | Liste et 6 fiches, dont une clôture HTTP 200 | À consigner après déploiement du plan 05 |
 | MS Vacances | `teamtailor@1` | Liste RSS et 6 fiches | À consigner après déploiement du plan 05 |
@@ -222,6 +222,20 @@ Points observés : source officielle à retrouver dans les dix fiches, date de p
 **Correction après la mesure `@1`.** Le fondateur a signalé la [fiche 215QHWT](https://candidat.francetravail.fr/offres/recherche/detail/215QHWT) : « Huez (38) » et l'employeur « LA FOLIE DOUCE SAINT GERVAIS » y sont explicitement indiqués. Lecture du service officiel le 24/10/2026 : `lieuTravail.libelleCommuneLieuTravail = "Huez"`, `codeDepartementLieuTravail = "38"`, `etablissement.libelleEnseigne = "LA FOLIE DOUCE SAINT GERVAIS"`. `france-travail@2` accepte ce couple commune/département s'il appartient au référentiel, sans exiger de code postal ou inventer de code INSEE. L'employeur était déjà extrait ; il est désormais visible dans l'échantillon. Le test de régression a échoué sur `@1`, puis réussi sur `@2`. La mesure de lieu 0/10 ci-dessus décrit donc un défaut de `@1`, pas une absence de lieu sur les fiches France Travail.
 
 **Nature du contrat (`@3`).** Le champ structuré `syntheseContrat` peut commencer par « Saisonnier — 4 Mois — Contrat travail ». Comme l'a précisé le fondateur, il établit la nature du contrat indépendamment de la rédaction de la description. L'adaptateur exprime ce libellé par « Contrat saisonnier » pour les règles communes, en conservant le texte original dans la preuve. La durée reste extraite sans conversion. Cela n'établit pas été ou hiver et ne transforme pas un CDD seul en contrat saisonnier. Le test sur la capture `posting-1.json` a échoué avant la correction, puis réussi.
+
+### France Travail — nouvelle mesure de preview `@3`
+
+Résultat transmis par le fondateur le 24/10/2026 : déploiement <https://saisonnier-jf4v5tq8u-francois-noels-projects.vercel.app>, instant `2026-10-24T07:43:45.659Z`, extracteur `france-travail@3`, dix fiches lues, aucun enregistrement d'annonce ou de dossier.
+
+| Contrat saisonnier | Période | Lieu | Candidature | Salaire |
+|---|---|---|---|---|
+| 10/10 | 8/10 | 10/10 | 0/10 | 2/10 |
+
+Les dix employeurs et lieux sont affichés, dont LA FOLIE DOUCE SAINT GERVAIS à Huez (38). Les deux fiches DOMAINE LES FALAISES à Martel (46), chef de partie pâtisserie et chef de partie chaud, ont une période contradictoire. Les deux salaires établis restent ceux des commis de cuisine VILLAGES CLUBS DU SOLEIL : 1 867 € brut par mois, à Montgenèvre (05) et Belleville (73). Des conditions facultatives restent à confirmer pour le ménage chez ELC à Hyères (83) et l'écailler CLOS BERNARD aux Allues (73).
+
+Les dix sources officielles employeur et canaux de candidature restent à établir ; la date de publication n'est pas connue. L'activité est à vérifier dans huit fiches. La mention « Contrat saisonnier à établir » encore présente dans certains points de revue de cette branche correspond à l'ancien contrôle de saison été/hiver : elle ne contredit pas le compteur de contrat saisonnier 10/10. Le plan 06 rend été/hiver facultatif et remplace ce contrôle par une alerte distincte (SH19).
+
+Cette mesure confirme les corrections de contrat, lieu et affichage de l'employeur. Elle ne démontre ni huit dossiers admis après déduplication, ni un réservoir de cinquante dossiers ; les mesures de preview des trois réserves restent attendues.
 
 ### Contrôle réel complémentaire en local — 24/10/2026
 
