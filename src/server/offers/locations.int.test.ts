@@ -59,14 +59,12 @@ function input() {
 }
 beforeAll(async () => {
   await db.delete(offers)
-  await db
-    .insert(user)
-    .values({
-      id: adminId,
-      name: "Admin lieux",
-      email: `${adminId}@lieux.example`,
-      role: "admin",
-    })
+  await db.insert(user).values({
+    id: adminId,
+    name: "Admin lieux",
+    email: `${adminId}@lieux.example`,
+    role: "admin",
+  })
   const [company] = await db
     .insert(companies)
     .values({ legalName: "Entreprise fictive lieux multiples" })

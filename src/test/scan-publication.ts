@@ -23,14 +23,12 @@ export const publicationNow = new Date("2026-10-24T10:00:00Z")
 export async function createPublicationFixture(mode: ScanMode = "bootstrap") {
   await resetScan(db.$client)
   const adminId = `scan-publication-${randomUUID()}`
-  await db
-    .insert(user)
-    .values({
-      id: adminId,
-      name: "Admin test",
-      email: `${adminId}@test.example`,
-      role: "admin",
-    })
+  await db.insert(user).values({
+    id: adminId,
+    name: "Admin test",
+    email: `${adminId}@test.example`,
+    role: "admin",
+  })
   const [company] = await db
     .insert(companies)
     .values({ legalName: `Employeur fictif ${randomUUID()}` })

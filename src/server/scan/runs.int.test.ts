@@ -235,31 +235,27 @@ describe("contraintes des passages", () => {
     { finishedAt: now },
   ])("refuse une combinaison incohérente %j", async (patch) => {
     await expect(
-      db
-        .insert(scanRuns)
-        .values({
-          mode: "bootstrap",
-          runKey: "bootstrap",
-          trigger: "admin",
-          startedAt: now,
-          deadlineAt: new Date(+now + 21600_000),
-          targetCount: 50,
-          ...patch,
-        }),
+      db.insert(scanRuns).values({
+        mode: "bootstrap",
+        runKey: "bootstrap",
+        trigger: "admin",
+        startedAt: now,
+        deadlineAt: new Date(+now + 21600_000),
+        targetCount: 50,
+        ...patch,
+      }),
     ).rejects.toThrow()
   })
   it("un quotidien ne peut porter ni échéance ni seuil", async () => {
     await expect(
-      db
-        .insert(scanRuns)
-        .values({
-          mode: "daily",
-          runKey: "daily:2026-10-24",
-          trigger: "cron",
-          startedAt: now,
-          windowStart: now,
-          targetReachedAt: now,
-        }),
+      db.insert(scanRuns).values({
+        mode: "daily",
+        runKey: "daily:2026-10-24",
+        trigger: "cron",
+        startedAt: now,
+        windowStart: now,
+        targetReachedAt: now,
+      }),
     ).rejects.toThrow()
   })
 })

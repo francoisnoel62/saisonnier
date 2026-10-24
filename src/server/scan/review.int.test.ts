@@ -142,16 +142,14 @@ it("état : compteurs et liste bornée, curseur stable, aucun texte de page ni c
   ).toBe(54)
   expect(JSON.stringify(first)).not.toContain("recrutement@hotel.example")
   expect(JSON.stringify(first)).not.toContain("Texte privé")
-  await db
-    .insert(scanReviews)
-    .values({
-      kind: "duplicate",
-      groupKey: "snapshot-duplicate",
-      candidateId: fixture.candidate.id,
-      otherCandidateId: first.items.find(
-        (item) => item.id !== fixture.candidate.id,
-      )!.id,
-    })
+  await db.insert(scanReviews).values({
+    kind: "duplicate",
+    groupKey: "snapshot-duplicate",
+    candidateId: fixture.candidate.id,
+    otherCandidateId: first.items.find(
+      (item) => item.id !== fixture.candidate.id,
+    )!.id,
+  })
   expect(
     (await getScanSnapshot({ trackedIds: [fixture.candidate.id] })).tracked[0]
       .blockingCount,
