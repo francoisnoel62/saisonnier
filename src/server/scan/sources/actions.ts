@@ -10,11 +10,17 @@ import type { SourceFormValues } from "@/domain/scan/source-form"
 import type { SourceTransition } from "@/domain/scan/source-lifecycle"
 import { requireRole } from "@/lib/dal"
 
+import { searchCompanyDirectory } from "@/server/companies/directory"
+
+import { detectStartUrl } from "./detect"
+import { getScanSource } from "./registry"
 import { runSourceTest, type SourceTestKind } from "./tests"
 import {
   createSource,
   decideReuse,
   deleteSource,
+  excludeSourceDomain,
+  linkSourceCompany,
   moveSource,
   restoreRevision,
   reviseSource,
@@ -130,4 +136,53 @@ export async function moveScanSourceAction(
   const { user } = await requireRole("admin")
   if (direction !== "up" && direction !== "down") return invalid
   return revalidated(await moveSource(key, direction, user.id))
+}
+
+export async function detectScanSourceAction(url: string) {
+  await requireRole("admin")
+  return detectStartUrl(String(url))
+}
+
+export async function searchSourceCompaniesAction(query: string) {
+  await requireRole("admin")
+  return searchCompanyDirectory(String(query).slice(0, 100))
+}
+
+export async function createSourceCompanyAction(key: string) {
+  const { user } = await requireRole("admin")
+  const source = await getScanSource(String(key))
+  if (!source)
+    return {
+      ok: false,
+      reason: "unknown",
+      message: "Source inconnue.",
+    } as const
+  // Annuaire indisponible : la fiche reprend le nom et le SIREN de la source.
+  const directory = source.employerSiren
+    ? await searchCompanyDirectory(source.employerSiren)
+    : { ok: false as const }
+  const match = directory.ok
+    ? directory.results.find((result) => result.siren === source.employerSiren)
+    : undefined
+  return revalidated(
+    await linkSourceCompany(
+      source.key,
+      user.id,
+      match
+        ? {
+            legalName: match.legalName,
+            displayName: match.displayName,
+            nafCode: match.nafCode,
+            communeName: match.communeName,
+          }
+        : null,
+    ),
+  )
+}
+
+export async function excludeSourceDomainAction(key: string, domain: string) {
+  const { user } = await requireRole("admin")
+  const result = await excludeSourceDomain(String(key), String(domain), user.id)
+  if (result.ok) revalidatePath("/admin/referentiels")
+  return revalidated(result)
 }
