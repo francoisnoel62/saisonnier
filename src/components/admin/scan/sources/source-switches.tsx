@@ -12,7 +12,7 @@ import {
   scanSourceSwitchLabels,
   type ScanSourceSwitch,
 } from "@/domain/scan/vocabulary"
-import { setScanSourceSwitchAction } from "@/server/scan/actions"
+import { setScanSourceSwitchAction } from "@/server/scan/sources/actions"
 
 export type ScanSourceState = Pick<
   ScanSourceSummary,

@@ -109,6 +109,10 @@ export const rejectionReasonLabels: Record<RejectionReason, string> = {
   other: "Autre",
   source_withdrawn: "Source écartée",
 }
+// Motifs proposés à l'admin ; `source_withdrawn` n'est posé que par l'archivage d'une source.
+export const manualRejectionReasons = rejectionReasons.filter(
+  (reason) => reason !== "source_withdrawn",
+)
 export function isAdmissionRejection(reason: RejectionReason) {
   return rejectionReasons.slice(0, 4).includes(reason)
 }

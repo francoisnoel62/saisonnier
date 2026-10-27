@@ -9,13 +9,8 @@ test("Scan — sources désactivées par défaut, réglages indépendants et per
   await resetScan(db)
   try {
     await asAdmin.setViewportSize({ width: 375, height: 812 })
-    await asAdmin.goto("/admin/scan")
-    const source = asAdmin.locator("li").filter({
-      has: asAdmin.getByRole("heading", {
-        name: "Fixtures locales",
-        exact: true,
-      }),
-    })
+    await asAdmin.goto("/admin/scan/sources/fixture")
+    const source = asAdmin.locator("header")
     const enabled = source.getByRole("switch", { name: "Activée", exact: true })
     const auto = source.getByRole("switch", {
       name: "Publication automatique (passages quotidiens)",
