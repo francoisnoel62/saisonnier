@@ -119,6 +119,7 @@ Elles complètent SH1 à SH19 de [`scan-v1/README.md`](../scan-v1/README.md).
 | SH28 | Aucun secret en base ; un connecteur authentifié lit `env.ts`. | D |
 | SH29 | Indeed et LinkedIn : aucun accès de collecte autorisé n'est documenté (recherche du 23/10/2026) ; enregistrées « Écartées », elles restent des pistes V3 via un moteur de recherche. SeasonJobs et JobAnim : brouillons de découverte « en attente d'autorisation » jusqu'à un accord écrit. | C, G |
 | SH30 | Plafonds de départ : 20 sources activées (budget Workflow de l'offre Hobby, à réévaluer au plan scan 10), 20 tests conservés par source, qualification à revérifier tous les 180 jours (alerte, sans désactivation). | B, E |
+| SH31 | La découverte est un radar : tout employeur qu'elle révèle devient une source employeur, ou une piste « à inviter » s'il n'a pas de portail carrière. L'invitation à déposer ses annonces est faite à la main par le fondateur, jamais par un email automatique. Au-delà de 75 % d'employeurs couverts sur deux mois, l'écran propose de passer la découverte en réserve, sans rien changer seul. | F |
 
 ## 5. Les sources demandées
 
@@ -138,7 +139,7 @@ Rien ci-dessous n'est présumé autorisé : chaque source suit le parcours de qu
 | Sandaya (WeRecruit) | employeur | aucun | **Écartée** (migrée) | liste construite par JavaScript (plan scan 01) | réexaminer si une liste lisible apparaît |
 | Pierre & Vacances – Center Parcs | employeur | aucun | **Écartée** (migrée) | liste dynamique sans inventaire fiable (plan scan 01) | idem |
 
-**« Etc. »** : réservoir de pistes **non vérifiées**, à passer dans l'assistant selon la priorité du fondateur. Les premiers candidats sont les employeurs déjà vus dans les échantillons France Travail (Villages Clubs du Soleil, La Folie Douce…) : c'est le premier usage du lot F (« ajouter ce portail comme source »). Viennent ensuite les groupes de villages vacances et de campings, les domaines skiables et les parcs de loisirs. Une lecture suffit à l'assistant pour établir leur format.
+**« Etc. »** : réservoir de pistes **non vérifiées**, à passer dans l'assistant selon la priorité du fondateur. Les premiers candidats sont les employeurs déjà vus dans les échantillons France Travail (Villages Clubs du Soleil, La Folie Douce…) : c'est le premier usage du lot F (« ajouter ce portail comme source », ou « employeur à inviter » s'il n'a pas de portail). Les grands groupes seront vite couverts ; les petits employeurs sans portail (restaurants d'altitude, campings indépendants) resteront la longue traîne de la découverte, d'où l'invitation à déposer et l'indicateur de couverture du lot F. Viennent ensuite les groupes de villages vacances et de campings, les domaines skiables et les parcs de loisirs. Une lecture suffit à l'assistant pour établir leur format.
 
 ## 6. Architecture cible
 
@@ -183,7 +184,7 @@ flowchart LR
 | `scan_reuse_decision` | `pending`, `authorized`, `accepted`, `refused` | À décider, Autorisation écrite, Acceptée par le fondateur, Refusée |
 | `scan_source_event_kind` | `imported`, `created`, `revised`, `status_changed`, `switched`, `reuse_decided`, `probed`, `sampled`, `detected`, `suspended`, `resumed`, `company_linked`, `domain_excluded`, `alias_learned` | §7.3 |
 
-Ajouts au vocabulaire existant : point de revue `source_withdrawn` (« Source écartée : publication impossible depuis ce dossier », bloquant) ; motif de rejet `source_withdrawn` ajouté **en dernier**, car `isAdmissionRejection` lit les quatre premiers motifs.
+Ajouts au vocabulaire existant : point de revue `source_withdrawn` (« Source écartée : publication impossible depuis ce dossier », bloquant) ; motif de rejet `source_withdrawn` ajouté **en dernier**, car `isAdmissionRejection` lit les quatre premiers motifs. Au lot F, `scan_review_kind` reçoit `employer_lead` (« Employeur à inviter ») ; ses décisions sont `invited`, `has_portal` et `dismissed`.
 
 ### 7.2 `scan_sources` (table existante, étendue)
 
@@ -523,7 +524,7 @@ Le rappel « Une lecture autorisée par robots.txt ne vaut pas autorisation de r
 - Champs non sensibles (libellé, identité, preuves, limites, alias) : nouvelle version sans test ; un motif est exigé pour l'identité d'une source prête.
 - Délai de recharge : 30 s par source entre deux tests ou détections (`cooldown`), pour qu'une suite de clics ne martèle pas un site tiers.
 
-Réglages ajoutés à `src/domain/scan/limits.ts` : `sourceTestCooldownMs: 30_000`, `sourceTestsKept: 20`, `sourceQualificationTestMaxAgeMs: 30 jours`, `sourceEditTestMaxAgeMs: 60 minutes`, `maxEnabledSources: 20`, `suspendAfterBlockedRuns: 3`, `qualificationMaxAgeDays: 180`.
+Réglages ajoutés à `src/domain/scan/limits.ts` : `sourceTestCooldownMs: 30_000`, `sourceTestsKept: 20`, `sourceQualificationTestMaxAgeMs: 30 jours`, `sourceEditTestMaxAgeMs: 60 minutes`, `maxEnabledSources: 20`, `suspendAfterBlockedRuns: 3`, `qualificationMaxAgeDays: 180` ; au lot F, `discoveryCoverageTarget: 0.75`.
 
 ## 11. Écrans
 
@@ -536,6 +537,7 @@ Réglages ajoutés à `src/domain/scan/limits.ts` : `sourceTestCooldownMs: 30_00
 | `/admin/scan/sources/nouvelle` | assistant d'ajout | C |
 | `/admin/scan/sources/[key]` | fiche ; onglets `?onglet=configuration`, `qualification`, `tests`, `activite` (lot E), `historique` | B |
 | `/admin/scan/sources/[key]/modifier` | formulaire complet ; guidé pour un brouillon (`?etape=`) | B, C |
+| `/admin/scan/employeurs` | employeurs sans portail à inviter, triés par nombre de dossiers | F |
 
 Les pages qui lancent sonde, échantillon ou détection exportent `maxDuration = 120`, comme `/admin/scan`. `pageTitleFor` reçoit « Sources du scan » ; la navigation de `/admin/scan` gagne le lien « Sources ».
 
@@ -618,6 +620,8 @@ Toutes dans `src/server/scan/sources/actions.ts` (`"use server"`) : `requireRole
 | `createSourceCompanyAction(key)` | SIREN de la source | `createCompanyFile`, `companyId`, `company_linked` | `ok` |
 | `excludeSourceDomainAction(key, domain)` | découverte ; domaine couvrant un de ses hôtes | `addBlockedDomain` (motif = libellé), `domain_excluded` | `ok` |
 | `rememberPlaceAliasAction(candidateId, name, place)` (lot F) | commune vérifiée, département du référentiel | alias, version non sensible, `alias_learned` | `ok` |
+| `markEmployerWithoutPortalAction(candidateId)` (lot F) | dossier d'une découverte ; employeur identifié | piste `employer_lead` ouverte ou réutilisée, occurrence ajoutée | `ok` |
+| `decideEmployerLeadAction(reviewId, decision, note)` (lot F) | `invited`, `has_portal` ou `dismissed` ; note obligatoire pour `invited` et `dismissed` | décision datée et attribuée ; `has_portal` ouvre l'assistant prérempli | `ok` |
 
 Les actions de sonde et d'échantillon de `src/server/scan/actions.ts` y sont déplacées avec leurs tests (`actions.test.ts` : rôle vérifié avant toute lecture, clés inconnues refusées).
 
@@ -719,7 +723,7 @@ flowchart TD
 | C | assistant, détection, identité, preuves, job-boards | L | B | indispensable |
 | D | connecteur générique, recherches France Travail multiples | L | C | important |
 | E | santé, rendement, disjoncteur | M | B, scan 09 | important |
-| F | alias appris, source créée depuis un dossier | S | C | utile |
+| F | alias appris, source créée depuis un dossier, employeurs à inviter, couverture de la découverte | M | C | important : c'est lui qui réduit la revue dans la durée |
 | G | recette sur les sources demandées | S | C (D pour Club Med) | indispensable |
 
 Branches `plan/scan-v2-01-<lot>-<slug>` (par exemple `plan/scan-v2-01-a-registre`), une PR par lot, preview vérifiée, branche Neon supprimée après le merge. Chaque lot met `CLAUDE.md` à jour.
@@ -874,16 +878,36 @@ Branches `plan/scan-v2-01-<lot>-<slug>` (par exemple `plan/scan-v2-01-a-registre
 
 ### Lot F — Boucles d'apprentissage depuis la revue
 
+La découverte sert de radar : chaque employeur qu'elle révèle doit devenir une source employeur, ou, s'il n'a pas de portail carrière, un employeur à inviter à déposer ses annonces lui-même. Le lot mesure ensuite quand la vitrine ne sert plus qu'à la longue traîne (SH31).
+
 1. **« Mémoriser ce lieu pour <source> »**, sur la fiche d'un dossier dont le lieu était à résoudre : l'alias (nom source → commune vérifiée) rejoint la configuration (version non sensible, motif « depuis le dossier … ») ; le passage suivant établit ce lieu sans revue.
 2. **« Ajouter ce portail comme source »** : à la validation d'un dossier de découverte dont l'URL officielle employeur n'est couverte par aucune source, l'assistant s'ouvre prérempli (URL, employeur, SIREN de l'entreprise choisie) ; `created` garde le dossier d'origine.
-3. **Compteur** sur la liste : « n portails employeurs repérés par la découverte, sans source ».
+3. **« Cet employeur n'a pas de portail carrière »**, sur la fiche d'un dossier de découverte : ouvre ou réutilise une **piste employeur**, revue `employer_lead` de `scan_reviews` (nouvelle valeur de `scan_review_kind`, migration `ALTER TYPE … ADD VALUE`).
+   - `groupKey` : `employer:<SIREN>` si l'entreprise est connue, sinon `employer:<nom normalisé>` (`normalizeJobTitle` n'est pas réutilisé : une règle `normalizeEmployerName` dédiée, testée sur les accents, la casse et les formes juridiques) ; `occurrences` compte les dossiers, `details` garde le nom, le SIREN, la commune, les dossiers et la source de découverte. Comme les suggestions de métiers, une même piste n'est jamais recréée.
+   - Le scan propose aussi la piste de lui-même, sans la créer : un employeur vu dans au moins deux dossiers de découverte, sans source ni piste, apparaît dans « À examiner ».
+   - Décisions, datées et attribuées : « Invité à déposer ses annonces » (date et note du contact), « A un portail » (ouvre l'assistant du point 2), « Écartée » (motif). L'invitation se fait à la main par le fondateur, depuis sa boîte : **aucun email automatique** n'est envoyé à un employeur. Un compte employeur créé ensuite avec ce SIREN résout la piste (le rattachement reste vérifié par l'admin, H2).
+4. **Écran « Employeurs à inviter »** (`/admin/scan/employeurs`, entrée de `pageTitleFor`) : pistes ouvertes triées par nombre de dossiers puis par date, avec la dernière offre vue, la source de découverte et les boutons de décision. Mobile d'abord ; TanStack Table v9 à partir de `md`.
+5. **Indicateur de couverture** (`discoveryCoverage`, pur, dans `source-health.ts`), affiché sur la fiche de chaque source de découverte et sur la carte des sources de `/admin/scan` :
+   - périmètre : dossiers de cette source décidés ou livrés sur les 30 derniers jours ;
+   - « couverts » : l'employeur a une source employeur non archivée (hôte de l'URL officielle établie dans `scan_source_hosts`, ou entreprise choisie reliée à une source par `companyId`) ;
+   - « à inviter » : l'employeur a une piste ouverte ou décidée « invité » ;
+   - « inconnus » : le reste ;
+   - affichage : « Couverture des employeurs : 62 % (31 couverts · 8 à inviter · 11 inconnus) », avec l'évolution par semaine sur 12 semaines (`ChartAreaInteractive`).
+   - Au-delà de 75 % de couverture sur deux mois de suite (seuil `discoveryCoverageTarget` dans `limits.ts`), une alerte non bloquante propose de passer la source de découverte en « Réserve » ou de la limiter au remplissage initial. Rien ne change sans décision de l'admin.
+6. **Compteurs** sur la liste des sources : « n portails employeurs repérés par la découverte, sans source » et « n employeurs à inviter ».
 
-**Tests** : intégration (alias appliqué par `resolvePlace` au contexte suivant ; provenance) ; E2E « Sources — un lieu mémorisé depuis un dossier sert au passage suivant ».
+**Tests**
+
+- Unitaires : `normalizeEmployerName` ; `discoveryCoverage` (couvert par hôte, par entreprise, piste invitée, inconnu, période de 30 jours, seuil sur deux mois) ; proposition automatique d'une piste à partir de deux dossiers.
+- Intégration : alias appliqué par `resolvePlace` au contexte suivant ; provenance d'une source créée depuis un dossier ; une piste n'est jamais recréée, ses occurrences augmentent ; un compte employeur avec le même SIREN résout la piste ; la couverture monte quand une source employeur est créée.
+- E2E : « Sources — un lieu mémorisé depuis un dossier sert au passage suivant » ; « Sources — un employeur sans portail devient une piste, puis est marqué invité » ; « Sources — la couverture d'une découverte se lit sur sa fiche ».
 
 **Critères d'acceptation**
 
 - [ ] Un alias appris ne se redemande plus.
-- [ ] Un employeur découvert sur France Travail devient une source en un seul parcours.
+- [ ] Un employeur découvert sur France Travail devient une source en un seul parcours, ou une piste employeur s'il n'a pas de portail.
+- [ ] La liste « Employeurs à inviter » se trie par nombre de dossiers ; aucune invitation n'est envoyée automatiquement.
+- [ ] La couverture des employeurs de chaque source de découverte est affichée, avec son évolution, et l'alerte de seuil reste une simple proposition.
 
 ### Lot G — Recette avec les sources demandées
 
@@ -960,6 +984,8 @@ En preview, puis en production :
 | 7 | Club Med | connecteur générique si lisible ; attendre la V4 | **générique** si la détection le permet |
 | 8 | Seuils (SH27, SH30) | — | 3 passages bloqués, 20 sources activées, 20 tests conservés, 180 jours |
 | 9 | Pistes écartées du plan 01 dans le registre | oui ; non | **oui** : la mémoire des décisions évite de refaire l'étude |
+| 10 | Moment du lot F | après le lot C ; après la recette V1 | **juste après le lot C** : c'est lui qui transforme la découverte en sources employeurs et réduit la revue |
+| 11 | Seuil de couverture (SH31) | 75 % sur deux mois ; autre | **75 %**, à ajuster après trois mois de mesure |
 
 ## 20. Hors périmètre
 
@@ -996,6 +1022,8 @@ En preview, puis en production :
 | Suspension automatique | `suspendedAt`, `suspensionReason`, `shouldSuspendSource` |
 | Motif d'URL simplifié | `parseUrlPattern`, `compileUrlPattern`, `suggestUrlPattern` |
 | Sonde, échantillon, détection | événements `probed`, `sampled`, `detected` |
+| Employeur à inviter (sans portail carrière) | revue `employer_lead` de `scan_reviews` |
+| Couverture des employeurs d'une découverte | `discoveryCoverage`, seuil `discoveryCoverageTarget` |
 
 ### B. Mises à jour de `CLAUDE.md`
 
