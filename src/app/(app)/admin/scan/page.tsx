@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { ScanSourcesCard } from "@/components/admin/scan-sources-card"
-import { listScanSources } from "@/server/scan/sources/state"
+import { listScanSources } from "@/server/scan/sources/registry"
 
 export const metadata: Metadata = { title: "Scan" }
 export const maxDuration = 120

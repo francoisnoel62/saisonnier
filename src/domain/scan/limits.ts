@@ -18,4 +18,12 @@ export const scanLimits = {
   bootstrapTarget: 50,
   bootstrapDeadlineMs: 6 * 60 * 60 * 1_000,
   dailyWindowMs: 72 * 60 * 60 * 1_000,
+  // Registre des sources (plan scan V2-01, SH30).
+  sourceTestCooldownMs: 30_000,
+  sourceTestsKept: 20,
+  sourceQualificationTestMaxAgeMs: 30 * 24 * 60 * 60 * 1_000,
+  sourceEditTestMaxAgeMs: 60 * 60 * 1_000,
+  maxEnabledSources: 20,
+  suspendAfterBlockedRuns: 3,
+  qualificationMaxAgeDays: 180,
 } as const

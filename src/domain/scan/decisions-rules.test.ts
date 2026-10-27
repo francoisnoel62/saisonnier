@@ -606,7 +606,7 @@ describe("§10 — identité d'un recrutement, aucune fusion implicite", () => {
       "no_content",
     ]))
   it("toutes les définitions ont un libellé et un caractère bloquant", () => {
-    expect(scanIssueCodes).toHaveLength(24)
+    expect(scanIssueCodes).toHaveLength(25)
     expect(
       scanIssueCodes.every(
         (code) =>

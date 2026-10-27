@@ -120,6 +120,27 @@
       "when": 1792826710000,
       "tag": "0016_offer_locations",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793118064142,
+      "tag": "0017_scan_source_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793118253994,
+      "tag": "0018_scan_source_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793118375675,
+      "tag": "0019_scan_source_constraints",
+      "breakpoints": true
     }
   ]
 }

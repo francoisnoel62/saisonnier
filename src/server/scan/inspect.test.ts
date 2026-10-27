@@ -3,9 +3,9 @@ import { join } from "node:path"
 import { expect, it } from "vitest"
 
 import { inspectScanDocument } from "./inspect"
-import { buildScanSourceDefinitions } from "./sources/registry"
+import { testScanSourceDefinitions } from "@/test/scan-sources"
 
-const sources = buildScanSourceDefinitions()
+const sources = testScanSourceDefinitions()
 function fixture(source: string, name: string) {
   return readFileSync(
     join(process.cwd(), "src/server/scan/sources/fixtures", source, name),

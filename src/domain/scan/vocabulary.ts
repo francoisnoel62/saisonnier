@@ -95,6 +95,8 @@ export const rejectionReasons = [
   "missing_minimum",
   "employer_unreachable",
   "other",
+  // Source écartée : ajouté en dernier, car isAdmissionRejection lit les quatre premiers motifs.
+  "source_withdrawn",
 ] as const
 export type RejectionReason = (typeof rejectionReasons)[number]
 export const rejectionReasonLabels: Record<RejectionReason, string> = {
@@ -105,6 +107,7 @@ export const rejectionReasonLabels: Record<RejectionReason, string> = {
   missing_minimum: "Minimum incomplet",
   employer_unreachable: "Employeur injoignable",
   other: "Autre",
+  source_withdrawn: "Source écartée",
 }
 export function isAdmissionRejection(reason: RejectionReason) {
   return rejectionReasons.slice(0, 4).includes(reason)
@@ -182,6 +185,10 @@ export const scanIssueDefinitions = {
     label: "Valeurs à corriger avant publication",
     blocking: true,
   },
+  source_withdrawn: {
+    label: "Source écartée : publication impossible depuis ce dossier",
+    blocking: true,
+  },
 } as const
 export type ScanIssueCode = keyof typeof scanIssueDefinitions
 export const scanIssueCodes = Object.keys(
@@ -205,4 +212,103 @@ export function uniqueIssues(issues: readonly ScanIssue[]) {
         (other) => other.code === issue.code && other.field === issue.field,
       ) === index,
   )
+}
+
+// Registre des sources (SH20).
+export const scanSourceKinds = ["employer", "discovery"] as const
+export type ScanSourceKind = (typeof scanSourceKinds)[number]
+export const scanSourceKindLabels: Record<ScanSourceKind, string> = {
+  employer: "Portail employeur",
+  discovery: "Découverte",
+}
+export const scanSourceStatuses = [
+  "draft",
+  "ready",
+  "rejected",
+  "archived",
+] as const
+export type ScanSourceStatus = (typeof scanSourceStatuses)[number]
+export const scanSourceStatusLabels: Record<ScanSourceStatus, string> = {
+  draft: "Brouillon",
+  ready: "Prête",
+  rejected: "Écartée",
+  archived: "Archivée",
+}
+export const scanSourceRoles = ["primary", "reserve"] as const
+export type ScanSourceRole = (typeof scanSourceRoles)[number]
+export const scanSourceRoleLabels: Record<ScanSourceRole, string> = {
+  primary: "Principale",
+  reserve: "Réserve",
+}
+export const scanAdapterKinds = [
+  "teamtailor",
+  "factorial",
+  "france-travail",
+  "smartrecruiters",
+  "fixture",
+] as const
+export type ScanAdapterKind = (typeof scanAdapterKinds)[number]
+export const scanAdapterLabels: Record<ScanAdapterKind, string> = {
+  teamtailor: "Teamtailor",
+  factorial: "Factorial",
+  "france-travail": "France Travail (recherche publique)",
+  smartrecruiters: "SmartRecruiters",
+  fixture: "Fixtures locales",
+}
+export const scanReuseDecisions = [
+  "pending",
+  "authorized",
+  "accepted",
+  "refused",
+] as const
+export type ScanReuseDecision = (typeof scanReuseDecisions)[number]
+export const scanReuseDecisionLabels: Record<ScanReuseDecision, string> = {
+  pending: "À décider",
+  authorized: "Autorisation écrite",
+  accepted: "Acceptée par le fondateur",
+  refused: "Refusée",
+}
+export const scanSourceSwitches = [
+  "enabled",
+  "dailyEnabled",
+  "autoPublish",
+] as const
+export type ScanSourceSwitch = (typeof scanSourceSwitches)[number]
+export const scanSourceSwitchLabels: Record<ScanSourceSwitch, string> = {
+  enabled: "Activée",
+  dailyEnabled: "Passages quotidiens",
+  autoPublish: "Publication automatique (passages quotidiens)",
+}
+export const scanSourceEventKinds = [
+  "imported",
+  "created",
+  "revised",
+  "status_changed",
+  "switched",
+  "reuse_decided",
+  "probed",
+  "sampled",
+  "detected",
+  "suspended",
+  "resumed",
+  "company_linked",
+  "domain_excluded",
+  "alias_learned",
+] as const
+export type ScanSourceEventKind = (typeof scanSourceEventKinds)[number]
+export const scanSourceEventKindLabels: Record<ScanSourceEventKind, string> = {
+  imported: "Reprise du registre historique",
+  created: "Création",
+  revised: "Modification",
+  status_changed: "Changement de statut",
+  switched: "Interrupteur",
+  reuse_decided: "Décision de reprise",
+  probed: "Test d’accès",
+  sampled: "Échantillon",
+  detected: "Détection",
+  suspended: "Suspension",
+  resumed: "Reprise après suspension",
+  company_linked: "Fiche entreprise liée",
+  domain_excluded: "Domaine exclu",
+  alias_learned: "Lieu mémorisé",
 }

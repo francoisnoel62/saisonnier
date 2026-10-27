@@ -32,6 +32,13 @@ import { withRunClaim, type ScanTransaction } from "./claim"
 import { recordCandidateDivergences } from "./divergences"
 import { attachOccupationInTransaction } from "./occupations"
 
+// Version de la source figée par le passage (initRunSources) ; nulle hors d'un passage initialisé.
+function frozenRevision(runId: string, sourceKey: string) {
+  return sql<
+    number | null
+  >`(select source_revision from scan_run_sources where run_id = ${runId} and source_key = ${sourceKey})`
+}
+
 export type ListedPosting = {
   identityKey: string
   discoveryUrl: string
@@ -52,6 +59,7 @@ export function recordListedPosting(
       .insert(scanCandidates)
       .values({
         sourceKey,
+        sourceRevision: frozenRevision(runId, sourceKey),
         identityKey: listed.identityKey,
         discoveryUrl: listed.discoveryUrl,
         externalId: listed.externalId,
@@ -377,6 +385,7 @@ export function newGeneration(
       .insert(scanCandidates)
       .values({
         sourceKey: latest.sourceKey,
+        sourceRevision: frozenRevision(input.runId, latest.sourceKey),
         identityKey: latest.identityKey,
         generation: latest.generation + 1,
         discoveryUrl: input.extraction.discoveryUrl,

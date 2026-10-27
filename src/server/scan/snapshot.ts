@@ -22,9 +22,8 @@ import {
   scanReviews,
   scanRuns,
   scanRunSources,
+  scanSources,
 } from "@/lib/db/schema"
-
-import { scanSourceDefinitions } from "./sources/registry"
 
 // Drizzle déqualifie les colonnes d'un SELECT à une table ; garder l'identité
 // extérieure qualifiée dans la sous-requête corrélée sur les doublons.
@@ -33,6 +32,8 @@ const queueColumns = {
   id: scanCandidates.id,
   title: sql<string | null>`left(${scanCandidates.title}, 150)`,
   sourceKey: scanCandidates.sourceKey,
+  // Libellé courant de la source, par jointure (clé étrangère : jamais « inconnue »).
+  sourceLabel: scanSources.label,
   status: scanCandidates.status,
   readyForReviewAt: scanCandidates.readyForReviewAt,
   companyName: sql<
@@ -48,6 +49,7 @@ function queueItem(row: {
   id: string
   title: string | null
   sourceKey: string
+  sourceLabel: string
   status: ScanQueueItem["status"]
   readyForReviewAt: Date | null
   companyName: string | null
@@ -59,8 +61,6 @@ function queueItem(row: {
     ...row,
     title: row.title ?? "Sans intitulé",
     readyForReviewAt: row.readyForReviewAt?.toISOString() ?? "",
-    sourceLabel:
-      scanSourceDefinitions[row.sourceKey]?.label ?? "Source inconnue",
   }
 }
 export function parseReviewCursor(value: string | null) {
@@ -112,6 +112,7 @@ export async function getScanSnapshot({
     db
       .select(queueColumns)
       .from(scanCandidates)
+      .innerJoin(scanSources, eq(scanSources.key, scanCandidates.sourceKey))
       .where(
         and(
           eq(scanCandidates.status, "to_review"),
@@ -132,6 +133,7 @@ export async function getScanSnapshot({
       ? db
           .select(queueColumns)
           .from(scanCandidates)
+          .innerJoin(scanSources, eq(scanSources.key, scanCandidates.sourceKey))
           .where(
             and(
               inArray(scanCandidates.id, trackedIds),
@@ -144,8 +146,9 @@ export async function getScanSnapshot({
   const run = runRows[0]
   const sources = run
     ? await db
-        .select()
+        .select({ source: scanRunSources, label: scanSources.label })
         .from(scanRunSources)
+        .innerJoin(scanSources, eq(scanSources.key, scanRunSources.sourceKey))
         .where(eq(scanRunSources.runId, run.id))
         .limit(50)
     : []
@@ -164,11 +167,9 @@ export async function getScanSnapshot({
           targetCount: run.targetCount,
           targetReachedAt: run.targetReachedAt?.toISOString() ?? null,
           finishedAt: run.finishedAt?.toISOString() ?? null,
-          sources: sources.map((source) => ({
+          sources: sources.map(({ source, label }) => ({
             key: source.sourceKey,
-            label:
-              scanSourceDefinitions[source.sourceKey]?.label ??
-              "Source inconnue",
+            label,
             status: source.status,
             listedCount: source.listedCount,
             fetchedCount: source.fetchedCount,

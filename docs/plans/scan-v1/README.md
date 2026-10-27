@@ -103,7 +103,7 @@ Elles complètent les hypothèses H1–H20 de l'application. **H10** (« aucun s
 
 | # | Hypothèse | Plans |
 |---|---|---|
-| SH1 | Le registre des sources est en code (`scanSourceDefinitions` : URL, adaptateur, hôtes officiels, preuve de rattachement, SIREN, conditions de reprise, limites). La table `scan_sources` ne porte que l'état modifiable par l'admin (activée, publication automatique), comme `scheduled_jobs`. Toute source démarre désactivée. La gestion complète des sources dans l'admin relève de la V2. | 01, 03 |
+| SH1 | **Levée par SH20** ([plan scan V2-01](../scan-v2/01-gestion-des-sources.md), lot A : registre en base). Le registre des sources est en code (`scanSourceDefinitions` : URL, adaptateur, hôtes officiels, preuve de rattachement, SIREN, conditions de reprise, limites). La table `scan_sources` ne porte que l'état modifiable par l'admin (activée, publication automatique), comme `scheduled_jobs`. Toute source démarre désactivée. La gestion complète des sources dans l'admin relève de la V2. | 01, 03 |
 | SH2 | Un seul passage actif à la fois. Un cron qui survient pendant un passage ne démarre rien et l'indique dans son résumé ; le passage quotidien suivant garde sa fenêtre de 72 h. | 03, 09 |
 | SH3 | Le remplissage initial est unique (`runKey = "bootstrap"`). « Reprendre » relance ce même passage, avec la même échéance T+6 h et le même compteur. Il ne publie jamais automatiquement. | 03, 09 |
 | SH4 | La publication automatique n'existe qu'en passage quotidien, pour une source dont l'admin a activé « Publication automatique » (désactivée par défaut), et pour un dossier sans aucun point bloquant ni doublon potentiel. Elle porte le label « Sourcée sur internet ». | 02, 04, 09 |

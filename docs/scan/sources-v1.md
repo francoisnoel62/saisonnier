@@ -1,5 +1,7 @@
 # Sources du scan V1 — dossier du 23 octobre 2026
 
+> **Document historique.** Depuis le lot A du [plan scan V2-01](../plans/scan-v2/01-gestion-des-sources.md), les sources sont un registre en base (`scan_sources`, versions et journal), repris de ce dossier par la migration `0018_scan_source_seed.sql`. Qualification, tests et décisions se consignent désormais dans l'historique de chaque source, depuis l'admin. Ce dossier reste la provenance des décisions du 23 au 24 octobre 2026.
+
 ## État de la décision
 
 Implémentation du plan 01 sur `plan/scan-01-sources-client-http`. **France Travail est la découverte prioritaire**, sur la recherche choisie par le fondateur. Belambra, VVF et MS Vacances restent des portails de réserve. L'API SmartRecruiters a été écartée après refus de robots.txt. Le registre ne lance aucun passage et ne publie aucune offre.

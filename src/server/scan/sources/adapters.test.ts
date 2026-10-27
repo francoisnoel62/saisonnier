@@ -1,6 +1,8 @@
-import { expect, it } from "vitest"
+import { expect, it, vi } from "vitest"
 
+import { adapterCatalog } from "@/domain/scan/adapter-catalog"
 import { buildProposal } from "@/domain/scan/proposal"
+import { scanAdapterKinds } from "@/domain/scan/vocabulary"
 import { scanAdapter } from "./adapters"
 import { context, fixtureFile, testDefinitions } from "./adapter-test-fixtures"
 import { listedPosting } from "./adapter"
@@ -21,6 +23,17 @@ it("les sources retenues sont couvertes et SmartRecruiters reste exclu", () => {
   ))
     expect(scanAdapter(source.adapter)).not.toBeNull()
   expect(scanAdapter("smartrecruiters")).toBeNull()
+})
+
+it("le catalogue annonce la version d'extracteur de chaque adaptateur", () => {
+  vi.stubEnv("SCAN_TEST_SOURCE_URL", "http://localhost:3200")
+  for (const kind of scanAdapterKinds)
+    expect(adapterCatalog[kind].version).toBe(
+      kind === "fixture"
+        ? "fixture@1"
+        : (scanAdapter(kind)?.extractorVersion ?? null),
+    )
+  vi.unstubAllEnvs()
 })
 
 it.each(captures)(

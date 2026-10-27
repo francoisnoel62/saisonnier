@@ -3,6 +3,7 @@
 import { unstable_rethrow } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -22,19 +23,17 @@ import { formatIsoDate } from "@/domain/offer-display"
 import { scanFailureLabels } from "@/domain/scan/http"
 import type { ScanProbeResult } from "@/domain/scan/probe"
 import type { ScanSourceSummary as SourceRow } from "@/domain/scan/source"
+import {
+  scanSourceKindLabels,
+  scanSourceRoleLabels,
+  scanSourceStatusLabels,
+} from "@/domain/scan/vocabulary"
 import { formatDateTime } from "@/lib/format"
 import { probeScanSourceAction } from "@/server/scan/actions"
 import { ScanSampleButton } from "./scan-sample-button"
-import {
-  ScanSourceSwitches,
-  type ScanSourceState,
-} from "./scan-source-switches"
+import { ScanSourceSwitches } from "./scan-source-switches"
 
-export function ScanSourcesCard({
-  sources,
-}: {
-  sources: (SourceRow & ScanSourceState)[]
-}) {
+export function ScanSourcesCard({ sources }: { sources: SourceRow[] }) {
   const [selected, setSelected] = useState<SourceRow | null>(null)
   const [result, setResult] = useState<ScanProbeResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -76,13 +75,20 @@ export function ScanSourcesCard({
                 key={source.key}
                 className="flex min-w-0 flex-col gap-3 rounded-lg border p-4"
               >
-                <div>
-                  <h3 className="font-medium">{source.label}</h3>
+                <div className="flex flex-col gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium">{source.label}</h3>
+                    <Badge
+                      variant={
+                        source.status === "ready" ? "default" : "outline"
+                      }
+                    >
+                      {scanSourceStatusLabels[source.status]}
+                    </Badge>
+                  </div>
                   <p className="text-sm text-muted-foreground">
-                    {source.role === "primary" ? "Principale" : "Réserve"} ·{" "}
-                    {source.kind === "discovery"
-                      ? "Découverte"
-                      : "Portail employeur"}
+                    {scanSourceRoleLabels[source.role]} ·{" "}
+                    {scanSourceKindLabels[source.kind]}
                   </p>
                 </div>
                 {source.kind === "discovery" && (
@@ -91,26 +97,34 @@ export function ScanSourcesCard({
                     publication.
                   </p>
                 )}
-                <p className="text-sm wrap-anywhere">
-                  Hôtes officiels : {source.officialHosts.join(", ")}
-                </p>
-                <p className="text-sm">
-                  Vérification documentée : {formatIsoDate(source.checkedAt)}
-                </p>
-                <Button
-                  variant="outline"
-                  className="h-auto w-full whitespace-normal sm:w-fit"
-                  disabled={pending}
-                  onClick={(event) => {
-                    trigger.current = event.currentTarget
-                    probe(source)
-                  }}
-                >
-                  Tester l’accès depuis ce déploiement
-                  <span className="sr-only"> — {source.label}</span>
-                </Button>
-                <ScanSourceSwitches source={source} />
-                <ScanSampleButton source={source} />
+                {source.officialHosts.length > 0 && (
+                  <p className="text-sm wrap-anywhere">
+                    Hôtes officiels : {source.officialHosts.join(", ")}
+                  </p>
+                )}
+                {source.checkedAt && (
+                  <p className="text-sm">
+                    Vérification documentée : {formatIsoDate(source.checkedAt)}
+                  </p>
+                )}
+                {source.testable && (
+                  <Button
+                    variant="outline"
+                    className="h-auto w-full whitespace-normal sm:w-fit"
+                    disabled={pending}
+                    onClick={(event) => {
+                      trigger.current = event.currentTarget
+                      probe(source)
+                    }}
+                  >
+                    Tester l’accès depuis ce déploiement
+                    <span className="sr-only"> — {source.label}</span>
+                  </Button>
+                )}
+                {source.status !== "rejected" && (
+                  <ScanSourceSwitches source={source} />
+                )}
+                {source.testable && <ScanSampleButton source={source} />}
               </li>
             ))}
           </ul>

@@ -4,6 +4,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import {
   insertScanCandidate,
   insertScanRun,
+  insertScanSource,
   resetScan,
 } from "../../../e2e/helpers/scan"
 import { admitPosting } from "@/domain/scan/admission"
@@ -450,6 +451,7 @@ it("SH13 : texte, nombre d'observations et extraits bornés à l'écriture, avec
 })
 
 it("livraison annulée si la source n'est pas initialisée : dossier et compteur intacts", async () => {
+  await insertScanSource(db.$client, { key: "uninitialized" })
   const c = await candidate({ sourceKey: "uninitialized" })
   await expect(deliverCandidate(input(c.id))).rejects.toThrow("non initialisée")
   expect((await currentRun()).deliveredCount).toBe(0)

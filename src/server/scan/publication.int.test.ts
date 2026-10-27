@@ -24,6 +24,7 @@ import {
 } from "@/test/scan-publication"
 
 import { publishCandidate } from "./publication"
+import { setSourceSwitch } from "./sources/writes"
 
 let fixture: PublicationFixture
 beforeEach(async () => {
@@ -42,7 +43,7 @@ async function stored() {
 }
 
 async function discoveredOnFranceTravail() {
-  await enableScanSource(db.$client, "france-travail", { autoPublish: true })
+  await enableScanSource(db.$client, "france-travail", { daily: true })
   await db
     .update(scanCandidates)
     .set({
@@ -120,6 +121,26 @@ it("France Travail reste sans publication automatique, même avec une URL employ
       expect.objectContaining({ code: "official_source" }),
     ]),
   })
+})
+
+it("une découverte refuse la publication automatique, en base comme par le service", async () => {
+  await expect(
+    db
+      .update(scanSources)
+      .set({ autoPublish: true })
+      .where(eq(scanSources.key, "france-travail")),
+  ).rejects.toThrow()
+  await expect(
+    enableScanSource(db.$client, "france-travail", { autoPublish: true }),
+  ).rejects.toThrow("découverte")
+  expect(
+    await setSourceSwitch(
+      "france-travail",
+      "autoPublish",
+      true,
+      fixture.adminId,
+    ),
+  ).toMatchObject({ ok: false, reason: "blocked" })
 })
 
 it("deux validations simultanées et leur rejeu donnent une seule annonce vérifiée par un humain", async () => {
