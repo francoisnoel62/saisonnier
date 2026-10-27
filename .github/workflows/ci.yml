@@ -15,7 +15,8 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # L’E2E dépasse 15 minutes sur les runners partagés : marge pour ne pas annuler un passage sain.
+    timeout-minutes: 30
 
     services:
       postgres:
