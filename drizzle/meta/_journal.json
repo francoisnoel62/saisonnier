@@ -78,6 +78,48 @@
       "when": 1792812553970,
       "tag": "0010_scan",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792814983610,
+      "tag": "0011_scan_offers",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792815025275,
+      "tag": "0012_scan_existing_human_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792822209896,
+      "tag": "0013_scan_review_occupations",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792823930931,
+      "tag": "0014_optional_season",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792825657039,
+      "tag": "0015_scan_presentation",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792826710000,
+      "tag": "0016_offer_locations",
+      "breakpoints": true
     }
   ]
 }

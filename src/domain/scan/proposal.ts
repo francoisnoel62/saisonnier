@@ -32,6 +32,7 @@ export type ProposedPlace = {
   postalCode?: string
 }
 export type ScanProposal = {
+  occupationId?: string
   title: ProposalField<string>
   company: ProposalField<ProposedCompany>
   description: ProposalField<string>
@@ -177,6 +178,11 @@ export function buildProposal(
           : []
       }),
   )
+  const locationCandidates = postingObservations(observations).filter(
+    (observation) =>
+      observation.field === "locationCandidates" &&
+      Array.isArray(observation.value),
+  )
   const activityFacts: { value: "active" | "closed"; evidence: Evidence }[] = []
   for (const observation of textObservations(observations, [
     "activity",
@@ -235,7 +241,18 @@ export function buildProposal(
       ["applicationDeadline", "validThrough"],
       rules.timeZone,
     ),
-    locations,
+    locations:
+      locations.status === "absent" && locationCandidates.length
+        ? {
+            status: "to_verify",
+            value: locationCandidates.flatMap(
+              (observation) => observation.value as ProposedPlace[],
+            ),
+            evidence: locationCandidates.map(
+              (observation) => observation.evidence,
+            ),
+          }
+        : locations,
     salary: salary.field,
     salaryPrecision: salary.precision,
     conditions: conditions.fields,
@@ -282,7 +299,9 @@ export function buildProposal(
   return proposal
 }
 export function proposalIssues(proposal: ScanProposal): ScanIssue[] {
-  const issues = [...proposal.issues]
+  const issues = proposal.issues.map((issue) =>
+    scanIssue(issue.code, issue.field),
+  )
   if (proposal.title.status !== "established" || !proposal.title.value.trim())
     issues.push(scanIssue("detail_unreadable", "title"))
   if (proposal.company.status !== "established")
@@ -298,7 +317,7 @@ export function proposalIssues(proposal: ScanProposal): ScanIssue[] {
   if (proposal.period.status === "contradictory")
     issues.push(scanIssue("period_contradiction"))
   if (proposal.season.status !== "established")
-    issues.push(scanIssue("seasonal_contract", "season"))
+    issues.push(scanIssue("season_unknown", "season"))
   if (proposal.season.status === "contradictory")
     issues.push(scanIssue("season_contradiction"))
   if (

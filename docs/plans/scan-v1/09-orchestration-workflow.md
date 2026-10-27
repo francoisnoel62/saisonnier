@@ -15,6 +15,17 @@ Exécuter les passages en arrière-plan avec Vercel Workflow :
 
 Fermer l'onglet n'arrête rien : la collecte ne dépend ni du navigateur ni de la présence de l'admin.
 
+## Préconditions relevées par la revue de la PR #37
+
+Le code des plans 04 à 08 n'est pas encore appelé par un passage. Ces points sont à traiter en branchant le Workflow, avant le premier passage réel :
+
+- `findDuplicateSuspects` (`duplicates.ts`) écrit comme une étape de workflow sans jeton ni verrou du passage : l'exécuter dans `withRunClaim`. Il relit aussi toutes les annonces et tous les dossiers livrés à chaque appel, sous le verrou du dossier : filtrer en SQL par département (lieux supplémentaires compris), entreprise et URL canonique avant de comparer les intitulés.
+- La file de revue (`use-scan-snapshot.ts`) avance son curseur sur `readyForReviewAt`. La livraison reçoit son `now` avant de prendre le verrou du passage : deux livraisons simultanées peuvent valider dans l'ordre inverse et le dossier le plus ancien n'apparaît jamais. Horodater `readyForReviewAt` après la prise du verrou (ou relire les dossiers livrés depuis l'instant du curseur moins une marge).
+- Les précisions (profil, organisation, informations pratiques, remarques de salaire et des conditions) sont copiées sans être coupées aux limites du formulaire (500 ou 1 000 caractères). La publication automatique est désormais refusée par `invalid_values`, mais la revue humaine n'a pas d'alerte `text_truncated` pour ces champs : tronquer comme pour la description.
+- La page d'un dossier propose le métier d'une suggestion même désactivé depuis, que `validateScanCandidate` refuse ensuite : lire les référentiels avec le même identifiant de métier dans l'action.
+- Le badge « Candidature externe » ignore les domaines devenus exclus après la publication, contrairement au panneau de candidature.
+- Décision produit : les lieux ajoutés par l'admin à une annonce déposée ne sont pas visibles dans le formulaire de l'employeur.
+
 ## Étapes
 
 1. **Installation et vérification préalable.** Lire d'abord [le guide Next.js du SDK](https://workflow-sdk.dev/docs/getting-started/next), [Workflows et étapes](https://workflow-sdk.dev/docs/foundations/workflows-and-steps), [erreurs et réessais](https://workflow-sdk.dev/docs/foundations/errors-and-retries) et les guides Next installés.

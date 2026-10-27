@@ -55,9 +55,11 @@ Le lieu principal reste dans `offers` ; les lieux supplémentaires vont dans une
 
 ## Critères d'acceptation
 
-- [ ] Une offre à plusieurs lieux apparaît une seule fois, quel que soit le nombre de ses lieux retenus par les filtres.
-- [ ] Oracle et requête restent d'accord sur tout le jeu de démonstration.
-- [ ] Carte et fiche présentent les mêmes lieux ; le dépôt employeur n'est pas modifié.
+- [x] Une offre à plusieurs lieux apparaît une seule fois, quel que soit le nombre de ses lieux retenus par les filtres.
+- [x] Oracle et requête restent d'accord sur tout le jeu de démonstration.
+- [x] Carte et fiche présentent les mêmes lieux ; le dépôt employeur n'est pas modifié.
+
+Vérifié le 24/10/2026 : lint, typage, contrôle des migrations, 920 tests unitaires et 310 tests d'intégration. Recette E2E complète : 204 cas validés sur ordinateur et mobile, un cas réservé au bureau ignoré sur mobile ; les deux cas d'édition ont été rejoués avec succès après ajout du nom de source manquant dans leur fiche de test. Les écritures manuelles et automatiques, leur rejeu, le remplacement atomique, le retour arrière sur erreur et la suppression en cascade sont couverts.
 
 ## Hors périmètre
 

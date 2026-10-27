@@ -43,7 +43,7 @@ export type MissingItem = { requirement: MinimumRequirement; label: string }
 const labels = {
   company: "Une entreprise identifiable",
   seasonal_contract:
-    "Un contrat explicitement saisonnier : saison indiquée et case « contrat saisonnier » cochée",
+    "Un contrat explicitement saisonnier : case « contrat saisonnier » cochée",
   location: "Un lieu précis : commune et département",
   period: "Une période (dates de début et de fin) ou une durée",
   // H9 : une annonce déposée se candidate par email ou téléphone ; le lien officiel est un plus.
@@ -82,7 +82,7 @@ export function checkPublicationMinimum(
 
   if (!filled(input.companyId)) addMissing("company", labels.company)
 
-  if (!input.seasonalContractConfirmed || !input.season) {
+  if (!input.seasonalContractConfirmed) {
     addMissing("seasonal_contract", labels.seasonal_contract)
   }
 

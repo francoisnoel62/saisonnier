@@ -23,6 +23,7 @@ import {
   departments,
   occupations,
   offers,
+  offerLocations,
   regions,
 } from "@/lib/db/schema"
 import type { Membership } from "@/server/companies/membership"
@@ -96,6 +97,10 @@ export async function listEmployerOffers(manager: OfferManager) {
   const rows = await db.query.offers.findMany({
     where: visibleTo(manager),
     with: {
+      extraLocations: {
+        orderBy: asc(offerLocations.position),
+        with: { department: { with: { region: true } } },
+      },
       company: true,
       occupation: true,
       department: { with: { region: true } },

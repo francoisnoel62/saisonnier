@@ -70,6 +70,8 @@ Un adaptateur observe : il ne décide ni de l'admission ni de la publication, n'
    4. plusieurs ou aucun : `to_verify`, avec les candidats.
 
    Un code INSEE commence par son département (contrainte `offers_commune_in_department`).
+
+   Clarification du fondateur le 24/10/2026 : pour France Travail, un couple commune/département explicite et appartenant au référentiel établit le lieu, même sans code postal ni INSEE. Aucun de ces deux codes n'est inventé ; les détails et la régression Huez (38) sont consignés dans le dossier des sources.
 9. **Plusieurs postes sur une page** `src/server/scan/extract/multi.ts`.
    - Une page n'est séparée en postes que si elle associe explicitement poste, lieu et période (lignes d'un tableau, blocs répétés). Chaque poste reçoit son `index` dans l'identité.
    - Sinon, un seul dossier, avec le point `multiple_positions`.
@@ -103,9 +105,11 @@ Un adaptateur observe : il ne décide ni de l'admission ni de la publication, n'
 
 ## Critères d'acceptation
 
-- [ ] Chaque source retenue a son adaptateur, ses fixtures et ses tests de référence.
-- [ ] La qualité du préremplissage, mesurée depuis la preview, est consignée par source ; le réservoir estimé est confirmé ou des sources de réserve sont ajoutées.
-- [ ] Aucune valeur sans preuve ; aucun HTML stocké ni affiché.
+- [x] Chaque source retenue a son adaptateur, ses fixtures et ses tests de référence.
+- [x] La qualité du préremplissage, mesurée depuis la preview, est consignée par source ; le réservoir estimé est confirmé ou des sources de réserve sont ajoutées.
+- [x] Aucune valeur sans preuve ; aucun HTML stocké ni affiché.
+
+Mesures du 24/10/2026 consignées dans [le dossier des sources](../../scan/sources-v1.md) et son archive structurée : France Travail `@3`, Belambra `teamtailor@1`, VVF `factorial@1`, MS Vacances `teamtailor@1` puis `@2`. Le correctif MS Vacances, détecté par la mesure, fait passer la candidature de 1/10 à 10/10 sur la preview et garde les boutons désactivés exclus. Les tests de référence passent après changement de version. L'inventaire France Travail actualisé compte 118 URL distinctes ; l'estimation exploratoire est corrigée à 94 dossiers potentiels avant déduplication, au-dessus de la marge de 70 du plan 01. La mesure réelle de cinquante dossiers livrés en six heures appartient aux plans 09 et 10 ; elle n'est pas présumée ici.
 
 ## Hors périmètre
 

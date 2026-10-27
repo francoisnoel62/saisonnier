@@ -201,13 +201,15 @@ describe("offerInputSchema — champs vides", () => {
 })
 
 describe("offerInputSchema — minimum de publication", () => {
+  it("été/hiver peut rester non précisé sans inventer une saison", () => {
+    expect(parse({ season: "" })).toMatchObject({ season: null })
+  })
   it("affiche ensemble toutes les erreurs d'un formulaire vide", () => {
     expect(errorsOf(emptyOfferFormValues())).toEqual({
       title: ["Indiquez l'intitulé du poste."],
       seasonalContract: [
         "Cochez cette case : seuls les contrats saisonniers peuvent être publiés.",
       ],
-      season: ["Choisissez la saison : été ou hiver."],
       communeName: ["Indiquez la commune du poste."],
       startDate: ["Indiquez la date de début du contrat."],
       endDate: ["Indiquez la date de fin du contrat."],

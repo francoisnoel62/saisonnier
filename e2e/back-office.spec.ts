@@ -107,7 +107,9 @@ test("§6 — l'admin saisit une annonce collectée avec un lien officiel : elle
   ).toBeVisible()
   await page.getByLabel("Intitulé").fill(title)
   const row = page.getByRole("row").filter({ hasText: title })
-  await expect(row.getByText("Collectée", { exact: true })).toBeVisible()
+  await expect(
+    row.getByText("Vérifiée par un humain", { exact: true }),
+  ).toBeVisible()
   await expect(row.getByText("En ligne")).toBeVisible()
 
   const offerId = await offerIdByTitle(db, title)
@@ -135,16 +137,14 @@ test("§6 — l'admin saisit une annonce collectée avec un lien officiel : elle
   await expect(
     asCandidate.getByText(
       new RegExp(
-        `^Annonce publiée sur le site officiel de ${companyName} — source consultée le `,
+        `^Annonce reprise du site officiel de ${companyName}, vérifiée par l'équipe le `,
       ),
     ),
   ).toBeVisible()
 
   await asCandidate.goto("/offres?dept=88")
   await expect(
-    offerCard(asCandidate, title).getByText(
-      "Collectée sur le site de l'employeur",
-    ),
+    offerCard(asCandidate, title).getByText("Vérifiée par un humain"),
   ).toBeVisible()
 })
 

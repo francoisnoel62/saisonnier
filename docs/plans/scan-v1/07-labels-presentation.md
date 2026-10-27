@@ -85,9 +85,11 @@ Les filtres restent justes : une information à confirmer ne satisfait aucun cri
 
 ## Critères d'acceptation
 
-- [ ] Carte et fiche affichent la même provenance, la même date de nouveauté et le même badge.
-- [ ] Une information « à confirmer » s'affiche comme telle et ne satisfait aucun filtre ; l'oracle et la requête restent d'accord.
-- [ ] Aucune coordonnée supplémentaire n'est transmise au navigateur.
+- [x] Carte et fiche affichent la même provenance, la même date de nouveauté et le même badge.
+- [x] Une information « à confirmer » s'affiche comme telle et ne satisfait aucun filtre ; l'oracle et la requête restent d'accord.
+- [x] Aucune coordonnée supplémentaire n'est transmise au navigateur.
+
+Vérifié le 24/10/2026 : lint, typage, contrôle des migrations, 909 tests unitaires, 303 tests d'intégration ; E2E présentation, recherche, fiche et back-office sur ordinateur et mobile. Les contrôles existants de provenance ont été adaptés aux nouveaux libellés et rejoués avec succès.
 
 ## Hors périmètre
 

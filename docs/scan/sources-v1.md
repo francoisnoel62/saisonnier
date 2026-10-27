@@ -201,3 +201,77 @@ Décision prise par délégation explicite du fondateur, après la revue de la P
 2. obtenir un avis juridique écrit, ou l'accord de France Travail, qui couvre la lecture du composant public.
 
 Le plan 09 vérifie cette condition avant d'autoriser la source dans un passage programmé ; l'admin peut toujours lancer la sonde.
+
+## Qualité du préremplissage — plan 05
+
+Le panneau « Extraire un échantillon » sur `/admin/scan` lit dix fiches au plus, sans enregistrer de dossier. Il montre les champs établis (contrat, période, lieu, candidature et salaire), les points à vérifier, l'heure, le déploiement et la version de l'extracteur. Un montant sans base reste une précision et ne compte pas comme salaire établi. Les dates de dernière modification France Travail ne deviennent pas des dates de publication ; son URL de découverte ne devient pas une source officielle employeur.
+
+| Source | Adaptateur | Tests sur captures réelles anonymisées | Mesure depuis la preview |
+|---|---|---|---|
+| France Travail | `france-travail@3` | Liste et 6 fiches JSON ; filtres SH17, Huez (38) sans code postal, nature saisonnière structurée | Mesures `@1` puis `@3` ci-dessous ; contrat et lieu établis dans 10/10 fiches sur `@3` |
+| Belambra | `teamtailor@2` | Liste RSS et 6 fiches, dont JSON-LD malformé, période et plusieurs métiers | Mesure `@1` du 24/10 à 08:43 UTC ci-dessous ; cas classique du bouton conservé par les tests `@2` |
+| VVF | `factorial@1` | Liste et 6 fiches, dont une clôture HTTP 200 | Mesure du 24/10 à 08:43 UTC ci-dessous |
+| MS Vacances | `teamtailor@2` | Liste RSS et 6 fiches ; bouton « POSTULER > » actif ou désactivé | Mesures `@1` puis `@2` ci-dessous ; candidature établie dans 10/10 fiches après correction |
+
+Les 24 fiches de référence vérifient qu'une valeur établie a une preuve de portée `posting` et qu'aucune balise HTML ne subsiste dans les sorties. Les tests unitaires simulent la réponse du service de communes. Les mesures de preview ci-dessous complètent ces tests et permettent de réévaluer l'estimation exploratoire du plan 01 ; elles ne démontrent pas le nombre de dossiers distincts qui seront livrés en production.
+
+**France Travail — mesure de preview transmise par le fondateur.** Déploiement exact : <https://saisonnier-5ga2apcmz-francois-noels-projects.vercel.app>, échantillon `france-travail@1` du `2026-10-24T06:05:48.552Z`, dix fiches lues. Les durées sont établies dans neuf fiches ; les deux salaires établis sont ceux des deux offres « #FORUM Commis de cuisine ». Les autres montants restent des précisions sans conversion ni base inventée. Aucun lieu n'est résolu par alias ou commune vérifiée, et aucun canal officiel employeur n'est établi.
+
+Points observés : source officielle à retrouver dans les dix fiches, date de publication inconnue, contrat ou saison à vérifier selon le dossier, activité non établie dans huit fiches. Une fiche de ménage en hôtellerie de plein air comporte une période contradictoire et une année déduite ; une fiche d'écailler comporte une information facultative à confirmer. Un contrat explicite ne suffit pas à déterminer été ou hiver : le point de revue de saison reste distinct. Ces compteurs mesurent le préremplissage, pas le nombre de dossiers qui passeraient l'admission et la déduplication ; ils ne confirment pas à eux seuls le réservoir de cinquante dossiers.
+
+**Correction après la mesure `@1`.** Le fondateur a signalé la [fiche 215QHWT](https://candidat.francetravail.fr/offres/recherche/detail/215QHWT) : « Huez (38) » et l'employeur « LA FOLIE DOUCE SAINT GERVAIS » y sont explicitement indiqués. Lecture du service officiel le 24/10/2026 : `lieuTravail.libelleCommuneLieuTravail = "Huez"`, `codeDepartementLieuTravail = "38"`, `etablissement.libelleEnseigne = "LA FOLIE DOUCE SAINT GERVAIS"`. `france-travail@2` accepte ce couple commune/département s'il appartient au référentiel, sans exiger de code postal ou inventer de code INSEE. L'employeur était déjà extrait ; il est désormais visible dans l'échantillon. Le test de régression a échoué sur `@1`, puis réussi sur `@2`. La mesure de lieu 0/10 ci-dessus décrit donc un défaut de `@1`, pas une absence de lieu sur les fiches France Travail.
+
+**Nature du contrat (`@3`).** Le champ structuré `syntheseContrat` peut commencer par « Saisonnier — 4 Mois — Contrat travail ». Comme l'a précisé le fondateur, il établit la nature du contrat indépendamment de la rédaction de la description. L'adaptateur exprime ce libellé par « Contrat saisonnier » pour les règles communes, en conservant le texte original dans la preuve. La durée reste extraite sans conversion. Cela n'établit pas été ou hiver et ne transforme pas un CDD seul en contrat saisonnier. Le test sur la capture `posting-1.json` a échoué avant la correction, puis réussi.
+
+### France Travail — nouvelle mesure de preview `@3`
+
+Résultat transmis par le fondateur le 24/10/2026 : déploiement <https://saisonnier-jf4v5tq8u-francois-noels-projects.vercel.app>, instant `2026-10-24T07:43:45.659Z`, extracteur `france-travail@3`, dix fiches lues, aucun enregistrement d'annonce ou de dossier.
+
+| Contrat saisonnier | Période | Lieu | Candidature | Salaire |
+|---|---|---|---|---|
+| 10/10 | 8/10 | 10/10 | 0/10 | 2/10 |
+
+Les dix employeurs et lieux sont affichés, dont LA FOLIE DOUCE SAINT GERVAIS à Huez (38). Les deux fiches DOMAINE LES FALAISES à Martel (46), chef de partie pâtisserie et chef de partie chaud, ont une période contradictoire. Les deux salaires établis restent ceux des commis de cuisine VILLAGES CLUBS DU SOLEIL : 1 867 € brut par mois, à Montgenèvre (05) et Belleville (73). Des conditions facultatives restent à confirmer pour le ménage chez ELC à Hyères (83) et l'écailler CLOS BERNARD aux Allues (73).
+
+Les dix sources officielles employeur et canaux de candidature restent à établir ; la date de publication n'est pas connue. L'activité est à vérifier dans huit fiches. La mention « Contrat saisonnier à établir » encore présente dans certains points de revue de cette branche correspond à l'ancien contrôle de saison été/hiver : elle ne contredit pas le compteur de contrat saisonnier 10/10. Le plan 06 rend été/hiver facultatif et remplace ce contrôle par une alerte distincte (SH19).
+
+Cette mesure confirme les corrections de contrat, lieu et affichage de l'employeur. Elle ne démontre ni huit dossiers admis après déduplication, ni un réservoir de cinquante dossiers ; les mesures de preview des trois réserves restent attendues.
+
+### Contrôle réel complémentaire en local — 24/10/2026
+
+Exécution en lecture seule du service d'échantillon au commit `3272675`, contre les sources publiques avec le client du scan ; dix fiches au plus par source, aucune annonce ni aucun dossier enregistré. **Ce contrôle local ne remplace pas la mesure depuis Vercel**, notamment pour le service de communes. Les ratios ci-dessous portent sur les champs établis, pas sur l'admission d'un dossier.
+
+| Source | Heure UTC | Fiches lisibles | Contrat | Période | Lieu | Candidature | Salaire |
+|---|---|---|---|---|---|---|---|
+| France Travail `@3` | 07:34:22 | 0 (liste en erreur réseau) | — | — | — | — | — |
+| Belambra `teamtailor@1` | 07:34:23 | 10/10 | 10/10 | 0/10 | 10/10 | 10/10 | 0/10 |
+| VVF `factorial@1` | 07:34:53 | 10/10 | 7/10 | 3/10 | 7/10 | 10/10 | 3/10 |
+| MS Vacances `teamtailor@1` | 07:35:17 | 10/10 | 3/10 | 0/10 | 9/10 | 1/10 | 0/10 |
+
+Belambra : les dix fiches courantes donnent le caractère saisonnier et le formulaire, mais aucune période complète établie. La [fiche 8588693](https://recrute.belambra.fr/jobs/8588693-second-de-cuisine-h-f) a été relue séparément : « Type de contrat : CDD saison », sans dates ni durée trouvées dans le texte utile. Les salaires sans base restent en précision. VVF : périodes ou lieux manquants dans une partie de l'échantillon, contradictions de contrat et absence de date source dans certaines fiches. MS Vacances : stages ou contrats ambigus, périodes absentes ou avec année à vérifier, un lieu non résolu et des canaux non établis dans neuf fiches.
+
+L'erreur France Travail décrit cette exécution locale, sans conclusion sur la disponibilité depuis Vercel. Les mesures de preview et la réévaluation suivantes remplacent l'attente des trois échantillons de réserve. La nouvelle mesure France Travail `@3` est consignée ci-dessus.
+
+### Réserves — mesures de preview du 24/10/2026
+
+Échantillons lancés par le fondateur et récupérés dans les journaux Vercel. Déploiement exact : <https://saisonnier-oql13e94m-francois-noels-projects.vercel.app>, commit `9b26b7c`. Les [résultats structurés](preview-samples-2026-10-24.json) conservent l'heure, la version, les dix fiches, les champs établis et les points à vérifier ; aucun contact ni texte de page brut n'est transmis par ce service.
+
+| Source | Heure UTC | Version | Lisibles | Contrat | Période | Lieu | Candidature | Salaire |
+|---|---|---|---|---|---|---|---|---|
+| Belambra | 08:43:27.174 | `teamtailor@1` | 10/10 | 10/10 | 0/10 | 10/10 | 10/10 | 0/10 |
+| VVF | 08:43:58.388 | `factorial@1` | 10/10 | 7/10 | 3/10 | 7/10 | 10/10 | 3/10 |
+| MS Vacances | 08:44:26.158 | `teamtailor@1` | 10/10 | 3/10 | 0/10 | 9/10 | 1/10 | 0/10 |
+
+Belambra : caractère saisonnier, lieu et formulaire établis dans les dix fiches ; période ou durée à renseigner, été/hiver non précisé, salaires conservés en précision sans base inventée. VVF : trois lieux restent à résoudre, des contrats sont contradictoires et des périodes manquent ; la date source n'est pas connue. MS Vacances : contrats de stage ou contradictoires, année parfois déduite, un lieu à résoudre, périodes incomplètes. La fiche d'entretien 8552923 indique seulement « Dates du contrat : 11/01/2026 » : cette date seule ne donne pas une période complète.
+
+**Correction du canal MS Vacances.** La lecture réelle et la capture anonymisée `posting-3.html` contiennent un bouton actif « POSTULER > ». L'égalité stricte avec « Postuler » faisait manquer ce canal et le signal d'activité. Le test de régression a échoué sur `@1`, puis réussi sur `teamtailor@2`. Le suffixe décoratif est désormais accepté sur Teamtailor, le libellé original est conservé dans la preuve et un bouton désactivé reste insuffisant. Les liens Factorial et les boutons Teamtailor classiques restent couverts. La mesure `@1` ci-dessus reste historique.
+
+**Confirmation MS Vacances `@2`.** Échantillon relancé par le fondateur à `2026-10-24T09:03:24.658Z` et récupéré dans les journaux du déploiement <https://saisonnier-na5bs9wn2-francois-noels-projects.vercel.app>, commit `665d1eb`. Dix fiches lisibles ; contrat `3/10`, période `0/10`, lieu `9/10`, candidature **`10/10`**, salaire `0/10`. Les champs non concernés restent identiques à la mesure précédente. Le défaut de canal est donc corrigé sur la preview ; les périodes incomplètes, contrats contradictoires, années déduites et lieu non résolu restent à vérifier. Le résultat intégral est ajouté à l'archive structurée ci-dessus.
+
+### Réévaluation du réservoir — 24/10/2026
+
+L'[inventaire actualisé](france-travail-inventory-2026-10-24.json), lu par l'adaptateur `france-travail@3` avec les filtres SH17 inchangés et la politesse du client, contient **118 URL distinctes** sur six pages (`20, 20, 20, 20, 20, 18`), pagination terminée. Il remplace, pour l'estimation courante, les 170 URL du relevé précédent. Aucune fiche ni annonce n'est enregistrée par cet inventaire de liens.
+
+La mesure de preview France Travail établit contrat et lieu dans 10/10 fiches et une période complète ou une durée dans 8/10. En conservant comme hypothèse de travail prudente le taux exploratoire `8/10` du plan 01, le calcul est corrigé à `floor(118 × 8/10) = 94 dossiers potentiels de revue`, avant déduplication métier et recherche des sources officielles. Cette estimation reste au-dessus de la marge de 70 visée par le plan 01. Les échantillons sont petits et non aléatoires : **94 n'est pas un stock confirmé**, et les compteurs de champs ne constituent pas un test d'admission. Les sources de réserve ne sont pas additionnées, car elles peuvent recouper France Travail ; aucune nouvelle source n'est nécessaire pour cette estimation de travail.
+
+Le risque principal est le travail de revue : source et canal officiels à retrouver pour France Travail, périodes manquantes ou ambiguës sur les réserves. Une période non établie bloque la publication ; elle reste visible comme point à vérifier dans un dossier admissible. L'objectif de cinquante dossiers distincts livrés en six heures demeure une recette réelle des plans 09 et 10, distincte de cette estimation préparatoire.

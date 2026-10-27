@@ -1,9 +1,6 @@
 // Serveur local réservé à Playwright ; aucune dépendance aux portails réels.
-import { readFileSync } from "node:fs"
 import { createServer } from "node:http"
-import { resolve } from "node:path"
 
-const directory = resolve("src/server/scan/sources/fixtures/belambra")
 const files = ["posting-1.html", "posting-3.html", "posting-9.html"]
 const port = Number(process.env.SCAN_FIXTURE_PORT ?? 3200)
 const server = createServer((req, res) => {
@@ -22,7 +19,28 @@ const server = createServer((req, res) => {
   const index = Number(req.url?.match(/^\/jobs\/([1-3])$/)?.[1]) - 1
   if (files[index]) {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
-    res.end(readFileSync(resolve(directory, files[index])))
+    const year =
+      new Date().getUTCFullYear() + (new Date().getUTCMonth() >= 11 ? 1 : 0)
+    const title = `Serveur saisonnier fictif ${index + 1} — hiver`
+    const description = `Nous recherchons un serveur pour notre établissement de tourisme. CDD saisonnier pour la saison d’hiver du 15 décembre ${year} au 15 avril ${year + 1}. Le poste est à pourvoir. Vous accueillez les clients et assurez le service des repas dans notre restaurant. Logement fourni. Envoyez votre CV à recrutement@employeur.example.`
+    const job = {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      title,
+      description: `<p>${description}</p>`,
+      datePosted: new Date().toISOString(),
+      jobLocation: {
+        address: {
+          addressLocality: "Chamonix",
+          postalCode: "74400",
+          addressCountry: "FR",
+        },
+      },
+      directApply: true,
+    }
+    res.end(
+      `<html lang="fr"><body><h1>${title}</h1><p>${description}</p><button>Postuler</button><script type="application/ld+json">${JSON.stringify(job)}</script></body></html>`,
+    )
     return
   }
   res.writeHead(404)

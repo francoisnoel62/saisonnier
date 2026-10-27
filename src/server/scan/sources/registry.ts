@@ -159,7 +159,13 @@ export function buildScanSourceDefinitions(
       role: "reserve",
       priority: 0,
       limits: {},
-      placeAliases: {},
+      placeAliases: {
+        Chamonix: {
+          name: "Chamonix",
+          inseeCode: "74056",
+          departmentCode: "74",
+        },
+      },
     }
   }
   return sources

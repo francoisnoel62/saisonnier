@@ -3,12 +3,14 @@ import { beforeEach, expect, it, vi } from "vitest"
 const mocks = vi.hoisted(() => ({
   requireRole: vi.fn(),
   probe: vi.fn(),
+  sample: vi.fn(),
   enabled: vi.fn(),
   autoPublish: vi.fn(),
   revalidate: vi.fn(),
 }))
 vi.mock("@/lib/dal", () => ({ requireRole: mocks.requireRole }))
 vi.mock("./probe", () => ({ probeScanSource: mocks.probe }))
+vi.mock("./sample", () => ({ sampleScanSource: mocks.sample }))
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }))
 vi.mock("./sources/state", () => ({
   isScanSourceKey: (key: string) => key === "belambra",
@@ -18,11 +20,25 @@ vi.mock("./sources/state", () => ({
 
 import {
   probeScanSourceAction,
+  sampleScanSourceAction,
   setScanSourceEnabledAction,
   setScanSourceAutoPublishAction,
 } from "./actions"
 
 beforeEach(() => vi.resetAllMocks())
+it("l'extraction d'échantillon vérifie le rôle admin et le registre avant toute lecture", async () => {
+  mocks.requireRole.mockRejectedValue(new Error("forbidden"))
+  await expect(sampleScanSourceAction("belambra")).rejects.toThrow("forbidden")
+  expect(mocks.sample).not.toHaveBeenCalled()
+  mocks.requireRole.mockResolvedValue({ user: { id: "admin" } })
+  expect(await sampleScanSourceAction("__proto__")).toMatchObject({ ok: false })
+  expect(mocks.sample).not.toHaveBeenCalled()
+  mocks.sample.mockResolvedValue({ sourceKey: "belambra", items: [] })
+  expect(await sampleScanSourceAction("belambra")).toMatchObject({
+    ok: true,
+    result: { sourceKey: "belambra" },
+  })
+})
 it("vérifie le rôle admin dans l'action avant de lire la source", async () => {
   mocks.requireRole.mockRejectedValue(new Error("forbidden"))
   await expect(probeScanSourceAction("belambra")).rejects.toThrow("forbidden")

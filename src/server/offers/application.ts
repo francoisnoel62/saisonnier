@@ -31,8 +31,10 @@ export type ApplicationDetails =
       forAdmin: boolean
     }
 
-export async function getBlockedDomains() {
-  const rows = await db
+export async function getBlockedDomains(
+  reader: Pick<typeof db, "select"> = db,
+) {
+  const rows = await reader
     .select({ domain: blockedDomains.domain })
     .from(blockedDomains)
   return rows.map((row) => row.domain)

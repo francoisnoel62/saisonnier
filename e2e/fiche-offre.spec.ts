@@ -134,7 +134,7 @@ test("§6 — une offre collectée affiche sa provenance et le lien de contact",
 
   await expect(
     page.getByText(
-      /^Annonce publiée sur le site officiel de SPL Domaine skiable du Val Clair — source consultée le \d+ \S+ \d{4}$/,
+      /^Annonce reprise du site officiel de SPL Domaine skiable du Val Clair, vérifiée par l'équipe le \d+ \S+ \d{4}$/,
     ),
   ).toBeVisible()
   await expect(page.getByText("Annonce déposée par l’employeur")).toHaveCount(0)

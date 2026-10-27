@@ -91,6 +91,23 @@ export function activeNavItem(items: NavItem[], pathname: string) {
 
 // Titre affiché dans l'en-tête, déduit de la navigation du rôle.
 export function pageTitleFor(role: Role, pathname: string) {
-  return activeNavItem([...navigation[role], ...secondaryNavigation], pathname)
-    ?.title
+  const scanPages: NavItem[] =
+    role === "admin"
+      ? [
+          {
+            title: "Dossiers du scan",
+            url: "/admin/scan/dossiers",
+            icon: RadarIcon,
+          },
+          {
+            title: "Suggestions de métiers",
+            url: "/admin/scan/suggestions",
+            icon: RadarIcon,
+          },
+        ]
+      : []
+  return activeNavItem(
+    [...navigation[role], ...secondaryNavigation, ...scanPages],
+    pathname,
+  )?.title
 }

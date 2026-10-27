@@ -29,6 +29,8 @@ import {
 } from "@/lib/db/schema"
 
 import { withRunClaim, type ScanTransaction } from "./claim"
+import { recordCandidateDivergences } from "./divergences"
+import { attachOccupationInTransaction } from "./occupations"
 
 export type ListedPosting = {
   identityKey: string
@@ -147,6 +149,15 @@ export type CandidateDelivery = {
 
 async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
   const { extraction, admission, proposal, candidateId, runId, now } = input
+  const [current] = await tx
+    .select()
+    .from(scanCandidates)
+    .where(eq(scanCandidates.id, candidateId))
+    .for("update")
+  if (current && ["published", "rejected"].includes(current.status)) {
+    await recordCandidateDivergences(tx, current, proposal)
+    return { ok: true, delivered: false } as const
+  }
   if (!admission.admitted)
     throw new RangeError("Un dossier non admis ne peut pas être livré")
   const title = (
@@ -209,6 +220,7 @@ async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
     )
     .returning()
   if (!candidate) return { ok: true, delivered: false } as const
+  const attached = await attachOccupationInTransaction(tx, candidate)
   // Le passage est déjà verrouillé : un seul incrément et une seule date de seuil, même avec 60 livraisons simultanées.
   await tx
     .update(scanRuns)
@@ -230,7 +242,7 @@ async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
     )
     .returning()
   if (!source) throw new Error("Source du passage non initialisée")
-  return { ok: true, delivered: true, candidate } as const
+  return { ok: true, delivered: true, candidate: attached } as const
 }
 
 export function deliverCandidate(input: CandidateDelivery) {

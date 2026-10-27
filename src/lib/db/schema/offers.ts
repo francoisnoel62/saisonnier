@@ -10,8 +10,9 @@ import {
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
   uuid,
+  unique,
+  uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core"
 
@@ -24,6 +25,10 @@ import {
   workTimes,
 } from "@/domain/offer"
 import { salaryUnits } from "@/domain/salary"
+import {
+  confirmableFields,
+  type ConfirmableField,
+} from "@/domain/field-certainty"
 import { triStates } from "@/domain/tri-state"
 
 import { user } from "./auth"
@@ -84,7 +89,7 @@ export const offers = pgTable(
     missions: text(),
 
     // Contrat et période : des dates précises, ou une durée seule.
-    season: seasonEnum().notNull(),
+    season: seasonEnum(),
     startDate: date(),
     endDate: date(),
     durationValue: integer(),
@@ -135,6 +140,12 @@ export const offers = pgTable(
     couplesWelcome: triState(),
     petsAllowed: triState(),
     otherConstraints: text(),
+    additionalInfo: text(),
+    fieldsToConfirm: text()
+      .array()
+      .$type<ConfirmableField[]>()
+      .notNull()
+      .default([]),
 
     // Candidature (§5, §7)
     applicationChannel: applicationChannelEnum().notNull().default("employer"),
@@ -149,6 +160,13 @@ export const offers = pgTable(
     sourceUrl: text(),
     sourceName: text(),
     sourceCheckedAt: timestamp({ withTimezone: true }),
+    sourcePublishedDate: date(),
+    sourcePublishedAt: timestamp({ withTimezone: true }),
+    firstDiscoveredAt: timestamp({ withTimezone: true }),
+    humanVerifiedAt: timestamp({ withTimezone: true }),
+    humanVerifiedByUserId: text().references(() => user.id, {
+      onDelete: "set null",
+    }),
 
     // Cycle de vie
     publishedAt: timestamp({ withTimezone: true }),
@@ -159,6 +177,35 @@ export const offers = pgTable(
     ...timestamps,
   },
   (t) => [
+    check(
+      "offers_additional_info",
+      sql`${notBlank(t.additionalInfo)} and length(${t.additionalInfo}) <= 1000`,
+    ),
+    check(
+      "offers_fields_to_confirm",
+      sql`${t.fieldsToConfirm} <@ ARRAY[${sql.raw(confirmableFields.map((f) => `'${f}'`).join(", "))}]::text[] and array_position(${t.fieldsToConfirm}, null) is null`,
+    ),
+    check(
+      "offers_confirmable_neutral",
+      sql`
+      (not ('salary' = any(${t.fieldsToConfirm})) or num_nonnulls(${t.salaryNetMinCents}, ${t.salaryNetMaxCents}, ${t.salaryNetUnit}, ${t.salaryGrossMinCents}, ${t.salaryGrossMaxCents}, ${t.salaryGrossUnit}) = 0)
+      and (not ('housing' = any(${t.fieldsToConfirm})) or ${t.housing} = 'unknown')
+      and (not ('meals' = any(${t.fieldsToConfirm})) or ${t.meals} = 'unknown')
+      and (not ('experience' = any(${t.fieldsToConfirm})) or ${t.experienceRequired} = 'unknown')
+      and (not ('driving_license' = any(${t.fieldsToConfirm})) or ${t.drivingLicenseRequired} = 'unknown')
+      and (not ('couples' = any(${t.fieldsToConfirm})) or ${t.couplesWelcome} = 'unknown')
+      and (not ('pets' = any(${t.fieldsToConfirm})) or ${t.petsAllowed} = 'unknown')
+      and (not ('languages' = any(${t.fieldsToConfirm})) or ${t.languagesRequired} = 'unknown')
+      and (not ('work_time' = any(${t.fieldsToConfirm})) or ${t.workTime} = 'unknown')`,
+    ),
+    check(
+      "offers_human_verification_collected",
+      sql`${t.humanVerifiedAt} is null or ${t.origin} = 'collected'`,
+    ),
+    check(
+      "offers_source_publication_date",
+      sql`${t.sourcePublishedAt} is null or ${t.sourcePublishedDate} is not null`,
+    ),
     // Invariants, vrais pour toute ligne : les formulaires les vérifient avant d'enregistrer.
     check(
       "offers_text_not_blank",
@@ -238,14 +285,70 @@ export const offers = pgTable(
     index().on(t.startDate, t.endDate),
     index().on(t.publishedAt),
     index().using("gin", t.languages),
-    // Une source, une annonce collectée : clé de déduplication de la collecte (plan 15).
-    uniqueIndex("offers_collected_source_url_unique")
+    // Une page peut porter plusieurs recrutements ou être réutilisée une autre saison.
+    index("offers_collected_source_url")
       .on(t.sourceUrl)
       .where(sql`${t.origin} = 'collected'`),
   ],
 )
 
-export const offersRelations = relations(offers, ({ one }) => ({
+export const offerLocations = pgTable(
+  "offer_locations",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    offerId: uuid()
+      .notNull()
+      .references(() => offers.id, { onDelete: "cascade" }),
+    position: integer().notNull(),
+    communeName: text().notNull(),
+    communeInseeCode: text(),
+    postalCode: text(),
+    departmentCode: text()
+      .notNull()
+      .references(() => departments.code),
+    locationDetails: text(),
+  },
+  (t) => [
+    check("offer_locations_position_positive", sql`${t.position} >= 1`),
+    check(
+      "offer_locations_text_not_blank",
+      notBlank(
+        t.communeName,
+        t.communeInseeCode,
+        t.postalCode,
+        t.locationDetails,
+      ),
+    ),
+    check(
+      "offer_locations_commune_in_department",
+      sql`${t.communeInseeCode} is null or starts_with(${t.communeInseeCode}, ${t.departmentCode})`,
+    ),
+    unique("offer_locations_order").on(t.offerId, t.position),
+    uniqueIndex("offer_locations_known_commune")
+      .on(t.offerId, t.communeInseeCode)
+      .where(sql`${t.communeInseeCode} is not null`),
+    index().on(t.departmentCode),
+    index().on(t.offerId),
+  ],
+)
+
+export const offerLocationsRelations = relations(offerLocations, ({ one }) => ({
+  offer: one(offers, {
+    fields: [offerLocations.offerId],
+    references: [offers.id],
+  }),
+  department: one(departments, {
+    fields: [offerLocations.departmentCode],
+    references: [departments.code],
+  }),
+}))
+
+export const offersRelations = relations(offers, ({ one, many }) => ({
+  extraLocations: many(offerLocations),
+  createdBy: one(user, {
+    fields: [offers.createdByUserId],
+    references: [user.id],
+  }),
   company: one(companies, {
     fields: [offers.companyId],
     references: [companies.id],

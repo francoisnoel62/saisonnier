@@ -13,6 +13,7 @@ import { findBlockedTargets } from "@/domain/blocked-domains"
 import { employerOfferState } from "@/domain/employer-offer"
 import { todayInParis } from "@/domain/offer-activity"
 import { contractPeriod } from "@/domain/offer-display"
+import { provenanceOf } from "@/domain/offer-labels"
 import { blockedTargetMessage } from "@/domain/offer-minimum"
 import { listAdminOffers, type AdminOffer } from "@/server/offers/admin-offers"
 import { getBlockedDomains } from "@/server/offers/application"
@@ -30,6 +31,7 @@ function toRow(
     id: offer.id,
     title: offer.title,
     origin: offer.origin,
+    provenance: provenanceOf(offer),
     state,
     companyName: company.displayName
       ? `${company.displayName} (${company.legalName})`

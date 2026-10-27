@@ -14,9 +14,9 @@ const offers = demoOffers(today)
 const active = offers.filter((offer) => isActive(offer, today))
 
 describe("demoOffers", () => {
-  it("contient 8 entreprises et 40 offres, aux identifiants uniques et valides", () => {
+  it("contient 8 entreprises et 44 offres, aux identifiants uniques et valides", () => {
     expect(demoCompanies).toHaveLength(8)
-    expect(offers).toHaveLength(40)
+    expect(offers).toHaveLength(44)
 
     const ids = [...demoCompanies, ...offers].map((row) => row.id)
     expect(new Set(ids).size).toBe(ids.length)
@@ -132,7 +132,7 @@ describe("demoOffers", () => {
         "rejected",
       ]),
     )
-    expect(active).toHaveLength(33)
+    expect(active).toHaveLength(37)
   })
 
   it("couvre des régions variées", () => {

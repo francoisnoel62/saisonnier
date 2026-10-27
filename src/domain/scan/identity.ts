@@ -8,13 +8,16 @@ export function canonicalUrl(value: string): string | null {
     if (!/^https?:$/.test(url.protocol) || url.username || url.password)
       return null
     url.hostname = url.hostname.toLowerCase().replace(/\.$/, "")
+    // Une ancre simple (#postuler) ne désigne pas une autre page ; une route de navigateur
+    // (#/offre/12, #!/offre/12) en désigne une.
+    const route = /^#!?\//.test(url.hash) ? url.hash : ""
     url.hash = ""
     for (const key of [...url.searchParams.keys()])
       if (/^(?:utm_.*|gclid|dclid|fbclid|msclkid|mc_cid|mc_eid)$/i.test(key))
         url.searchParams.delete(key)
     url.searchParams.sort()
     url.pathname = url.pathname.replace(/\/+$/, "")
-    return `${url.origin}${url.pathname === "/" ? "" : url.pathname}${url.search}`
+    return `${url.origin}${url.pathname === "/" ? "" : url.pathname}${url.search}${route}`
   } catch {
     return null
   }

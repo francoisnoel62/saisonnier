@@ -219,6 +219,24 @@ describe("§10 — conditions facultatives fidèles à la source", () => {
       extractConditions([observation("35 h par mois")]).fields.weeklyHours
         .status,
     ).toBe("absent"))
+  it.each([
+    "Contrat de 151,67 heures mensuelles",
+    "Base 151,67 h mensuelles",
+    "1 607 heures annuelles",
+    "35 h par an",
+    "70 heures par semaine",
+  ])(
+    "des heures hors période hebdomadaire ou hors plage restent absentes : %s",
+    (text) =>
+      expect(
+        extractConditions([observation(text)]).fields.weeklyHours.status,
+      ).toBe("absent"),
+  )
+  it("une valeur structurée hors plage hebdomadaire est ignorée", () =>
+    expect(
+      extractConditions([observation(151.67, "weeklyHours")]).fields.weeklyHours
+        .status,
+    ).toBe("absent"))
   it("les libellés bruts des champs d'horaires sont aussi reconnus", () => {
     const result = extractConditions([
       observation("temps plein", "workTime"),

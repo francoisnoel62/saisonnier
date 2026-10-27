@@ -303,7 +303,6 @@ describe("§10 — minimum de publication et automatisation SH4", () => {
   it.each([
     ["company", "company"],
     ["contract", "seasonal_contract"],
-    ["season", "seasonal_contract"],
     ["period", "period"],
     ["locations", "location"],
     ["application", "application"],
@@ -488,6 +487,20 @@ describe("§10 — identité d'un recrutement, aucune fusion implicite", () => {
     expect(canonicalUrl("https://hotel.example/")).toBe("https://hotel.example")
     expect(canonicalUrl("javascript:alert(1)")).toBeNull()
   })
+  it("une route de navigateur (#/…) distingue les pages, une simple ancre non", () => {
+    expect(canonicalUrl("https://jobs.example/#/offre/12")).toBe(
+      "https://jobs.example#/offre/12",
+    )
+    expect(canonicalUrl("https://jobs.example/#/offre/12")).not.toBe(
+      canonicalUrl("https://jobs.example/#/offre/34"),
+    )
+    expect(canonicalUrl("https://jobs.example/#!/offre/12")).toBe(
+      "https://jobs.example#!/offre/12",
+    )
+    expect(canonicalUrl("https://jobs.example/offre/12#postuler")).toBe(
+      canonicalUrl("https://jobs.example/offre/12"),
+    )
+  })
   it("identifiant externe prioritaire, index de poste y compris zéro", () => {
     expect(
       recruitmentIdentity({
@@ -593,7 +606,7 @@ describe("§10 — identité d'un recrutement, aucune fusion implicite", () => {
       "no_content",
     ]))
   it("toutes les définitions ont un libellé et un caractère bloquant", () => {
-    expect(scanIssueCodes).toHaveLength(22)
+    expect(scanIssueCodes).toHaveLength(24)
     expect(
       scanIssueCodes.every(
         (code) =>

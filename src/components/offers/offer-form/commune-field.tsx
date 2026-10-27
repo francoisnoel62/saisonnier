@@ -18,7 +18,7 @@ import {
   offerTextLimits,
   POSTAL_CODE,
   type OfferFormReferentials,
-  type OfferFormValues,
+  type AdminOfferFormValues,
 } from "@/domain/offer-input"
 import { cn } from "@/lib/utils"
 
@@ -89,10 +89,17 @@ const communeCount = (count: number) =>
 
 export function CommuneField({
   departments,
+  prefix = "",
 }: {
   departments: OfferFormReferentials["departments"]
+  prefix?: "" | `extraLocations.${number}.`
 }) {
-  const { control, setValue, getValues } = useFormContext<OfferFormValues>()
+  const { control, setValue, getValues } =
+    useFormContext<AdminOfferFormValues>()
+  const communeNameField = `${prefix}communeName` as const
+  const inseeField = `${prefix}communeInseeCode` as const
+  const departmentField = `${prefix}departmentCode` as const
+  const postalField = `${prefix}postalCode` as const
   const {
     field: {
       ref: communeRef,
@@ -102,15 +109,15 @@ export function CommuneField({
       onBlur: onCommuneBlur,
     },
     fieldState,
-  } = useController({ control, name: "communeName" })
-  const [inseeCode, departmentCode, postalCode] = useWatch({
+  } = useController({ control, name: communeNameField })
+  const [inseeCode = "", departmentCode = "", postalCode = ""] = useWatch({
     control,
-    name: ["communeInseeCode", "departmentCode", "postalCode"],
+    name: [inseeField, departmentField, postalField],
   })
 
   // Une commune enregistrée sans code INSEE a été saisie à la main.
   const [manual, setManual] = useState(
-    () => !!getValues("communeName") && !getValues("communeInseeCode"),
+    () => !!getValues(communeNameField) && !getValues(inseeField),
   )
   const [query, setQuery] = useState("")
   const [search, setSearch] = useState<Search>({ status: "idle" })
@@ -128,7 +135,7 @@ export function CommuneField({
     return department ? `${department.name} (${department.code})` : code
   }
 
-  const id = fieldId("communeName")
+  const id = fieldId(communeNameField)
   const listId = `${id}-options`
   const text = query.trim()
   const searching = !manual && text.length >= MIN_QUERY_LENGTH
@@ -186,7 +193,13 @@ export function CommuneField({
   const setHidden = (
     name: "communeInseeCode" | "postalCode" | "departmentCode",
     value: string,
-  ) => setValue(name, value, { shouldDirty: true })
+  ) =>
+    setValue(
+      `${prefix}${name}` as
+        typeof inseeField | typeof postalField | typeof departmentField,
+      value,
+      { shouldDirty: true },
+    )
 
   function choose(choice: Commune) {
     setHidden("communeInseeCode", choice.inseeCode)
@@ -277,7 +290,7 @@ export function CommuneField({
         </div>
         {postalChoices.length > 0 && (
           <SelectField
-            name="postalCode"
+            name={postalField}
             label="Code postal (facultatif)"
             hint="Cette commune a plusieurs codes postaux."
             placeholder="Choisir"
@@ -333,7 +346,7 @@ export function CommuneField({
               onCommuneBlur()
             }}
             aria-invalid={fieldState.invalid}
-            aria-describedby={describedBy("communeName", {
+            aria-describedby={describedBy(communeNameField, {
               hint: true,
               error: fieldState.invalid,
             })}
@@ -399,7 +412,7 @@ export function CommuneField({
       {manual && (
         <>
           <SelectField
-            name="departmentCode"
+            name={departmentField}
             label="Département"
             placeholder="Choisir le département"
             options={departments.map((d) => ({
