@@ -6,6 +6,18 @@
 
 Rédigé le 27 octobre 2026 sur `main` (`ae31948` : plans scan 01 à 08 terminés, 09 et 10 à faire). Premier plan de la V2 du scan, anticipé à la demande du fondateur : l'admin veut **gérer, ajouter, modifier et supprimer facilement des sources** (France Travail, VVF, Belambra, Club Med, Indeed, SeasonJobs, JobAnim…).
 
+## État de réalisation (28 octobre 2026)
+
+| Lot | PR | État |
+|---|---|---|
+| A · Registre en base | #43 | livré ; CI verte, preview migrée ; fusion à faire par le fondateur |
+| B · Écran des sources | #44 | livré, empilé sur A |
+| C · Ajout guidé | #45 | livré, empilé sur B ; chronométrage en preview au lot G |
+| D · Page carrière, recherches France Travail multiples | #46 | livré, empilé sur C ; fixtures réelles à choisir avec le fondateur ; connecteur `france-travail-api` sur décision |
+| F · Apprentissage depuis la revue | #47 | livré, empilé sur D |
+| E · Santé et disjoncteur | #48 | livré, empilé sur F ; branchement en fin de passage par le plan scan 09 (contrat dans `CLAUDE.md`) |
+| G · Recette | ce document | protocole et compte rendu dans [`docs/scan/recette-sources.md`](../../scan/recette-sources.md) : à mener par le fondateur depuis la preview puis la production |
+
 ## En bref
 
 - **La source devient une donnée, le connecteur reste du code.** Les adaptateurs Teamtailor et Factorial lisent déjà n'importe quel portail de leur format : il ne manque qu'un écran et un registre en base. Ajouter un employeur sur un format connu, ou une recherche France Travail, prend quelques minutes, sans PR ni déploiement.
@@ -772,11 +784,11 @@ Branches `plan/scan-v2-01-<lot>-<slug>` (par exemple `plan/scan-v2-01-a-registre
 
 **Critères d'acceptation**
 
-- [ ] Plus aucune définition de source dans le code de production ; `db:check` passe ; la preview migre sa branche Neon sans erreur.
-- [ ] Le test d'or prouve que les quatre sources migrées sont identiques au registre en code.
-- [ ] Toute référence à une source est une clé étrangère `restrict` ; un passage lit la version figée à son démarrage.
-- [ ] L'activation existante est conservée, ou retirée avec un événement explicite.
-- [ ] `lint`, `typecheck`, `test`, `test:int` et `e2e` passent.
+- [x] Plus aucune définition de source dans le code de production ; `db:check` passe ; la preview migre sa branche Neon sans erreur.
+- [x] Le test d'or prouve que les quatre sources migrées sont identiques au registre en code.
+- [x] Toute référence à une source est une clé étrangère `restrict` ; un passage lit la version figée à son démarrage.
+- [x] L'activation existante est conservée, ou retirée avec un événement explicite.
+- [x] `lint`, `typecheck`, `test`, `test:int` et `e2e` passent.
 
 ### Lot B — Écran des sources : liste, fiche, modification, versions, cycle de vie
 
@@ -804,10 +816,10 @@ Branches `plan/scan-v2-01-<lot>-<slug>` (par exemple `plan/scan-v2-01-a-registre
 
 **Critères d'acceptation**
 
-- [ ] Liste, fiche et modification utilisables à 375 px ; aucune erreur SQL n'atteint l'admin.
-- [ ] Aucune activation sans qualification ; aucune configuration sensible non testée sur une source prête.
-- [ ] Chaque écriture a son auteur, sa date et son motif dans l'historique ; une version se restaure.
-- [ ] « Supprimer » n'efface que les sources sans historique et propose sinon « Archiver ».
+- [x] Liste, fiche et modification utilisables à 375 px ; aucune erreur SQL n'atteint l'admin.
+- [x] Aucune activation sans qualification ; aucune configuration sensible non testée sur une source prête.
+- [x] Chaque écriture a son auteur, sa date et son motif dans l'historique ; une version se restaure.
+- [x] « Supprimer » n'efface que les sources sans historique et propose sinon « Archiver ».
 
 ### Lot C — Ajout guidé : détection, identité, preuves, job-boards
 
@@ -829,9 +841,9 @@ Branches `plan/scan-v2-01-<lot>-<slug>` (par exemple `plan/scan-v2-01-a-registre
 **Critères d'acceptation**
 
 - [ ] En preview, un portail Teamtailor ou Factorial et une recherche France Travail s'ajoutent jusqu'à « Prête » en moins de 10 minutes, sans développement.
-- [ ] Aucune découverte sans domaine exclu ; aucune source employeur sur un domaine exclu.
-- [ ] La demande d'autorisation se prépare en un clic ; la décision du fondateur est datée et motivée.
-- [ ] Le rapport de détection n'affirme rien sans signal.
+- [x] Aucune découverte sans domaine exclu ; aucune source employeur sur un domaine exclu.
+- [x] La demande d'autorisation se prépare en un clic ; la décision du fondateur est datée et motivée.
+- [x] Le rapport de détection n'affirme rien sans signal.
 
 ### Lot D — Connecteur générique « page carrière » et recherches France Travail multiples
 
@@ -855,9 +867,9 @@ Branches `plan/scan-v2-01-<lot>-<slug>` (par exemple `plan/scan-v2-01-a-registre
 
 **Critères d'acceptation**
 
-- [ ] Un site carrière rendu côté serveur s'ajoute, se teste et se qualifie sans développement.
-- [ ] Aucun motif saisi ne peut produire une expression coûteuse.
-- [ ] Une source France Travail à deux recherches les lit toutes deux et ne livre jamais deux fois la même offre.
+- [x] Un site carrière rendu côté serveur s'ajoute, se teste et se qualifie sans développement.
+- [x] Aucun motif saisi ne peut produire une expression coûteuse.
+- [x] Une source France Travail à deux recherches les lit toutes deux et ne livre jamais deux fois la même offre.
 
 ### Lot E — Santé, rendement et disjoncteur (après le plan scan 09)
 
@@ -872,9 +884,9 @@ Branches `plan/scan-v2-01-<lot>-<slug>` (par exemple `plan/scan-v2-01-a-registre
 
 **Critères d'acceptation**
 
-- [ ] La suspension automatique est visible, motivée et réversible.
-- [ ] Rendement et coût se lisent par source.
-- [ ] Les alertes de robots.txt et de qualification apparaissent sur `/admin`.
+- [x] La suspension automatique est visible, motivée et réversible (déclenchement en fin de passage : plan scan 09).
+- [x] Rendement et coût se lisent par source.
+- [x] Les alertes de robots.txt et de qualification apparaissent sur `/admin`.
 
 ### Lot F — Boucles d'apprentissage depuis la revue
 
@@ -904,10 +916,10 @@ La découverte sert de radar : chaque employeur qu'elle révèle doit devenir un
 
 **Critères d'acceptation**
 
-- [ ] Un alias appris ne se redemande plus.
-- [ ] Un employeur découvert sur France Travail devient une source en un seul parcours, ou une piste employeur s'il n'a pas de portail.
-- [ ] La liste « Employeurs à inviter » se trie par nombre de dossiers ; aucune invitation n'est envoyée automatiquement.
-- [ ] La couverture des employeurs de chaque source de découverte est affichée, avec son évolution, et l'alerte de seuil reste une simple proposition.
+- [x] Un alias appris ne se redemande plus.
+- [x] Un employeur découvert sur France Travail devient une source en un seul parcours, ou une piste employeur s'il n'a pas de portail.
+- [x] La liste « Employeurs à inviter » se trie par nombre de dossiers ; aucune invitation n'est envoyée automatiquement.
+- [x] La couverture des employeurs de chaque source de découverte est affichée, avec son évolution, et l'alerte de seuil reste une simple proposition.
 
 ### Lot G — Recette avec les sources demandées
 
