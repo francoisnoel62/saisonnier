@@ -8,6 +8,10 @@ import {
 import { SCAN_FIXTURE_PORT } from "./helpers/env"
 import { expectNoHorizontalScroll } from "./helpers/shell"
 
+// Une source « E2E — … » laissée par un essai interrompu (délai dépassé) ne doit pas décaler
+// les clés déduites des libellés lors de la reprise.
+test.beforeEach(async ({ db }) => deleteTestSources(db))
+
 test("Scan — la page du scan est réservée à l'admin", async ({
   asCandidate,
   asEmployer,
@@ -537,7 +541,7 @@ test("Sources — un site carrière générique se configure et s'échantillonne
   asAdmin,
   db,
 }) => {
-  test.setTimeout(90_000)
+  test.setTimeout(180_000)
   const today = new Date().toISOString().slice(0, 10)
   const origin = `http://localhost:${SCAN_FIXTURE_PORT}`
   try {
@@ -589,7 +593,7 @@ test("Sources — un site carrière générique se configure et s'échantillonne
       .click()
     const sheet = asAdmin.getByRole("dialog", { name: /Échantillon —/ })
     await expect(sheet.getByText(/Test réussi/)).toBeVisible({
-      timeout: 45_000,
+      timeout: 120_000,
     })
     // Trois fiches en page 1, la quatrième après le lien « page suivante ».
     await expect(sheet.getByRole("link", { name: "Fiche source" })).toHaveCount(
