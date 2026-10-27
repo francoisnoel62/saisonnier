@@ -1,0 +1,2 @@
+ALTER TABLE "scan_run_sources" ADD COLUMN "robots_digest" text;--> statement-breakpoint
+CREATE INDEX "scan_run_sources_source_key_run_id_index" ON "scan_run_sources" USING btree ("source_key","run_id");

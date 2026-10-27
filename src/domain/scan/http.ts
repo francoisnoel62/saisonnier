@@ -52,6 +52,8 @@ export type RobotsDecision = {
   crawlDelayMs: number
   // Motif quand robots.txt n'a pas pu être lu (l'hôte est alors indisponible).
   reason?: ScanFailureReason
+  // SHA-256 du robots.txt lu (vide pour un 404) : un changement est signalé (lot E).
+  digest?: string
 }
 
 export type ScanFailure = {

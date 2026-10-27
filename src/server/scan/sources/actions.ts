@@ -14,6 +14,7 @@ import { requireRole } from "@/lib/dal"
 import { searchCompanyDirectory } from "@/server/companies/directory"
 
 import { detectStartUrl } from "./detect"
+import { resumeSource } from "./health"
 import {
   decideEmployerLead,
   learnPlaceAlias,
@@ -234,4 +235,10 @@ export async function decideEmployerLeadAction(
       user.id,
     ),
   )
+}
+
+export async function resumeScanSourceAction(key: string, version: number) {
+  const { user } = await requireRole("admin")
+  if (!Number.isSafeInteger(version)) return invalid
+  return revalidated(await resumeSource(String(key), version, user.id))
 }

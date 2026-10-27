@@ -7,6 +7,10 @@ const querySchema = z.object({
   apres: z.string().optional(),
   limite: z.coerce.number().int().min(1).max(50).default(50),
   suivis: z.string().optional(),
+  source: z
+    .string()
+    .regex(/^[a-z][a-z0-9-]{1,47}$/)
+    .optional(),
 })
 export async function GET(request: Request) {
   const { denied } = await authorizeRoute("admin")
@@ -37,6 +41,7 @@ export async function GET(request: Request) {
         after: parsed.data.apres,
         limit: parsed.data.limite,
         trackedIds,
+        source: parsed.data.source,
       }),
       { headers: { "Cache-Control": "no-store" } },
     )

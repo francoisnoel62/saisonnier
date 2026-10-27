@@ -20,6 +20,7 @@ import {
   switchBlockerMessage,
   switchBlockers,
 } from "@/domain/scan/source-lifecycle"
+import type { SourceHealth } from "@/domain/scan/source-health"
 import {
   qualificationGaps,
   type QualificationItem,
@@ -199,6 +200,8 @@ export type SourceTestSummary = {
   current: boolean
 }
 export type ScanSourceListRow = ScanSourceSummary & {
+  // Santé d'après les derniers passages (lot E), ajoutée par la page.
+  health?: SourceHealth
   adapterVersion: string | null
   lastTest: SourceTestSummary | null
   gap: string | null

@@ -47,6 +47,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { sourceHealthLabels } from "@/domain/scan/source-health"
 import {
   sourceListFilters,
   sourceListFilterLabels,
@@ -171,6 +172,15 @@ const columns = columnHelper.columns([
     id: "runs",
     header: "Passages",
     cell: ({ row }) => <Runs row={row.original} />,
+  }),
+  columnHelper.display({
+    id: "health",
+    header: "Santé",
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap">
+        {sourceHealthLabels[row.original.health ?? "unknown"]}
+      </span>
+    ),
   }),
   columnHelper.display({
     id: "lastTest",
@@ -411,6 +421,9 @@ export function SourcesTable({
                   <p className="text-sm text-muted-foreground">{row.gap}</p>
                 )}
                 <Runs row={row} />
+                <p className="text-sm">
+                  Santé : {sourceHealthLabels[row.health ?? "unknown"]}
+                </p>
                 <p className="text-sm">
                   Dernier test : <LastTest row={row} />
                 </p>

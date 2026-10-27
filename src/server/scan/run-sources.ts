@@ -59,6 +59,7 @@ export type RunSourcePatch = Partial<
     | "cursor"
     | "lastRequestAt"
     | "lastError"
+    | "robotsDigest"
     | "startedAt"
     | "finishedAt"
   >

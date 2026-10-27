@@ -711,3 +711,62 @@ test.describe("Sources — apprentissage depuis la revue", () => {
     ).toBeVisible()
   })
 })
+
+test("Sources — une source bloquée trois fois est suspendue et se reprend après un test", async ({
+  asAdmin,
+  db,
+}) => {
+  try {
+    // Trois passages quotidiens terminés où la source était bloquée, et l'état que le
+    // disjoncteur pose en fin de passage (applyCircuitBreaker, testé en intégration).
+    for (const daysAgo of [3, 2, 1]) {
+      const startedAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
+      const run = await insertScanRun(db, {
+        mode: "daily",
+        startedAt,
+        status: "completed",
+        finishedAt: startedAt,
+      })
+      await db.query(
+        `insert into scan_run_sources (run_id, source_key, source_revision, status, last_error)
+         select $1, key, revision, 'blocked', 'robots.txt refuse la lecture' from scan_sources where key = 'fixture'`,
+        [run.id],
+      )
+    }
+    await db.query(
+      `update scan_sources set suspended_at = now(), suspension_reason = 'Trois passages consécutifs bloqués (robots.txt, 401 ou 403) : source suspendue.', version = version + 1 where key = 'fixture'`,
+    )
+    await db.query(
+      "update scan_source_events set created_at = created_at - interval '1 hour' where source_key = 'fixture'",
+    )
+    await asAdmin.goto("/admin/scan/sources/fixture")
+    await expect(
+      asAdmin.getByText("Source suspendue", { exact: true }),
+    ).toBeVisible()
+    await expect(
+      asAdmin.getByText(/Trois passages consécutifs bloqués/),
+    ).toBeVisible()
+    await expect(
+      asAdmin.getByRole("switch", { name: "Activée", exact: true }),
+    ).toBeDisabled()
+    await asAdmin.getByRole("button", { name: "Reprendre la source" }).click()
+    await expect(asAdmin.getByText(/Testez la source/)).toBeVisible()
+    await asAdmin.getByRole("button", { name: /Tester l’accès/ }).click()
+    const sheet = asAdmin.getByRole("dialog", { name: /Diagnostic —/ })
+    await expect(sheet.getByText(/Test réussi/)).toBeVisible({
+      timeout: 30_000,
+    })
+    await asAdmin.keyboard.press("Escape")
+    await asAdmin.getByRole("button", { name: "Reprendre la source" }).click()
+    await expect(asAdmin.getByText("Source reprise.")).toBeVisible()
+    await expect(
+      asAdmin.getByText("Source suspendue", { exact: true }),
+    ).toHaveCount(0)
+    await asAdmin.goto("/admin/scan/sources/fixture?onglet=activite")
+    await expect(
+      asAdmin.getByText(/Passage quotidien · Bloquée/).first(),
+    ).toBeVisible()
+  } finally {
+    await resetScan(db)
+  }
+})

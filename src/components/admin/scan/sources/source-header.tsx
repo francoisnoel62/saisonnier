@@ -10,6 +10,7 @@ import {
   scanSourceStatusLabels,
 } from "@/domain/scan/vocabulary"
 
+import { ResumeSource } from "./source-resume"
 import { SourceEditLink, useSourceLifecycle } from "./source-lifecycle"
 import { ScanSourceSwitches } from "./source-switches"
 import { SourceTestButtons } from "./source-test"
@@ -20,10 +21,12 @@ export function SourceHeader({
   source,
   pendingCandidates,
   rejectionReason,
+  suspensionReason = null,
 }: {
   source: ScanSourceSummary
   pendingCandidates: number
   rejectionReason: string | null
+  suspensionReason?: string | null
 }) {
   const lifecycle = useSourceLifecycle({ ...source, pendingCandidates })
   const descriptor = source.adapter ? adapterCatalog[source.adapter] : null
@@ -48,6 +51,13 @@ export function SourceHeader({
           <p className="text-sm wrap-anywhere">Écartée : {rejectionReason}</p>
         )}
       </div>
+      {source.suspended && (
+        <ResumeSource
+          sourceKey={source.key}
+          version={source.version}
+          reason={suspensionReason}
+        />
+      )}
       {source.status !== "rejected" && source.status !== "archived" && (
         <ScanSourceSwitches source={source} />
       )}

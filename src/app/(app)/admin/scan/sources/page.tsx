@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { sourceListFilters } from "@/domain/scan/source-lifecycle"
 import { scanAdapterKinds, scanSourceKinds } from "@/domain/scan/vocabulary"
+import { sourceHealthSummaries } from "@/server/scan/sources/health"
 import { discoveryRadar } from "@/server/scan/sources/learning"
 import { listScanSourceRows } from "@/server/scan/sources/registry"
 
@@ -22,6 +23,14 @@ function one<T extends string>(
 ): T | undefined {
   const item = Array.isArray(value) ? value[0] : value
   return allowed.find((candidate) => candidate === item)
+}
+
+async function rowsWithHealth() {
+  const [rows, health] = await Promise.all([
+    listScanSourceRows(),
+    sourceHealthSummaries(),
+  ])
+  return rows.map((row) => ({ ...row, health: health.get(row.key)?.health }))
 }
 
 // Compteurs du radar de la découverte (lot F).
@@ -69,7 +78,7 @@ export default async function ScanSourcesPage({
         </Button>
       </div>
       <RadarCounters />
-      <SourcesTable rows={await listScanSourceRows()} query={query} />
+      <SourcesTable rows={await rowsWithHealth()} query={query} />
     </div>
   )
 }
