@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 
 import type {
+  EmployerLeadDecision,
   ScanReuseDecision,
   ScanSourceSwitch,
 } from "@/domain/scan/vocabulary"
@@ -13,6 +14,11 @@ import { requireRole } from "@/lib/dal"
 import { searchCompanyDirectory } from "@/server/companies/directory"
 
 import { detectStartUrl } from "./detect"
+import {
+  decideEmployerLead,
+  learnPlaceAlias,
+  markEmployerWithoutPortal,
+} from "./learning"
 import { getScanSource } from "./registry"
 import { runSourceTest, type SourceTestKind } from "./tests"
 import {
@@ -65,9 +71,17 @@ export async function setScanSourceSwitchAction(
   )
 }
 
-export async function createScanSourceAction(values: SourceFormValues) {
+export async function createScanSourceAction(
+  values: SourceFormValues,
+  originCandidateId?: string,
+) {
   const { user } = await requireRole("admin")
-  return revalidated(await createSource(values, user.id))
+  return revalidated(
+    await createSource(values, user.id, {
+      originCandidateId:
+        typeof originCandidateId === "string" ? originCandidateId : undefined,
+    }),
+  )
 }
 
 export async function updateScanSourceAction(
@@ -185,4 +199,39 @@ export async function excludeSourceDomainAction(key: string, domain: string) {
   const result = await excludeSourceDomain(String(key), String(domain), user.id)
   if (result.ok) revalidatePath("/admin/referentiels")
   return revalidated(result)
+}
+
+export async function rememberPlaceAliasAction(
+  candidateId: string,
+  input: {
+    name: string
+    communeName: string
+    inseeCode: string
+    departmentCode: string
+  },
+) {
+  const { user } = await requireRole("admin")
+  return revalidated(await learnPlaceAlias(String(candidateId), input, user.id))
+}
+
+export async function markEmployerWithoutPortalAction(candidateId: string) {
+  const { user } = await requireRole("admin")
+  const result = await markEmployerWithoutPortal(String(candidateId), user.id)
+  if (result.ok) revalidatePath("/admin/scan/employeurs")
+  return revalidated(result)
+}
+
+export async function decideEmployerLeadAction(
+  reviewId: string,
+  decision: EmployerLeadDecision,
+  note: string,
+) {
+  const { user } = await requireRole("admin")
+  return revalidated(
+    await decideEmployerLead(
+      String(reviewId),
+      { decision, note: String(note) },
+      user.id,
+    ),
+  )
 }

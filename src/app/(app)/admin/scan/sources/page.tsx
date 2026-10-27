@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { sourceListFilters } from "@/domain/scan/source-lifecycle"
 import { scanAdapterKinds, scanSourceKinds } from "@/domain/scan/vocabulary"
+import { discoveryRadar } from "@/server/scan/sources/learning"
 import { listScanSourceRows } from "@/server/scan/sources/registry"
 
 export const metadata: Metadata = { title: "Sources du scan" }
@@ -21,6 +22,24 @@ function one<T extends string>(
 ): T | undefined {
   const item = Array.isArray(value) ? value[0] : value
   return allowed.find((candidate) => candidate === item)
+}
+
+// Compteurs du radar de la découverte (lot F).
+async function RadarCounters() {
+  const radar = await discoveryRadar()
+  return (
+    <p className="text-sm">
+      {radar.portalsWithoutSource} portail
+      {radar.portalsWithoutSource > 1 ? "s" : ""} employeur
+      {radar.portalsWithoutSource > 1 ? "s" : ""} repéré
+      {radar.portalsWithoutSource > 1 ? "s" : ""} par la découverte, sans source
+      ·{" "}
+      <Link className="underline" href="/admin/scan/employeurs">
+        {radar.employersToInvite} employeur
+        {radar.employersToInvite > 1 ? "s" : ""} à inviter
+      </Link>
+    </p>
+  )
 }
 
 export default async function ScanSourcesPage({
@@ -49,6 +68,7 @@ export default async function ScanSourcesPage({
           </Link>
         </Button>
       </div>
+      <RadarCounters />
       <SourcesTable rows={await listScanSourceRows()} query={query} />
     </div>
   )

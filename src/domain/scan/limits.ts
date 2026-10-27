@@ -26,4 +26,6 @@ export const scanLimits = {
   maxEnabledSources: 20,
   suspendAfterBlockedRuns: 3,
   qualificationMaxAgeDays: 180,
+  // SH31 : au-delà, l'écran propose de passer la découverte en réserve (sans rien changer seul).
+  discoveryCoverageTarget: 0.75,
 } as const

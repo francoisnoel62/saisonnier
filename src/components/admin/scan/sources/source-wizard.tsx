@@ -196,16 +196,26 @@ function Report({
 
 // Assistant d'ajout (§11.4) : point de départ, rapport de détection, type et identité, puis
 // création du brouillon ; la page de modification guide la suite.
-export function SourceWizard() {
+export function SourceWizard({
+  initial = {},
+}: {
+  // Préremplissage depuis un dossier de découverte (lot F).
+  initial?: {
+    url?: string
+    employerName?: string
+    siren?: string
+    candidateId?: string
+  }
+}) {
   const router = useRouter()
-  const [url, setUrl] = useState("")
+  const [url, setUrl] = useState(initial.url ?? "")
   const [report, setReport] = useState<DetectionReport | null>(null)
   const [withoutUrl, setWithoutUrl] = useState(false)
   const [choice, setChoice] = useState(NONE)
   const [kind, setKind] = useState<ScanSourceKind>("employer")
   const [label, setLabel] = useState("")
-  const [employerName, setEmployerName] = useState("")
-  const [siren, setSiren] = useState("")
+  const [employerName, setEmployerName] = useState(initial.employerName ?? "")
+  const [siren, setSiren] = useState(initial.siren ?? "")
   const [website, setWebsite] = useState("")
   const [host, setHost] = useState("")
   const [nafWarning, setNafWarning] = useState<string | null>(null)
@@ -237,7 +247,9 @@ export function SourceWizard() {
         choose(detected.proposals.length ? "0" : NONE, detected)
         if (!detected.proposals.length && detected.blockedDomain)
           setKind("discovery")
-        setLabel(detected.knownPlatform?.name ?? detected.host)
+        setLabel(
+          initial.employerName ?? detected.knownPlatform?.name ?? detected.host,
+        )
         setHost(detected.host)
       } catch (error) {
         unstable_rethrow(error)
@@ -264,7 +276,10 @@ export function SourceWizard() {
     setError(null)
     startTransition(async () => {
       try {
-        const result = await createScanSourceAction(values())
+        const result = await createScanSourceAction(
+          values(),
+          initial.candidateId,
+        )
         if (!result.ok) {
           const fields =
             "fieldErrors" in result && result.fieldErrors

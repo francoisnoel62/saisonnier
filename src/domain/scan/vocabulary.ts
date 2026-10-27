@@ -121,6 +121,7 @@ export const scanReviewKinds = [
   "divergence",
   "incident",
   "occupation",
+  "employer_lead",
 ] as const
 export type ScanReviewKind = (typeof scanReviewKinds)[number]
 export const scanReviewKindLabels: Record<ScanReviewKind, string> = {
@@ -128,7 +129,21 @@ export const scanReviewKindLabels: Record<ScanReviewKind, string> = {
   divergence: "Divergence",
   incident: "Incident",
   occupation: "Suggestion de métier",
+  employer_lead: "Employeur à inviter",
 }
+// Pistes employeur (lot F, SH31) : employeur révélé par une découverte, sans portail carrière.
+export const employerLeadDecisions = [
+  "invited",
+  "has_portal",
+  "dismissed",
+] as const
+export type EmployerLeadDecision = (typeof employerLeadDecisions)[number]
+export const employerLeadDecisionLabels: Record<EmployerLeadDecision, string> =
+  {
+    invited: "Invité à déposer ses annonces",
+    has_portal: "A un portail",
+    dismissed: "Écartée",
+  }
 export const scanReviewStatuses = ["open", "resolved", "dismissed"] as const
 export type ScanReviewStatus = (typeof scanReviewStatuses)[number]
 export const scanReviewStatusLabels: Record<ScanReviewStatus, string> = {

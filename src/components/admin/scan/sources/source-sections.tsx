@@ -3,6 +3,10 @@ import { formatIsoDate } from "@/domain/offer-display"
 import type { ScanProbeResult } from "@/domain/scan/probe"
 import type { ExtractionSample } from "@/domain/scan/sample"
 import type { ScanSourceDraftSnapshot } from "@/domain/scan/source"
+import {
+  formatCoverage,
+  type DiscoveryCoverage,
+} from "@/domain/scan/source-health"
 import { formatDateTime } from "@/lib/format"
 
 import { ProbeResultView, safeHref, SampleResultView } from "./test-results"
@@ -284,5 +288,58 @@ export function SourceTests({
         </li>
       ))}
     </ol>
+  )
+}
+
+// Couverture des employeurs d'une découverte (lot F, SH31), sur 30 jours et par semaine.
+export function SourceCoverage({ coverage }: { coverage: DiscoveryCoverage }) {
+  return (
+    <section
+      aria-labelledby="coverage-title"
+      className="flex min-w-0 flex-col gap-2 rounded-lg border p-4 text-sm"
+    >
+      <h3 id="coverage-title" className="font-semibold">
+        Radar de la découverte
+      </h3>
+      <p>{formatCoverage(coverage.last30)}</p>
+      {coverage.suggestReserve && (
+        <p role="status">
+          Plus de 75 % des employeurs sont couverts depuis deux mois : vous
+          pouvez passer cette découverte en réserve, ou la limiter au
+          remplissage initial. Rien ne change sans votre décision.
+        </p>
+      )}
+      <details>
+        <summary className="cursor-pointer">Évolution sur 12 semaines</summary>
+        <table className="mt-2 w-full text-left">
+          <thead>
+            <tr>
+              <th scope="col" className="py-1 font-medium">
+                Semaine du
+              </th>
+              <th scope="col" className="py-1 font-medium">
+                Couverts
+              </th>
+              <th scope="col" className="py-1 font-medium">
+                Dossiers
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {coverage.weeks.map((week) => (
+              <tr key={week.start}>
+                <td className="py-1">{formatIsoDate(week.start)}</td>
+                <td className="py-1">
+                  {week.rate === null
+                    ? "—"
+                    : `${Math.round(week.rate * 100)} %`}
+                </td>
+                <td className="py-1">{week.total}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
+    </section>
   )
 }

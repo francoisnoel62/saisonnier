@@ -8,6 +8,7 @@ import { SourceQualification } from "@/components/admin/scan/sources/source-qual
 import { QualificationTools } from "@/components/admin/scan/sources/source-qualification-tools"
 import {
   SourceConfiguration,
+  SourceCoverage,
   SourceTests,
   type SourceTestRow,
 } from "@/components/admin/scan/sources/source-sections"
@@ -17,6 +18,7 @@ import { authorizationRequestText } from "@/domain/scan/authorization-request"
 import { env } from "@/lib/env"
 import { cn } from "@/lib/utils"
 import { getBlockedDomains } from "@/server/offers/application"
+import { sourceCoverage } from "@/server/scan/sources/learning"
 import { getScanSourceDetail } from "@/server/scan/sources/registry"
 
 export const metadata: Metadata = { title: "Source du scan" }
@@ -64,6 +66,9 @@ export default async function ScanSourcePage({
         pendingCandidates={detail.pendingCandidates}
         rejectionReason={row.rejectionReason}
       />
+      {row.kind === "discovery" && (
+        <SourceCoverage coverage={await sourceCoverage(key)} />
+      )}
       <nav aria-label="Onglets de la source" className="border-b">
         <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           {tabs.map((item) => (

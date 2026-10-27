@@ -1,0 +1,1 @@
+ALTER TYPE "public"."scan_review_kind" ADD VALUE 'employer_lead';

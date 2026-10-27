@@ -100,6 +100,11 @@ export function pageTitleFor(role: Role, pathname: string) {
             icon: RadarIcon,
           },
           {
+            title: "Employeurs à inviter",
+            url: "/admin/scan/employeurs",
+            icon: RadarIcon,
+          },
+          {
             title: "Dossiers du scan",
             url: "/admin/scan/dossiers",
             icon: RadarIcon,
