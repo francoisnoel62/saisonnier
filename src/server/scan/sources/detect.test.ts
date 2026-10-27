@@ -183,3 +183,30 @@ it("demande d'autorisation : service, objet, robot, politesse, données, contact
     Contact : https://saisonnier.example/contact"
   `)
 })
+
+it("page carrière : motif proposé avec le nombre de liens reconnus et des exemples", () => {
+  const links = [101, 102, 103]
+    .map((id) => `<a href="/carriere/offres/poste-${id}">Poste ${id}</a>`)
+    .join("")
+  const report = detectSource(
+    detectionSignals({
+      body: `<html><body><a href="/contact">Contact</a>${links}<a rel="next" href="/carriere?page=2">Suivant</a></body></html>`,
+      finalUrl: "https://recrute.hotel-test.example/carriere",
+      contentType: "text/html",
+    }),
+    context,
+  )
+  expect(report.proposals).toEqual([
+    expect.objectContaining({
+      adapter: "career-page",
+      params: expect.objectContaining({
+        postingPattern:
+          "https://recrute.hotel-test.example/carriere/offres/{slug}-{id}",
+        pagination: { kind: "next" },
+      }),
+      evidence: expect.arrayContaining([
+        expect.stringContaining("3 liens reconnus"),
+      ]),
+    }),
+  ])
+})

@@ -10,7 +10,14 @@ import type { ScanSourceDefinition } from "@/domain/scan/source"
 import { createScanHttpClient, type ScanFetchOptions } from "../http"
 
 export type AdapterKind = ScanSourceDefinition["adapter"]
-export type ListCursor = { page: number; format?: "rss" | "html" }
+// `list` : index de la liste lue (recherches France Travail multiples) ; `url` : page suivante
+// annoncée par la page lue (pagination rel="next").
+export type ListCursor = {
+  page: number
+  format?: "rss" | "html"
+  list?: number
+  url?: string
+}
 export type ListedPosting = {
   url: string
   identityKey: string
@@ -122,7 +129,11 @@ export async function readDocument(
       target.username ||
       target.password ||
       (target.protocol !== "https:" &&
-        !(ctx.source.adapter === "fixture" && target.protocol === "http:"))
+        !(
+          (ctx.source.adapter === "fixture" ||
+            ctx.source.adapter === "career-page") &&
+          target.protocol === "http:"
+        ))
     )
       return {
         ok: false,

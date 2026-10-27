@@ -532,3 +532,70 @@ test("Sources — écarter Indeed sans lecture du site", async ({
     await deleteTestSources(db)
   }
 })
+
+test("Sources — un site carrière générique se configure et s'échantillonne sans code", async ({
+  asAdmin,
+  db,
+}) => {
+  test.setTimeout(90_000)
+  const today = new Date().toISOString().slice(0, 10)
+  const origin = `http://localhost:${SCAN_FIXTURE_PORT}`
+  try {
+    await asAdmin.goto("/admin/scan/sources/nouvelle")
+    await asAdmin.getByLabel("Adresse de départ").fill(`${origin}/carriere`)
+    await asAdmin.getByRole("button", { name: "Analyser" }).click()
+    const proposal = asAdmin.getByRole("radio", { name: /Page carrière/ })
+    await expect(proposal).toBeChecked({ timeout: 30_000 })
+    await expect(
+      asAdmin.getByText(
+        `Motif proposé : ${origin}/carriere/offres/{slug}-{id} (3 liens reconnus).`,
+      ),
+    ).toBeVisible()
+    await asAdmin.getByLabel("Libellé").fill("E2E — Page carrière")
+    await asAdmin.getByLabel("Employeur", { exact: true }).fill("Hôtel E2E")
+    await asAdmin.getByLabel("Site officiel de l’employeur").fill(`${origin}/`)
+    await asAdmin.getByRole("button", { name: "Créer le brouillon" }).click()
+    await expect(asAdmin).toHaveURL(/e2e-page-carriere\/modifier/)
+    await expect(asAdmin.getByLabel("Motif des fiches")).toHaveValue(
+      `${origin}/carriere/offres/{slug}-{id}`,
+    )
+    await expect(
+      asAdmin.getByText(/carriere\/offres\/\[\^\/\?#\]\+-\(\[0-9\]\+\)/),
+    ).toBeVisible()
+    await asAdmin
+      .getByLabel("Preuve de rattachement : page consultée")
+      .fill(`${origin}/`)
+    await asAdmin
+      .getByLabel("Ce que montre cette page")
+      .fill("Serveur de fixtures du dépôt.")
+    await asAdmin.getByLabel("Consultée le", { exact: true }).fill(today)
+    await asAdmin
+      .getByLabel("Conditions : CGU ou mentions consultées")
+      .fill(`${origin}/`)
+    await asAdmin
+      .getByLabel("Extrait de robots.txt")
+      .fill("User-agent: * Allow: /")
+    await asAdmin
+      .getByLabel("Résumé des conditions")
+      .fill("Fixtures fictives du dépôt.")
+    await asAdmin.getByLabel("Consultées le", { exact: true }).fill(today)
+    await asAdmin.getByRole("button", { name: "Enregistrer" }).click()
+    await expect(
+      asAdmin.getByRole("heading", { name: "Version 2" }),
+    ).toBeVisible()
+    await asAdmin.goto("/admin/scan/sources/e2e-page-carriere")
+    await asAdmin
+      .getByRole("button", { name: /Extraire un échantillon/ })
+      .click()
+    const sheet = asAdmin.getByRole("dialog", { name: /Échantillon —/ })
+    await expect(sheet.getByText(/Test réussi/)).toBeVisible({
+      timeout: 45_000,
+    })
+    // Trois fiches en page 1, la quatrième après le lien « page suivante ».
+    await expect(sheet.getByRole("link", { name: "Fiche source" })).toHaveCount(
+      4,
+    )
+  } finally {
+    await deleteTestSources(db)
+  }
+})

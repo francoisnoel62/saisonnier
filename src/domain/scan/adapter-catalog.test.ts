@@ -71,17 +71,17 @@ it.each([
   },
 )
 
-it("une recherche France Travail reste sur la recherche publique, une seule pour l'instant", () => {
+it("une recherche France Travail reste sur la recherche publique, cinq au plus", () => {
   expect(
     parseAdapterParams("france-travail", {
-      searchUrls: [franceTravailSearchUrl],
+      searchUrls: [franceTravailSearchUrl, franceTravailSearchUrl],
     }).success,
   ).toBe(true)
   for (const searchUrls of [
     [],
     ["https://candidat.francetravail.fr/offres/emploi"],
     ["https://www.francetravail.fr/offres/recherche?domaine=G"],
-    [franceTravailSearchUrl, franceTravailSearchUrl],
+    Array(6).fill(franceTravailSearchUrl),
   ])
     expect(parseAdapterParams("france-travail", { searchUrls }).success).toBe(
       false,

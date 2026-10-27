@@ -67,6 +67,15 @@ function draftValues(
   const values: SourceFormValues = { ...base, adapter: proposal.adapter }
   if (typeof params.portalUrl === "string") values.portalUrl = params.portalUrl
   if (typeof params.origin === "string") values.fixtureOrigin = params.origin
+  if (typeof params.listUrl === "string") {
+    const pagination = params.pagination as { kind?: string } | undefined
+    values.careerPage = {
+      ...values.careerPage,
+      listUrl: params.listUrl,
+      postingPattern: String(params.postingPattern ?? ""),
+      pagination: pagination?.kind === "next" ? "next" : "none",
+    }
+  }
   if (Array.isArray(params.searchUrls)) {
     const search = parseFranceTravailSearchUrl(String(params.searchUrls[0]))
     if (search)

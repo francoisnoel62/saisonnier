@@ -289,8 +289,15 @@ function AdapterFields({ testOrigin }: { testOrigin?: string }) {
             )}
           />
           {partners && <FormAlert>{partnerOffersWarning}</FormAlert>}
+          <TextInput
+            name="extraSearchUrls"
+            label="Recherches supplémentaires (facultatif)"
+            multiline
+            hint="Une adresse de recherche publique par ligne, quatre au plus : toutes vivent dans cette source."
+          />
         </FieldSet>
       )}
+      {adapter === "career-page" && <CareerPageFields />}
       {(!adapter || !descriptor?.derive) && (
         <>
           <TextInput
@@ -308,6 +315,81 @@ function AdapterFields({ testOrigin }: { testOrigin?: string }) {
         </>
       )}
     </>
+  )
+}
+
+function CareerPageFields() {
+  const { control } = useFormContext<SourceFormValues>()
+  const pagination = useWatch({ control, name: "careerPage.pagination" })
+  return (
+    <FieldSet>
+      <FieldLegend>Page carrière</FieldLegend>
+      <TextInput
+        name="careerPage.listUrl"
+        label="Adresse de la liste des offres"
+        type="url"
+        hint="Page HTML, plan de site XML ou flux RSS de la liste."
+      />
+      <TextInput
+        name="careerPage.postingPattern"
+        label="Motif des fiches"
+        hint="Ex. https://recrute.exemple.fr/offres/{slug}-{id} : {id} numérique, {code} alphanumérique, {slug} partie de texte, {*} segment. Aucune expression régulière."
+      />
+      <Controller
+        control={control}
+        name="careerPage.pagination"
+        render={({ field }) => (
+          <Field>
+            <FieldLabel htmlFor={fieldId("careerPage.pagination")}>
+              Pagination
+            </FieldLabel>
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger
+                id={fieldId("careerPage.pagination")}
+                className="w-full sm:w-80"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucune</SelectItem>
+                <SelectItem value="next">
+                  Lien « page suivante » (rel=next)
+                </SelectItem>
+                <SelectItem value="param">Paramètre de page</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
+      />
+      {pagination === "param" && (
+        <TextInput
+          name="careerPage.pageParam"
+          label="Nom du paramètre de page"
+        />
+      )}
+      <TextInput
+        name="careerPage.extraHosts"
+        label="Hôtes supplémentaires des fiches (facultatif)"
+        multiline
+        hint="Un hôte par ligne, si les fiches sont servies ailleurs que la liste."
+      />
+      <Controller
+        control={control}
+        name="careerPage.requireJsonLd"
+        render={({ field }) => (
+          <Field orientation="horizontal">
+            <Checkbox
+              id={fieldId("careerPage.requireJsonLd")}
+              checked={field.value}
+              onCheckedChange={(checked) => field.onChange(checked === true)}
+            />
+            <FieldLabel htmlFor={fieldId("careerPage.requireJsonLd")}>
+              Exiger un JSON-LD JobPosting sur chaque fiche
+            </FieldLabel>
+          </Field>
+        )}
+      />
+    </FieldSet>
   )
 }
 

@@ -190,11 +190,7 @@ export function scanSourceDefinitionErrors(
     source.reuse.url,
   ]) {
     const url = checkScanUrl(value, policy)
-    if (
-      !url ||
-      (url.protocol !== "https:" &&
-        !(source.adapter === "fixture" && isTestSourceUrl(url, policy)))
-    )
+    if (!url || (url.protocol !== "https:" && !isTestSourceUrl(url, policy)))
       errors.push(`URL interdite ${value}`)
   }
   for (const value of source.listUrls) {

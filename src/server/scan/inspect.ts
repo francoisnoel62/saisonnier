@@ -178,5 +178,8 @@ export function detectionSignals({
     textLength: xml ? 0 : $("body").text().replace(/\s+/g, " ").trim().length,
     rssItems: xml ? $("item, entry").length : 0,
     rssNamespaces: namespaces,
+    nextLink: xml
+      ? null
+      : absolute($('a[rel="next"], link[rel="next"]').first().attr("href")),
   }
 }

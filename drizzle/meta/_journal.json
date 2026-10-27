@@ -141,6 +141,13 @@
       "when": 1793118375675,
       "tag": "0019_scan_source_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793133789838,
+      "tag": "0020_scan_career_page",
+      "breakpoints": true
     }
   ]
 }

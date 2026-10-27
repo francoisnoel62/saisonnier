@@ -2,7 +2,12 @@ import { z } from "zod"
 
 import { isValidSiren } from "@/domain/membership"
 
-import { adapterDescriptor, deriveSourceConfig } from "./adapter-catalog"
+import {
+  adapterDescriptor,
+  deriveSourceConfig,
+  maxFranceTravailSearches,
+  parseAdapterParams,
+} from "./adapter-catalog"
 import {
   franceTravailSearchSchema,
   franceTravailSearchUrl,
@@ -42,6 +47,17 @@ export type SourceFormValues = {
     emission: string
     offresPartenaires: boolean
     tri: string
+  }
+  // Recherches France Travail supplémentaires, une adresse par ligne (cinq recherches au plus).
+  extraSearchUrls: string
+  // Page carrière (connecteur générique, lot D).
+  careerPage: {
+    listUrl: string
+    postingPattern: string
+    pagination: "none" | "next" | "param"
+    pageParam: string
+    extraHosts: string
+    requireJsonLd: boolean
   }
   fixtureOrigin: string
   // Connecteur sans déduction (aucun, SmartRecruiters) : hôtes et listes documentés.
@@ -99,6 +115,15 @@ export function emptySourceFormValues(
       emission: "",
       offresPartenaires: false,
       tri: "",
+    },
+    extraSearchUrls: "",
+    careerPage: {
+      listUrl: "",
+      postingPattern: "",
+      pagination: "none",
+      pageParam: "page",
+      extraHosts: "",
+      requireJsonLd: false,
     },
     fixtureOrigin: "",
     manualHosts: "",
@@ -180,6 +205,15 @@ export function scanSourceFormSchema(context: SourceFormContext) {
         offresPartenaires: z.boolean(),
         tri: z.string(),
       }),
+      extraSearchUrls: z.string().max(10_000),
+      careerPage: z.object({
+        listUrl: z.string().trim().max(2048),
+        postingPattern: z.string().trim().max(300),
+        pagination: z.enum(["none", "next", "param"]),
+        pageParam: z.string().trim(),
+        extraHosts: z.string().max(2000),
+        requireJsonLd: z.boolean(),
+      }),
       fixtureOrigin: z.string().trim(),
       manualHosts: z.string().max(2000),
       manualListUrls: z.string().max(20_000),
@@ -256,6 +290,39 @@ export function scanSourceFormSchema(context: SourceFormContext) {
           if (!search.success)
             for (const problem of search.error.issues)
               issue(["search", ...problem.path.map(String)], problem.message)
+          const extra = lines(values.extraSearchUrls)
+          for (const url of extra)
+            if (!parseFranceTravailSearchUrl(url))
+              issue(
+                ["extraSearchUrls"],
+                `Recherche publique attendue (candidat.francetravail.fr/offres/recherche) : ${url}.`,
+              )
+          if (extra.length + 1 > maxFranceTravailSearches)
+            issue(
+              ["extraSearchUrls"],
+              `${maxFranceTravailSearches} recherches au plus.`,
+            )
+        }
+        if (values.adapter === "career-page") {
+          const parsed = parseAdapterParams(
+            "career-page",
+            careerPageParams(values.careerPage),
+          )
+          if (!parsed.success)
+            for (const problem of parsed.error.issues) {
+              const [field] = problem.path.map(String)
+              issue(
+                [
+                  "careerPage",
+                  field === "pagination"
+                    ? "pageParam"
+                    : field === "extraHosts"
+                      ? "extraHosts"
+                      : (field ?? "postingPattern"),
+                ],
+                problem.message,
+              )
+            }
         }
         if (
           values.adapter === "fixture" &&
@@ -359,6 +426,19 @@ function searchInput(search: SourceFormValues["search"]) {
   })
 }
 
+function careerPageParams(values: SourceFormValues["careerPage"]) {
+  return {
+    listUrl: values.listUrl.trim(),
+    postingPattern: values.postingPattern.trim(),
+    pagination:
+      values.pagination === "param"
+        ? { kind: "param", name: values.pageParam.trim() }
+        : { kind: values.pagination },
+    extraHosts: [...new Set(lines(values.extraHosts))],
+    requireJsonLd: values.requireJsonLd,
+  }
+}
+
 function adapterParams(values: SourceFormValues) {
   switch (values.adapter) {
     case "teamtailor":
@@ -374,9 +454,21 @@ function adapterParams(values: SourceFormValues) {
         searchInput(values.search),
       )
       return search.success
-        ? { searchUrls: [franceTravailSearchUrl(search.data)] }
+        ? {
+            searchUrls: [
+              franceTravailSearchUrl(search.data),
+              ...lines(values.extraSearchUrls),
+            ].slice(0, maxFranceTravailSearches),
+          }
         : undefined
     }
+    case "career-page":
+      return parseAdapterParams(
+        "career-page",
+        careerPageParams(values.careerPage),
+      ).success
+        ? careerPageParams(values.careerPage)
+        : undefined
     case "fixture":
       return isLocalTestOrigin(values.fixtureOrigin)
         ? { origin: new URL(values.fixtureOrigin).origin }
@@ -456,6 +548,28 @@ export function formValuesToSnapshot(
   }) as ScanSourceDraftSnapshot
 }
 
+function careerPageDefaults(
+  params: Record<string, unknown>,
+  empty: SourceFormValues["careerPage"],
+): SourceFormValues["careerPage"] {
+  if (typeof params.listUrl !== "string") return empty
+  const pagination = (params.pagination ?? { kind: "none" }) as {
+    kind: "none" | "next" | "param"
+    name?: string
+  }
+  return {
+    listUrl: params.listUrl,
+    postingPattern:
+      typeof params.postingPattern === "string" ? params.postingPattern : "",
+    pagination: pagination.kind,
+    pageParam: pagination.name ?? "page",
+    extraHosts: Array.isArray(params.extraHosts)
+      ? params.extraHosts.map(String).join("\n")
+      : "",
+    requireJsonLd: params.requireJsonLd === true,
+  }
+}
+
 // Valeurs du formulaire d'une version existante.
 export function sourceFormDefaults(
   definition: ScanSourceDraftSnapshot,
@@ -490,6 +604,10 @@ export function sourceFormDefaults(
           tri: search.tri ?? "",
         }
       : empty.search,
+    extraSearchUrls: Array.isArray(params.searchUrls)
+      ? params.searchUrls.slice(1).map(String).join("\n")
+      : "",
+    careerPage: careerPageDefaults(params, empty.careerPage),
     fixtureOrigin: typeof params.origin === "string" ? params.origin : "",
     manualHosts: derived ? "" : (definition.officialHosts ?? []).join("\n"),
     manualListUrls: derived ? "" : (definition.listUrls ?? []).join("\n"),

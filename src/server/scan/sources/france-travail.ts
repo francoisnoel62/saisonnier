@@ -45,10 +45,15 @@ export const franceTravailAdapter: ScanAdapter = {
   kind: "france-travail",
   extractorVersion: "france-travail@3",
   async listPage(ctx, cursor) {
+    // Plusieurs recherches (lot D) : chacune parcourue dans la limite de pages, l'une après
+    // l'autre ; une offre vue par deux recherches reste une seule piste (unicité par source).
+    const list = cursor?.list ?? 0
     const page = cursor?.page ?? 0
-    if (page >= pageLimit(ctx))
-      return { kind: "listed", postings: [], next: null }
-    const url = new URL(ctx.source.listUrls[0])
+    const nextList =
+      list + 1 < ctx.source.listUrls.length ? { page: 0, list: list + 1 } : null
+    if (page >= pageLimit(ctx) || !ctx.source.listUrls[list])
+      return { kind: "listed", postings: [], next: nextList }
+    const url = new URL(ctx.source.listUrls[list])
     url.searchParams.set("range", `${page * 20}-${page * 20 + 19}`)
     const response = await readDocument(ctx, url.href)
     if (!response.ok) return listFailure(response)
@@ -95,8 +100,8 @@ export const franceTravailAdapter: ScanAdapter = {
       postings,
       next:
         postings.length === 20 && page + 1 < pageLimit(ctx)
-          ? { page: page + 1 }
-          : null,
+          ? { page: page + 1, list }
+          : nextList,
     }
   },
   async readPosting(ctx, listed) {

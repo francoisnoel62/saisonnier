@@ -250,6 +250,7 @@ export const scanAdapterKinds = [
   "france-travail",
   "smartrecruiters",
   "fixture",
+  "career-page",
 ] as const
 export type ScanAdapterKind = (typeof scanAdapterKinds)[number]
 export const scanAdapterLabels: Record<ScanAdapterKind, string> = {
@@ -258,6 +259,7 @@ export const scanAdapterLabels: Record<ScanAdapterKind, string> = {
   "france-travail": "France Travail (recherche publique)",
   smartrecruiters: "SmartRecruiters",
   fixture: "Fixtures locales",
+  "career-page": "Page carrière (connecteur générique)",
 }
 export const scanReuseDecisions = [
   "pending",
