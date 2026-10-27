@@ -74,3 +74,88 @@ it("épingle la socket aux adresses DNS contrôlées, sans seconde résolution i
   expect(resolve).toHaveBeenCalledTimes(2)
   expect(transport.request).toHaveBeenCalledTimes(2)
 })
+
+function respondingTransport() {
+  transport.request.mockImplementation(
+    (
+      url: URL,
+      _options: RequestOptions,
+      respond: (r: IncomingMessage) => void,
+    ) =>
+      Object.assign(new EventEmitter(), {
+        end() {
+          respond(
+            Object.assign(
+              Readable.from([
+                Buffer.from(
+                  url.pathname === "/robots.txt"
+                    ? "User-agent: *\nAllow: /"
+                    : "<html>ok</html>",
+                ),
+              ]),
+              {
+                statusCode: 200,
+                headers: {
+                  "content-type":
+                    url.pathname === "/robots.txt" ? "text/plain" : "text/html",
+                },
+              },
+            ) as IncomingMessage,
+          )
+        },
+      }),
+  )
+}
+const publicHost = vi
+  .fn()
+  .mockResolvedValue([{ address: "8.8.8.8", family: 4 }])
+
+it("exchangeTimeoutMs borne l'échange, pas l'attente de politesse de l'hôte", async () => {
+  transport.request.mockReset()
+  respondingTransport()
+  const client = createScanHttpClient({
+    resolve: publicHost,
+    pacer: new HostPacer(),
+    minIntervalMs: 300,
+  })
+  // Trois lectures simultanées de l'hôte : la dernière attend plus que les 100 ms d'un échange.
+  const results = await Promise.all(
+    [1, 2, 3].map((n) =>
+      client.scanFetch(`https://geo.example/communes?n=${n}`, {
+        exchangeTimeoutMs: 100,
+        deadline: Date.now() + 10_000,
+      }),
+    ),
+  )
+  expect(results.map((result) => result.ok)).toEqual([true, true, true])
+  expect(Math.max(...results.map((result) => result.waitedMs))).toBeGreaterThan(
+    200,
+  )
+})
+
+it("exchangeTimeoutMs coupe un échange qui ne répond pas, sans attendre l'échéance de l'étape", async () => {
+  transport.request.mockReset()
+  transport.request.mockImplementation((_url: URL, options: RequestOptions) => {
+    const request = new EventEmitter()
+    options.signal?.addEventListener("abort", () =>
+      request.emit(
+        "error",
+        Object.assign(new Error("aborted"), { name: "TimeoutError" }),
+      ),
+    )
+    return Object.assign(request, { end() {} })
+  })
+  const client = createScanHttpClient({
+    resolve: publicHost,
+    pacer: new HostPacer(),
+    minIntervalMs: 0,
+  })
+  const startedAt = Date.now()
+  expect(
+    await client.scanFetch("https://silent.example/jobs", {
+      exchangeTimeoutMs: 50,
+      deadline: Date.now() + 10_000,
+    }),
+  ).toMatchObject({ ok: false, reason: "timeout" })
+  expect(Date.now() - startedAt).toBeLessThan(2_000)
+})

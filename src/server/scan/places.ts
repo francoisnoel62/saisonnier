@@ -121,9 +121,10 @@ async function resolve(
   url.searchParams.set("nom", raw.communeName)
   url.searchParams.set("fields", "nom,code,codesPostaux,codeDepartement")
   try {
+    // Les 5 s bornent l'échange lui-même ; l'attente de politesse suit l'échéance de l'étape.
     const response = await ctx.scanFetch(url.href, {
-      deadline: Math.min(ctx.deadline, Date.now() + 5000),
-      signal: AbortSignal.timeout(5000),
+      deadline: ctx.deadline,
+      exchangeTimeoutMs: 5000,
     })
     if (!response.ok) return unresolved
     const parsed = z.array(communeSchema).safeParse(JSON.parse(response.body))

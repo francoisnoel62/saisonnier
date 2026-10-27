@@ -1,4 +1,5 @@
 import type { WorkTime } from "@/domain/offer"
+import { weeklyHoursRange } from "@/domain/offer-input"
 import type { TriState } from "@/domain/tri-state"
 
 import { absent, resolveFacts, type ProposalField } from "./field"
@@ -141,8 +142,8 @@ export function extractConditions(observations: readonly Observation[]) {
     if (
       observation.field === "weeklyHours" &&
       typeof observation.value === "number" &&
-      observation.value > 0 &&
-      observation.value <= 168
+      observation.value >= weeklyHoursRange.min &&
+      observation.value <= weeklyHoursRange.max
     )
       hourFacts.push({
         value: observation.value,
@@ -166,12 +167,17 @@ export function extractConditions(observations: readonly Observation[]) {
         /^\s*(?:hebdomadaires?|hebdo)\b/.test(
           text.slice(match.index + match[0].length),
         )
+      // « 151,67 heures mensuelles », « 1 607 h par an » : ni hebdomadaire, ni convertible.
+      const otherPeriod = /^\s*(?:mensuel|annuel|par\s+an\b|\/\s*an\b)/.test(
+        text.slice(match.index + match[0].length),
+      )
       if (
-        value > 0 &&
-        value <= 168 &&
+        value >= weeklyHoursRange.min &&
+        value <= weeklyHoursRange.max &&
         (value > 24 || explicitWeekly) &&
         match[2] !== "jour" &&
         match[2] !== "mois" &&
+        !otherPeriod &&
         !isNegated(text, match.index, match[0].length)
       )
         hourFacts.push({ value, evidence: observation.evidence })

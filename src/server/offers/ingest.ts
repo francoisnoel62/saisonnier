@@ -88,6 +88,8 @@ export async function upsertCollectedOffer(
         blocked: findBlockedTargets(input, blockedDomains),
       }
 
+    // La forme canonique sert aux comparaisons seulement : l'annonce garde le lien saisi, qui doit
+    // rester celui que le candidat ouvre.
     const sourceUrl = canonicalUrl(input.sourceUrl)
     if (!sourceUrl) return { ok: false, reason: "not_found" }
     // L'index n'est plus unique : sérialiser les saisies admin par URL canonique.
@@ -125,7 +127,7 @@ export async function upsertCollectedOffer(
     }
 
     const { extraLocations = [], ...columns } = input
-    const values = { ...columns, sourceUrl, sourceCheckedAt: now }
+    const values = { ...columns, sourceCheckedAt: now }
     if (offerId !== undefined) {
       // Le cycle de vie et la vérification humaine ne sont jamais réécrits ici.
       await tx.update(offers).set(values).where(eq(offers.id, offerId))

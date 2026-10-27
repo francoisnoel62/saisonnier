@@ -56,7 +56,13 @@ export async function validateScanCandidate(
     version,
     input: parsed.data,
   })
-  if (!result.ok)
+  if (!result.ok) {
+    if (result.reason === "already_published")
+      return {
+        ok: false,
+        message:
+          "Ce dossier a déjà été publié, depuis un autre onglet ou lors d'un envoi précédent : vos modifications n'ont pas été enregistrées. Ouvrez l'annonce publiée pour la corriger.",
+      }
     return {
       ok: false,
       message:
@@ -64,6 +70,7 @@ export async function validateScanCandidate(
           ? reviewConflictMessage
           : `Publication impossible : ${result.issues.map((issue) => issue.label).join(" ; ")}`,
     }
+  }
   revalidateReview()
   return {
     ok: true,

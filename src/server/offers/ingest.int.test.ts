@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { eq, like } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { todayInParis } from "@/domain/offer-activity"
@@ -131,6 +131,35 @@ describe("upsertCollectedOffer", () => {
       publishedAt: first,
       sourceCheckedAt: first,
     })
+  })
+
+  it("conserve le lien saisi : routes #/… distinctes, barre finale et paramètres intacts", async () => {
+    const site = "https://jobs.hotel-ingest.example"
+    const a = await upsertCollectedOffer(
+      collected({ sourceUrl: `${site}/#/offre/12`, title: "Serveur" }),
+      actor,
+    )
+    const b = await upsertCollectedOffer(
+      collected({ sourceUrl: `${site}/#/offre/34`, title: "Cuisinier" }),
+      actor,
+    )
+    expect(a).toMatchObject({ ok: true, created: true })
+    expect(b).toMatchObject({ ok: true, created: true })
+    const tracked = `${site}/emplois/plongeur/?utm_source=x&b=2&a=1`
+    const c = await upsertCollectedOffer(
+      collected({ sourceUrl: tracked, title: "Plongeur" }),
+      actor,
+    )
+    if (!c.ok) throw new Error(c.reason)
+    const [row] = await db.select().from(offers).where(eq(offers.id, c.offerId))
+    expect(row.sourceUrl).toBe(tracked)
+    // Le même lien, au suivi près, reste refusé comme source déjà utilisée.
+    expect(
+      await upsertCollectedOffer(
+        collected({ sourceUrl: `${site}/emplois/plongeur?a=1&b=2` }),
+        actor,
+      ),
+    ).toEqual({ ok: false, reason: "source_taken", offerId: c.offerId })
   })
 
   it("refuse une nouvelle saisie d'une annonce retirée sans la remettre en ligne", async () => {
@@ -279,6 +308,12 @@ describe("upsertCollectedOffer", () => {
     expect(
       results.filter((r) => !r.ok && r.reason === "source_taken"),
     ).toHaveLength(1)
-    expect(await rowsWithSource(source)).toHaveLength(1)
+    // Le lien saisi est conservé tel quel : le gagnant de la course peut être l'un ou l'autre.
+    expect(
+      await db
+        .select()
+        .from(offers)
+        .where(like(offers.sourceUrl, `${source}%`)),
+    ).toHaveLength(1)
   })
 })

@@ -206,9 +206,12 @@ export async function extractHtmlPosting(
         JSON.stringify(salary),
       )
   }
-  const resolutions = await Promise.all(
-    rawPlaces.map((place) =>
-      resolvePlace(
+  // Un lieu après l'autre : l'hôte de geo.api.gouv.fr est espacé de 2 s, des lectures simultanées
+  // feraient échouer les dernières sur l'échéance de politesse.
+  const resolutions: Awaited<ReturnType<typeof resolvePlace>>[] = []
+  for (const place of rawPlaces)
+    resolutions.push(
+      await resolvePlace(
         {
           ...place,
           proof: proof(
@@ -218,8 +221,7 @@ export async function extractHtmlPosting(
         },
         ctx,
       ),
-    ),
-  )
+    )
   const resolved = resolutions.every((place) => place.status === "established")
   const values = resolutions.flatMap((place) =>
     place.status === "established" || place.status === "to_verify"

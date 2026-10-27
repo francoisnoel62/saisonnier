@@ -178,6 +178,10 @@ export const scanIssueDefinitions = {
     blocking: false,
   },
   text_truncated: { label: "Contenu tronqué", blocking: false },
+  invalid_values: {
+    label: "Valeurs à corriger avant publication",
+    blocking: true,
+  },
 } as const
 export type ScanIssueCode = keyof typeof scanIssueDefinitions
 export const scanIssueCodes = Object.keys(

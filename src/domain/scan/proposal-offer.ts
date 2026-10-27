@@ -1,6 +1,7 @@
 import {
   emptyOfferFormValues,
   previewOfferInput,
+  weeklyHoursRange,
   type AdminOfferInput,
 } from "@/domain/offer-input"
 
@@ -28,6 +29,15 @@ export function truncatePostingText(text: string, limit: number) {
   if (/\s/.test(text[limit] ?? "")) return prefix.trim()
   const lastSpace = prefix.lastIndexOf(" ")
   return (lastSpace > 0 ? prefix.slice(0, lastSpace) : prefix).trim()
+}
+
+// La colonne et le formulaire bornent les heures hebdomadaires : au-delà, la valeur reste dans les preuves.
+function plausibleWeeklyHours(hours: number | undefined) {
+  return hours !== undefined &&
+    hours >= weeklyHoursRange.min &&
+    hours <= weeklyHoursRange.max
+    ? hours
+    : null
 }
 
 // Seules les valeurs établies alimentent les colonnes. Les inconnues restent absentes.
@@ -86,7 +96,7 @@ export function proposalToOfferInput(proposal: ScanProposal) {
     drivingLicenseDetails:
       proposal.conditionPrecisions.drivingLicenceRequired ?? null,
     workTime: valueOf(proposal.conditions.workTime) ?? "unknown",
-    weeklyHours: valueOf(proposal.conditions.weeklyHours) ?? null,
+    weeklyHours: plausibleWeeklyHours(valueOf(proposal.conditions.weeklyHours)),
     scheduleDetails: valueOf(proposal.organization) ?? null,
     couplesWelcome: valueOf(proposal.conditions.couplesAccepted) ?? "unknown",
     petsAllowed: valueOf(proposal.conditions.petsAccepted) ?? "unknown",

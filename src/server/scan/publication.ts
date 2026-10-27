@@ -5,6 +5,8 @@ import { and, eq, or, inArray } from "drizzle-orm"
 import { isBlockedHost } from "@/domain/blocked-domains"
 import { expiryReason, todayInParis } from "@/domain/offer-activity"
 import {
+  adminOfferInputSchema,
+  adminOfferToFormValues,
   areExtraLocationsValid,
   type AdminOfferInput,
 } from "@/domain/offer-input"
@@ -45,6 +47,8 @@ export type PublicationRequest = { candidateId: string; now?: Date } & (
 export type PublicationResult =
   | { ok: true; offerId: string; created: boolean }
   | { ok: false; reason: "conflict" | "blocked"; issues: ScanIssue[] }
+  // Validation humaine d'un dossier déjà publié : ses valeurs n'ont pas été enregistrées.
+  | { ok: false; reason: "already_published"; offerId: string }
 const conflict: PublicationResult = {
   ok: false,
   reason: "conflict",
@@ -62,9 +66,13 @@ async function publish(
     .where(eq(scanCandidates.id, request.candidateId))
     .for("update")
   if (!candidate) return conflict
-  // Le rejeu constate la publication, même si l'annonce a été retirée depuis.
+  // Le rejeu d'une étape du scan constate la publication, même si l'annonce a été retirée depuis.
+  // Une seconde validation humaine porte d'autres valeurs : les ignorer en silence ferait croire
+  // qu'elles sont publiées.
   if (candidate.status === "published" && candidate.offerId)
-    return { ok: true, offerId: candidate.offerId, created: false }
+    return request.kind === "admin"
+      ? { ok: false, reason: "already_published", offerId: candidate.offerId }
+      : { ok: true, offerId: candidate.offerId, created: false }
   if (candidate.offerId || !candidate.proposal) return conflict
   if (
     request.kind === "admin"
@@ -186,6 +194,23 @@ async function publish(
     ),
     ...(expiryReason(input, today) ? [scanIssue("activity")] : []),
     ...(!candidate.lastFetchedAt ? [scanIssue("detail_unreadable")] : []),
+    // Le formulaire de l'admin borne chaque champ ; une publication automatique ne contourne pas
+    // ces bornes (une valeur hors colonne ferait échouer la transaction).
+    ...(request.kind === "scan" &&
+    !adminOfferInputSchema({
+      today,
+      blockedDomains,
+      departmentCodes: knownDepartments.map((row) => row.code),
+      occupationIds: [],
+    }).safeParse(
+      adminOfferToFormValues({
+        ...input,
+        occupationId: null,
+        companyId: company?.id ?? "",
+      }),
+    ).success
+      ? [scanIssue("invalid_values")]
+      : []),
     ...(!areExtraLocationsValid(
       input,
       input.extraLocations,

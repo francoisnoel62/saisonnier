@@ -127,19 +127,16 @@ it("deux validations simultanées et leur rejeu donnent une seule annonce vérif
     publishCandidate(fixture.request),
     publishCandidate(fixture.request),
   ])
-  expect(results).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({ ok: true, created: true }),
-      expect.objectContaining({ ok: true, created: false }),
-    ]),
-  )
   const [offer] = await db
     .select()
     .from(offers)
     .where(eq(offers.companyId, fixture.company.id))
-  expect(
-    results.every((result) => result.ok && result.offerId === offer.id),
-  ).toBe(true)
+  expect(results).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ ok: true, created: true }),
+      { ok: false, reason: "already_published", offerId: offer.id },
+    ]),
+  )
   expect(offer).toMatchObject({
     status: "published",
     humanVerifiedAt: publicationNow,
@@ -154,10 +151,101 @@ it("deux validations simultanées et leur rejeu donnent une seule annonce vérif
     version: fixture.candidate.version + 1,
   })
   expect(await publishCandidate(fixture.request)).toEqual({
-    ok: true,
-    created: false,
+    ok: false,
+    reason: "already_published",
     offerId: offer.id,
   })
+})
+
+it("une seconde validation humaine aux valeurs corrigées est refusée, l'annonce reste inchangée", async () => {
+  const first = await publishCandidate(fixture.request)
+  if (!first.ok) throw new Error("Fixture publication failed")
+  const second = await publishCandidate({
+    ...fixture.request,
+    input: { ...fixture.input, title: "Intitulé corrigé dans un autre onglet" },
+  })
+  expect(second).toEqual({
+    ok: false,
+    reason: "already_published",
+    offerId: first.offerId,
+  })
+  const [offer] = await db
+    .select({ title: offers.title })
+    .from(offers)
+    .where(eq(offers.id, first.offerId))
+  expect(offer.title).toBe(fixture.input.title)
+})
+
+it("rejeu d'une étape du scan après publication : la publication existante est constatée", async () => {
+  await fixture.cleanup()
+  fixture = await createPublicationFixture("daily")
+  await fixture.discovered()
+  const first = await publishCandidate(fixture.scanRequest)
+  if (!first.ok) throw new Error(JSON.stringify(first))
+  expect(await publishCandidate(fixture.scanRequest)).toEqual({
+    ok: true,
+    created: false,
+    offerId: first.offerId,
+  })
+})
+
+it.each([
+  ["151,67 heures hebdomadaires", 151.67],
+  ["70 heures hebdomadaires", 70],
+])(
+  "publication automatique : des heures hors plage (%s) restent dans les preuves, sans erreur SQL",
+  async (_label, weeklyHours) => {
+    await fixture.cleanup()
+    fixture = await createPublicationFixture("daily")
+    await fixture.discovered()
+    await db
+      .update(scanCandidates)
+      .set({
+        proposal: {
+          ...fixture.proposal,
+          conditions: {
+            ...fixture.proposal.conditions,
+            weeklyHours: established(
+              weeklyHours,
+              fixture.proposal.title.evidence,
+            ),
+          },
+        },
+      })
+      .where(eq(scanCandidates.id, fixture.candidate.id))
+    // Hors plage : la conversion n'en fait pas une valeur d'annonce, la publication se poursuit.
+    const result = await publishCandidate(fixture.scanRequest)
+    expect(result).toMatchObject({ ok: true, created: true })
+    if (!result.ok) return
+    const [offer] = await db
+      .select({ weeklyHours: offers.weeklyHours })
+      .from(offers)
+      .where(eq(offers.id, result.offerId))
+    expect(offer.weeklyHours).toBeNull()
+  },
+)
+
+it("publication automatique : un texte au-delà des bornes du formulaire est refusé avec un motif", async () => {
+  await fixture.cleanup()
+  fixture = await createPublicationFixture("daily")
+  await fixture.discovered()
+  await db
+    .update(scanCandidates)
+    .set({
+      proposal: {
+        ...fixture.proposal,
+        profile: established("x".repeat(600), fixture.proposal.title.evidence),
+      },
+    })
+    .where(eq(scanCandidates.id, fixture.candidate.id))
+  expect(await publishCandidate(fixture.scanRequest)).toMatchObject({
+    ok: false,
+    reason: "blocked",
+    issues: expect.arrayContaining([
+      expect.objectContaining({ code: "invalid_values" }),
+    ]),
+  })
+  expect(await stored()).toMatchObject({ offerId: null })
 })
 
 it("version périmée : refuse sans modifier le dossier", async () => {
@@ -379,8 +467,8 @@ it.each(["unpublished", "expired", "rejected"] as const)(
       .from(offers)
       .where(eq(offers.id, published.offerId))
     expect(await publishCandidate(fixture.request)).toEqual({
-      ok: true,
-      created: false,
+      ok: false,
+      reason: "already_published",
       offerId: published.offerId,
     })
     expect(

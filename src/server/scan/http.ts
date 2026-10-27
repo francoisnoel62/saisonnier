@@ -60,7 +60,12 @@ type Robots = {
   crawlDelayMs: number
 }
 // Une lecture et ses redirections : échéance commune et durées cumulées.
-type Reading = PacerTurn & { elapsedMs: number; waitedMs: number }
+type Reading = PacerTurn & {
+  elapsedMs: number
+  waitedMs: number
+  // Resserre la durée d'un échange (attente de politesse exclue), jamais au-delà de `timeoutMs`.
+  exchangeTimeoutMs?: number
+}
 type Purpose = "robots" | "page"
 
 export type ScanHttpOptions = ScanRequestLimits & {
@@ -73,6 +78,8 @@ export type ScanFetchOptions = {
   // Échéance de l'étape (horodatage) ; par défaut, le budget d'une étape de lot.
   deadline?: number
   signal?: AbortSignal
+  // Durée maximale de chaque échange, comptée depuis l'envoi ; elle ne peut que raccourcir celle du client.
+  exchangeTimeoutMs?: number
 }
 
 function isFailure(value: object): value is ScanFailure {
@@ -171,10 +178,14 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
   ): Promise<Exchange | ScanFailure> {
     const hostname = url.hostname.replace(/^\[|\]$/g, "")
     const resolvedAt = Date.now()
+    const exchangeMs = Math.min(
+      timeoutMs,
+      reading.exchangeTimeoutMs ?? timeoutMs,
+    )
     const addresses = await checkedAddresses(
       url,
       hostname,
-      AbortSignal.any([reading.signal, AbortSignal.timeout(timeoutMs)]),
+      AbortSignal.any([reading.signal, AbortSignal.timeout(exchangeMs)]),
     )
     reading.elapsedMs += Date.now() - resolvedAt
     if (!addresses) return { ok: false, reason: "blocked_address" }
@@ -198,7 +209,10 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
               hostname,
               purpose,
               lookup,
-              AbortSignal.any([reading.signal, AbortSignal.timeout(timeoutMs)]),
+              AbortSignal.any([
+                reading.signal,
+                AbortSignal.timeout(exchangeMs),
+              ]),
             )
           } finally {
             reading.elapsedMs += Date.now() - sentAt
@@ -395,12 +409,14 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
     {
       deadline = Date.now() + scanLimits.batchBudgetMs,
       signal,
+      exchangeTimeoutMs,
     }: ScanFetchOptions = {},
   ): Promise<ScanFetchResult> {
     const budget = AbortSignal.timeout(Math.max(0, deadline - Date.now()))
     const reading: Reading = {
       signal: signal ? AbortSignal.any([signal, budget]) : budget,
       deadline,
+      exchangeTimeoutMs,
       elapsedMs: 0,
       waitedMs: 0,
     }
