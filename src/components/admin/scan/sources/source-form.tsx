@@ -507,7 +507,6 @@ export function SourceForm({
         if (result.ok) {
           toast.success("Modifications enregistrées.")
           router.push(`/admin/scan/sources/${source.key}?onglet=historique`)
-          router.refresh()
           return
         }
         setNeedsTest("reason" in result && result.reason === "needs_test")

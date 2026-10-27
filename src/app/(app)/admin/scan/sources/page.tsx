@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
+import { PlusIcon } from "lucide-react"
 import Link from "next/link"
 
 import {
   SourcesTable,
   type SourceListQuery,
 } from "@/components/admin/scan/sources/sources-table"
+import { Button } from "@/components/ui/button"
 import { sourceListFilters } from "@/domain/scan/source-lifecycle"
 import { scanAdapterKinds, scanSourceKinds } from "@/domain/scan/vocabulary"
 import { listScanSourceRows } from "@/server/scan/sources/registry"
@@ -34,11 +36,19 @@ export default async function ScanSourcesPage({
   }
   return (
     <div className="grid min-w-0 gap-6">
-      <nav aria-label="Fil d’Ariane" className="text-sm">
-        <Link className="underline" href="/admin/scan">
-          ← Scan
-        </Link>
-      </nav>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <nav aria-label="Fil d’Ariane" className="text-sm">
+          <Link className="underline" href="/admin/scan">
+            ← Scan
+          </Link>
+        </nav>
+        <Button asChild className="w-full sm:w-fit">
+          <Link href="/admin/scan/sources/nouvelle">
+            <PlusIcon aria-hidden />
+            Ajouter une source
+          </Link>
+        </Button>
+      </div>
       <SourcesTable rows={await listScanSourceRows()} query={query} />
     </div>
   )

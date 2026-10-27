@@ -6,6 +6,7 @@ import { z } from "zod"
 import { blockedDomainSchema } from "@/domain/blocked-domains"
 import { occupationSchema, type OccupationInput } from "@/domain/occupation"
 import { requireRole } from "@/lib/dal"
+import { employerSourcesOnDomains } from "@/server/scan/sources/registry"
 import { isUuid } from "@/server/offers/queries"
 
 import {
@@ -98,6 +99,8 @@ export type ExcludeDomainResult =
       created: boolean
       // Annonces publiées qui y mènent : la fiche masque déjà ces liens ; à corriger.
       affected: AffectedOffer[]
+      // Sources employeur du scan hébergées sur ce domaine : à écarter ou archiver (D6).
+      affectedSources: { key: string; label: string }[]
     }
   | {
       ok: false
@@ -120,6 +123,7 @@ export async function excludeDomain(
     domain,
     created,
     affected: await publishedOffersPointingTo([domain]),
+    affectedSources: await employerSourcesOnDomains([domain]),
   }
 }
 

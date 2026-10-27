@@ -353,3 +353,182 @@ test("Sources — liste et fiche à 375 px sans défilement horizontal", async (
   )
   await expectNoHorizontalScroll(asAdmin)
 })
+
+test("Sources — ajout guidé d'un portail employeur jusqu'à l'activation", async ({
+  asAdmin,
+  db,
+}) => {
+  // Parcours complet : détection, modification, décision, échantillon, activation.
+  test.setTimeout(90_000)
+  const today = new Date().toISOString().slice(0, 10)
+  const origin = `http://localhost:${SCAN_FIXTURE_PORT}`
+  try {
+    await asAdmin.goto("/admin/scan/sources")
+    await asAdmin.getByRole("link", { name: "Ajouter une source" }).click()
+    await asAdmin.getByLabel("Adresse de départ").fill(`${origin}/`)
+    await asAdmin.getByRole("button", { name: "Analyser" }).click()
+    await expect(asAdmin.getByText(/Page lue \(HTTP 200\)/)).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(
+      asAdmin.getByRole("radio", { name: /Fixtures locales/ }),
+    ).toBeChecked()
+    // Annuaire non consulté : l'employeur est saisi à la main.
+    await asAdmin.getByLabel("Libellé").fill("E2E — Portail guidé")
+    await asAdmin.getByLabel("Employeur", { exact: true }).fill("Employeur E2E")
+    await asAdmin.getByLabel("Site officiel de l’employeur").fill(`${origin}/`)
+    await asAdmin.getByRole("button", { name: "Créer le brouillon" }).click()
+    await expect(asAdmin).toHaveURL(
+      /\/admin\/scan\/sources\/e2e-portail-guide\/modifier/,
+    )
+    await expect(asAdmin.getByText(/Étape 3 sur 6/)).toBeVisible()
+    await asAdmin
+      .getByLabel("Preuve de rattachement : page consultée")
+      .fill(`${origin}/`)
+    await asAdmin
+      .getByLabel("Ce que montre cette page")
+      .fill("Serveur de fixtures du dépôt.")
+    await asAdmin.getByLabel("Consultée le", { exact: true }).fill(today)
+    await asAdmin
+      .getByLabel("Conditions : CGU ou mentions consultées")
+      .fill(`${origin}/`)
+    await asAdmin
+      .getByLabel("Extrait de robots.txt")
+      .fill("User-agent: * Allow: /")
+    await asAdmin
+      .getByLabel("Résumé des conditions")
+      .fill("Fixtures anonymisées du dépôt.")
+    await asAdmin.getByLabel("Consultées le", { exact: true }).fill(today)
+    await asAdmin.getByRole("button", { name: "Enregistrer" }).click()
+    await expect(
+      asAdmin.getByRole("heading", { name: "Version 2" }),
+    ).toBeVisible()
+
+    await asAdmin.goto(
+      "/admin/scan/sources/e2e-portail-guide?onglet=qualification",
+    )
+    await asAdmin.getByLabel("Acceptée par le fondateur").check()
+    await asAdmin
+      .getByLabel("Note")
+      .fill("Fixtures du dépôt, acceptées pour le test.")
+    await asAdmin
+      .getByRole("button", { name: "Enregistrer la décision" })
+      .click()
+    await expect(
+      asAdmin.getByText(/Acceptée par le fondateur le .* par Alix Admin/),
+    ).toBeVisible()
+    await asAdmin
+      .getByRole("button", { name: /Extraire un échantillon/ })
+      .click()
+    const sheet = asAdmin.getByRole("dialog", { name: /Échantillon —/ })
+    await expect(sheet.getByText(/Test réussi/)).toBeVisible({
+      timeout: 30_000,
+    })
+    await asAdmin.keyboard.press("Escape")
+    const ready = asAdmin.getByRole("button", { name: "Marquer comme prête" })
+    await expect(ready).toBeEnabled()
+    await ready.click()
+    const enabled = asAdmin.getByRole("switch", {
+      name: "Activée",
+      exact: true,
+    })
+    await expect(enabled).toBeEnabled()
+    await enabled.click()
+    await expect(enabled).toBeChecked()
+    // L'interrupteur s'affiche coché tout de suite : attendre l'écriture avant de recharger.
+    await expect
+      .poll(
+        async () =>
+          (
+            await db.query(
+              "select enabled from scan_sources where key = 'e2e-portail-guide'",
+            )
+          ).rows[0]?.enabled,
+        { timeout: 15_000 },
+      )
+      .toBe(true)
+    await asAdmin.reload()
+    await expect(
+      asAdmin.getByRole("switch", { name: "Activée", exact: true }),
+    ).toBeChecked()
+  } finally {
+    await db.query(
+      "update scan_sources set enabled = false, daily_enabled = false, auto_publish = false where label like 'E2E — %'",
+    )
+    await deleteTestSources(db)
+  }
+})
+
+test("Sources — une découverte exige son domaine exclu et ne publie jamais automatiquement", async ({
+  asAdmin,
+  db,
+}) => {
+  try {
+    await asAdmin.goto("/admin/scan/sources/nouvelle")
+    await asAdmin.getByRole("button", { name: "Enregistrer sans URL" }).click()
+    await asAdmin.getByLabel("Découverte").check()
+    await expect(asAdmin.getByLabel("Employeur", { exact: true })).toHaveCount(
+      0,
+    )
+    await asAdmin.getByLabel("Libellé").fill("E2E — JobAnim")
+    await asAdmin.getByLabel("Hôte officiel").fill("www.jobanim-e2e.example")
+    await asAdmin.getByRole("button", { name: "Créer le brouillon" }).click()
+    await expect(asAdmin).toHaveURL(/e2e-jobanim\/modifier/)
+    await asAdmin.goto("/admin/scan/sources/e2e-jobanim?onglet=qualification")
+    await expect(
+      asAdmin.getByText(/Domaine exclu à ajouter pour www.jobanim-e2e.example/),
+    ).toBeVisible()
+    await asAdmin
+      .getByRole("button", {
+        name: "Ajouter jobanim-e2e.example aux domaines exclus",
+      })
+      .click()
+    await expect(
+      asAdmin.getByText(/Fait : Cohérence avec les domaines exclus/),
+    ).toBeAttached()
+    await asAdmin.goto("/admin/scan/sources/e2e-jobanim")
+    await expect(
+      asAdmin.getByText(/un diffuseur n’est jamais l’employeur/),
+    ).toBeVisible()
+    await expect(
+      asAdmin.getByRole("switch", {
+        name: "Publication automatique (passages quotidiens)",
+      }),
+    ).toBeDisabled()
+  } finally {
+    await deleteTestSources(db)
+    await db.query(
+      "delete from blocked_domains where domain = 'jobanim-e2e.example'",
+    )
+  }
+})
+
+test("Sources — écarter Indeed sans lecture du site", async ({
+  asAdmin,
+  db,
+}) => {
+  try {
+    await asAdmin.goto("/admin/scan/sources/nouvelle")
+    await asAdmin
+      .getByLabel("Adresse de départ")
+      .fill("https://fr.indeed.com/emplois?q=serveur")
+    await asAdmin.getByRole("button", { name: "Analyser" }).click()
+    await expect(
+      asAdmin.getByText("Site non lu : fr.indeed.com."),
+    ).toBeVisible()
+    await expect(
+      asAdmin.getByRole("heading", { name: /Plateforme connue : Indeed/ }),
+    ).toBeVisible()
+    await asAdmin.getByLabel("Libellé").fill("E2E — Indeed")
+    await asAdmin
+      .getByRole("button", { name: "Enregistrer comme écartée" })
+      .click()
+    await expect(asAdmin).toHaveURL(/\/admin\/scan\/sources\/e2e-indeed$/)
+    await expect(asAdmin.getByText("Écartée", { exact: true })).toBeVisible()
+    await expect(
+      asAdmin.getByText(/Écartée : Aucun accès de collecte autorisé/),
+    ).toBeVisible()
+  } finally {
+    await deleteTestSources(db)
+  }
+})

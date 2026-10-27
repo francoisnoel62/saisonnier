@@ -8,7 +8,7 @@ import {
 } from "@/domain/scan/detection"
 import { scanFailureLabels } from "@/domain/scan/http"
 import { scanLimits } from "@/domain/scan/limits"
-import { checkScanUrl } from "@/domain/scan/url-safety"
+import { checkScanUrl, isTestSourceUrl } from "@/domain/scan/url-safety"
 import { env } from "@/lib/env"
 import { getBlockedDomains } from "@/server/offers/application"
 
@@ -54,7 +54,10 @@ export async function detectStartUrl(
       message:
         "Adresse https publique attendue, sans identifiants ni port (ex. https://recrute.exemple.fr).",
     }
-  const last = recentHosts.get(url.hostname)
+  // L'origine locale de test n'a pas de délai : la politesse du client suffit.
+  const last = isTestSourceUrl(url, scanUrlPolicy)
+    ? undefined
+    : recentHosts.get(url.hostname)
   const wait = last ? last + scanLimits.sourceTestCooldownMs - now.getTime() : 0
   if (wait > 0)
     return {
