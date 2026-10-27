@@ -303,7 +303,8 @@ export function SourceWizard({
           router.push(`/admin/scan/sources/${result.key}`)
           return
         }
-        toast.success("Brouillon créé : complétez sa configuration.")
+        // Pas de toast : la page de modification annonce l'étape suivante, et un toast
+        // survolé sur mobile resterait affiché au-dessus de « Enregistrer ».
         router.push(`/admin/scan/sources/${result.key}/modifier`)
       } catch (error) {
         unstable_rethrow(error)
