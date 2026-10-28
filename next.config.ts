@@ -1,4 +1,5 @@
 import type { NextConfig } from "next"
+import { withWorkflow } from "workflow/next"
 
 const nextConfig: NextConfig = {
   // L'E2E lance son propre `next dev` (port 3100) : Next refuse deux serveurs de développement
@@ -16,4 +17,5 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+// Directives "use workflow" et "use step" du scan (src/workflows/).
+export default withWorkflow(nextConfig)

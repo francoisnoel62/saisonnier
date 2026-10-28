@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
     // Rapports Playwright
     "playwright-report/**",
     "test-results/**",
+    // Vercel Workflow : données locales, bundles de test et routes générées
+    ".workflow-data*/**",
+    ".workflow-vitest/**",
+    "src/app/.well-known/workflow/**",
   ]),
   // `use`, dans les fixtures Playwright, n'est pas un hook React.
   { files: ["e2e/**"], rules: { "react-hooks/rules-of-hooks": "off" } },

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { OrchestrationTestCard } from "@/components/admin/scan/orchestration-test"
 import { SourcesSummaryCard } from "@/components/admin/scan/sources/sources-summary-card"
 import { listScanSourceRows } from "@/server/scan/sources/registry"
 
@@ -24,6 +25,7 @@ export default async function ScanPage() {
         </Link>
       </nav>
       <SourcesSummaryCard rows={await listScanSourceRows()} />
+      <OrchestrationTestCard />
     </div>
   )
 }
