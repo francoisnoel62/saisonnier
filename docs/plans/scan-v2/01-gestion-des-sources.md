@@ -10,13 +10,13 @@ Rédigé le 27 octobre 2026 sur `main` (`ae31948` : plans scan 01 à 08 terminé
 
 | Lot | PR | État |
 |---|---|---|
-| A · Registre en base | #43 | livré ; CI verte, preview migrée ; fusion à faire par le fondateur |
-| B · Écran des sources | #44 | livré, empilé sur A |
-| C · Ajout guidé | #45 | livré, empilé sur B ; chronométrage en preview au lot G |
-| D · Page carrière, recherches France Travail multiples | #46 | livré, empilé sur C ; fixtures réelles à choisir avec le fondateur ; connecteur `france-travail-api` sur décision |
-| F · Apprentissage depuis la revue | #47 | livré, empilé sur D |
-| E · Santé et disjoncteur | #48 | livré, empilé sur F ; branchement en fin de passage par le plan scan 09 (contrat dans `CLAUDE.md`) |
-| G · Recette | ce document | protocole et compte rendu dans [`docs/scan/recette-sources.md`](../../scan/recette-sources.md) : à mener par le fondateur depuis la preview puis la production |
+| A · Registre en base | #43 | fusionné ; production migrée (`0017` à `0019`) ; relevé §17.1 consigné dans la PR |
+| B · Écran des sources | #50 (reprise de #44) | fusionné |
+| C · Ajout guidé | #45 | fusionné ; chronométrage en preview au lot G |
+| D · Page carrière, recherches France Travail multiples | #46 | fusionné ; fixtures réelles à choisir avec le fondateur ; connecteur `france-travail-api` sur décision (§19) |
+| F · Apprentissage depuis la revue | #47 | fusionné |
+| E · Santé et disjoncteur | #48 | fusionné ; déclenchement en fin de passage par le plan scan 09 (contrat dans `CLAUDE.md`) |
+| G · Recette | #49 | protocole et compte rendu dans [`docs/scan/recette-sources.md`](../../scan/recette-sources.md) : à mener par le fondateur depuis la production |
 
 ## En bref
 

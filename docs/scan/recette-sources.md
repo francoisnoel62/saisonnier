@@ -1,6 +1,6 @@
 # Recette des sources du scan — plan V2-01, lot G
 
-> **État : à mener par le fondateur.** Les lots A à F sont livrés (PR #43 à #48). La recette se fait depuis le déploiement, avec un compte admin : la preview d'abord, puis la production (SH23 : les tests faits en preview restent dans la base de la preview ; la production se qualifie par un échantillon lancé depuis la production). Chaque décision se consigne **dans l'application** (décision de reprise, motif d'écart, historique de la source), datée et attribuée ; ce document en garde le compte rendu.
+> **État : à mener par le fondateur.** Les lots A à F sont fusionnés et en production (PR #43, #50, #45, #46, #47, #48). La recette se fait depuis le déploiement, avec un compte admin : la preview d'abord, puis la production (SH23 : les tests faits en preview restent dans la base de la preview ; la production se qualifie par un échantillon lancé depuis la production). Chaque décision se consigne **dans l'application** (décision de reprise, motif d'écart, historique de la source), datée et attribuée ; ce document en garde le compte rendu.
 
 ## Décisions attendues (§19 du plan)
 
