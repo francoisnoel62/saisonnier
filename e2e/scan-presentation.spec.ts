@@ -66,8 +66,9 @@ for (const provenance of [
       }),
     ).toBeVisible()
     await page.goto(`/offres/${id}`)
+    // La fiche « ma saison » affiche la provenance en tête et au pied (PR #53).
     await expect(
-      page.getByText(provenanceLabels[provenance], { exact: true }),
+      page.getByText(provenanceLabels[provenance], { exact: true }).first(),
     ).toBeVisible()
     if (provenance === "sourced") {
       await expect(page.getByText(/sans vérification humaine/)).toBeVisible()
@@ -103,7 +104,7 @@ for (const provenance of ["human_verified", "sourced"] as const) {
       page.getByRole("link", { name: /Site officiel :/ }),
     ).toHaveCount(0)
     await expect(
-      page.getByText(provenanceLabels[provenance], { exact: true }),
+      page.getByText(provenanceLabels[provenance], { exact: true }).first(),
     ).toBeVisible()
   })
 }
@@ -122,9 +123,11 @@ test("Scan §5 — logement à confirmer : indication et exclusion du filtre log
     card(page, title).getByText("À confirmer", { exact: true }),
   ).toBeVisible()
   await page.goto(`/offres/${id}`)
-  await expect(page.getByText("À confirmer", { exact: true })).toBeVisible()
   await expect(
-    page.getByText("Salaire à confirmer", { exact: true }),
+    page.getByText("À confirmer", { exact: true }).first(),
+  ).toBeVisible()
+  await expect(
+    page.getByText("Salaire à confirmer", { exact: true }).first(),
   ).toBeVisible()
   await expect(
     page.getByRole("heading", { name: "Divers", exact: true }),
