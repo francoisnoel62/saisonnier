@@ -8,7 +8,13 @@ import type {
   MembershipDecision,
 } from "@/domain/membership"
 import { db } from "@/lib/db"
-import { companies, companyMembers, offers, user } from "@/lib/db/schema"
+import {
+  companies,
+  companyMembers,
+  offers,
+  scanReviews,
+  user,
+} from "@/lib/db/schema"
 
 // Rattachement employeur ↔ entreprise (plan 13, H2). L'appelant passe l'identifiant de la
 // session, jamais une valeur venue de la requête.
@@ -79,6 +85,22 @@ export async function createMembership(
       .onConflictDoNothing({ target: companyMembers.userId })
       .returning()
     if (!member) throw new MembershipExistsError()
+    // Un employeur repéré par la découverte crée son compte : sa piste est résolue (lot F du
+    // plan scan V2-01). Le rattachement reste vérifié par l'admin (H2).
+    await tx
+      .update(scanReviews)
+      .set({
+        status: "resolved",
+        decision: { decision: "account_created", companyId: target.id },
+        decidedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(scanReviews.kind, "employer_lead"),
+          eq(scanReviews.groupKey, `employer:${company.siren}`),
+          ne(scanReviews.status, "dismissed"),
+        ),
+      )
 
     return { company: target, member, existingCompany: !created }
   })

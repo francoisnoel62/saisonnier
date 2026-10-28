@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { CandidateLearning } from "@/components/admin/scan/candidate-learning"
 import { ReviewDecisions } from "@/components/admin/scan/review-decisions"
 import { OfferForm } from "@/components/offers/offer-form/offer-form"
 import { valueOf } from "@/domain/scan/field"
@@ -24,6 +25,7 @@ import { getOfferFormReferentials } from "@/server/offers/employer-offers"
 import { getCandidateForReview, nextReviewPath } from "@/server/scan/review"
 import { validateScanCandidate } from "@/server/scan/review-actions"
 import type { ScanSourceDraftSnapshot } from "@/domain/scan/source"
+import { uncoveredEmployerPortal } from "@/server/scan/sources/learning"
 import { loadScanSource } from "@/server/scan/sources/registry"
 
 function safeHref(value: string | null | undefined) {
@@ -68,8 +70,9 @@ export default async function ScanCandidatePage({
   if (!review) notFound()
   const { candidate } = review
   const proposal = candidate.proposal
-  const [source, referentials, companies, next] = await Promise.all([
+  const [source, portal, referentials, companies, next] = await Promise.all([
     loadScanSource(candidate.sourceKey),
+    uncoveredEmployerPortal(candidate),
     getOfferFormReferentials(proposal?.occupationId),
     listCompanyOptions(),
     nextReviewPath(id),
@@ -103,6 +106,18 @@ export default async function ScanCandidatePage({
       candidate.officialUrl ??
         (proposal ? valueOf(proposal.officialUrl) : undefined),
     )
+  // Lieux lus sur la source mais non résolus : candidats à « Mémoriser ce lieu ».
+  const placeNames =
+    proposal?.locations.status === "to_verify"
+      ? [
+          ...new Set(
+            (proposal.locations.value ?? [])
+              .map((place) => place.communeName)
+              .filter((name): name is string => !!name),
+          ),
+        ]
+      : []
+  const proposedEmployer = proposal ? valueOf(proposal.company) : undefined
   const fields = [
     ...new Set(candidate.observations.map((observation) => observation.field)),
   ]
@@ -243,6 +258,21 @@ export default async function ScanCandidatePage({
           {candidate.reviewNote ? ` : ${candidate.reviewNote}` : ""}.
         </p>
       )}
+      <CandidateLearning
+        candidateId={id}
+        sourceLabel={sourceLabel}
+        placeNames={placeNames}
+        portal={portal}
+        employer={
+          proposedEmployer?.name
+            ? {
+                name: proposedEmployer.name,
+                siren: proposedEmployer.siren ?? null,
+              }
+            : null
+        }
+        discovery={source?.row.kind === "discovery"}
+      />
       <section className="min-w-0 rounded-lg border p-4">
         <h2 className="font-semibold">Preuves</h2>
         {fields.map((field) => (

@@ -102,3 +102,39 @@ export async function insertReviewableCandidate(
     sourceUrl,
   }
 }
+
+// Dossier à vérifier d'une découverte (France Travail) : employeur proposé, lieu à résoudre,
+// URL officielle facultative (lot F du plan scan V2-01).
+export async function insertDiscoveryCandidate(
+  db: Pool,
+  runId: string,
+  {
+    employer,
+    communeName = "Les Menuires",
+    officialUrl,
+  }: { employer: string; communeName?: string; officialUrl?: string },
+) {
+  const now = new Date()
+  const extraction = posting({
+    title: `Serveur découverte ${randomUUID().slice(0, 8)}`,
+    officialUrl,
+    discoveryUrl: `https://candidat.francetravail.fr/offres/recherche/detail/${randomUUID().replace(/-/g, "").slice(0, 7).toUpperCase()}`,
+    collectedAt: now.toISOString(),
+    observations: [
+      observation({ name: employer }, "company"),
+      observation([{ communeName, country: "France" }], "locationCandidates"),
+    ],
+  })
+  return insertScanCandidate(db, {
+    firstRunId: runId,
+    sourceKey: "france-travail",
+    status: "to_review",
+    title: extraction.title,
+    proposal: buildProposal(extraction, {
+      referenceDate: now.toISOString().slice(0, 10),
+    }),
+    officialUrl: officialUrl ?? null,
+    discoveryUrl: extraction.discoveryUrl,
+    lastFetchedAt: now,
+  })
+}

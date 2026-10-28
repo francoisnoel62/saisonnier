@@ -19,6 +19,9 @@ export default async function ScanPage() {
         <Link className="underline" href="/admin/scan/suggestions">
           Suggestions de métiers
         </Link>
+        <Link className="underline" href="/admin/scan/employeurs">
+          Employeurs à inviter
+        </Link>
       </nav>
       <SourcesSummaryCard rows={await listScanSourceRows()} />
     </div>

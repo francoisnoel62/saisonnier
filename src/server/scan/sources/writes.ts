@@ -294,6 +294,7 @@ async function identityColumns(
 export function createSource(
   values: SourceFormValues,
   adminId: string,
+  { originCandidateId }: { originCandidateId?: string } = {},
 ): Promise<SourceWriteResult> {
   const parsed = parseForm(values)
   if (!parsed.success)
@@ -353,6 +354,11 @@ export function createSource(
             ...(snapshot.listUrls?.[0]
               ? { startUrl: snapshot.listUrls[0] }
               : {}),
+            // Lot F : source créée depuis un dossier de découverte.
+            ...(originCandidateId &&
+            z.uuid().safeParse(originCandidateId).success
+              ? { originCandidateId }
+              : {}),
           },
         },
         { actorUserId: adminId, revision: 1 },
@@ -396,7 +402,7 @@ async function recentSample(
 // Nouvelle version si l'instantané change. Sur une source prête : configuration complète,
 // échantillon réussi de la nouvelle empreinte si elle change ce qui est lu, motif si l'identité
 // change.
-function reviseSnapshot(
+export function reviseSnapshot(
   key: string,
   version: number,
   snapshot: ScanSourceDraftSnapshot,

@@ -4,7 +4,9 @@ import {
   insertScanCandidate,
   insertScanRun,
   insertTestSource,
+  resetScan,
 } from "./helpers/scan"
+import { insertDiscoveryCandidate } from "./helpers/scan-review"
 import { SCAN_FIXTURE_PORT } from "./helpers/env"
 import { expectNoHorizontalScroll } from "./helpers/shell"
 
@@ -602,4 +604,114 @@ test("Sources — un site carrière générique se configure et s'échantillonne
   } finally {
     await deleteTestSources(db)
   }
+})
+
+test.describe("Sources — apprentissage depuis la revue", () => {
+  test.beforeEach(async ({ db }) => resetScan(db))
+  test.afterEach(async ({ db }) => resetScan(db))
+
+  test("Sources — un lieu mémorisé depuis un dossier sert au passage suivant", async ({
+    asAdmin,
+    db,
+  }) => {
+    const run = await insertScanRun(db, {
+      status: "completed",
+      finishedAt: new Date(),
+    })
+    const candidate = await insertDiscoveryCandidate(db, run.id, {
+      employer: "Chalet E2E",
+    })
+    await asAdmin.goto(`/admin/scan/dossiers/${candidate.id}`)
+    await expect(
+      asAdmin.getByRole("heading", {
+        name: "Mémoriser ce lieu pour France Travail",
+      }),
+    ).toBeVisible()
+    await expect(asAdmin.getByLabel("Nom lu sur la source")).toHaveValue(
+      "Les Menuires",
+    )
+    await asAdmin.getByLabel("Commune vérifiée").fill("Les Belleville")
+    await asAdmin.getByLabel("Département", { exact: true }).fill("73")
+    await asAdmin.getByLabel("Code INSEE").fill("73257")
+    await asAdmin.getByRole("button", { name: "Mémoriser ce lieu" }).click()
+    await expect(
+      asAdmin.getByText("Lieu mémorisé pour France Travail."),
+    ).toBeVisible()
+    await asAdmin.goto("/admin/scan/sources/france-travail")
+    await expect(
+      asAdmin.getByText("« Les Menuires » → Les Belleville (73, INSEE 73257)"),
+    ).toBeVisible()
+    await asAdmin.goto("/admin/scan/sources/france-travail?onglet=historique")
+    await expect(
+      asAdmin.getByText(/Motif : Lieu mémorisé depuis le dossier/),
+    ).toBeVisible()
+  })
+
+  test("Sources — un employeur sans portail devient une piste, puis est marqué invité", async ({
+    asAdmin,
+    db,
+  }) => {
+    const run = await insertScanRun(db, {
+      status: "completed",
+      finishedAt: new Date(),
+    })
+    const candidate = await insertDiscoveryCandidate(db, run.id, {
+      employer: "Chalet E2E sans portail",
+    })
+    await asAdmin.goto(`/admin/scan/dossiers/${candidate.id}`)
+    await asAdmin
+      .getByRole("button", {
+        name: "Cet employeur n’a pas de portail carrière",
+      })
+      .click()
+    await expect(
+      asAdmin.getByText("Employeur ajouté aux employeurs à inviter."),
+    ).toBeVisible()
+    await asAdmin.goto("/admin/scan/employeurs")
+    const lead = asAdmin.locator("li").filter({
+      has: asAdmin.getByRole("heading", { name: "Chalet E2E sans portail" }),
+    })
+    await expect(lead.getByText("1 dossier", { exact: true })).toBeVisible()
+    await lead
+      .getByLabel("Note")
+      .fill("Appel du gérant, invitation envoyée par email.")
+    await lead
+      .getByRole("button", { name: "Invité à déposer ses annonces" })
+      .click()
+    await expect(lead.getByText("Invité", { exact: true })).toBeVisible()
+    await expect(
+      lead.getByText(
+        "Invitation : Appel du gérant, invitation envoyée par email.",
+      ),
+    ).toBeVisible()
+    await expectNoHorizontalScroll(asAdmin)
+  })
+
+  test("Sources — la couverture d'une découverte se lit sur sa fiche", async ({
+    asAdmin,
+    db,
+  }) => {
+    const run = await insertScanRun(db, {
+      status: "completed",
+      finishedAt: new Date(),
+    })
+    await insertDiscoveryCandidate(db, run.id, {
+      employer: "Hôtel E2E couvert",
+      officialUrl: "https://recrute.belambra.fr/jobs/1-serveur",
+    })
+    await insertDiscoveryCandidate(db, run.id, { employer: "Gîte E2E inconnu" })
+    await asAdmin.goto("/admin/scan/sources/france-travail")
+    await expect(
+      asAdmin.getByRole("heading", { name: "Radar de la découverte" }),
+    ).toBeVisible()
+    await expect(
+      asAdmin.getByText(
+        "Couverture des employeurs : 50 % (1 couvert · 0 à inviter · 1 inconnu)",
+      ),
+    ).toBeVisible()
+    await asAdmin.goto("/admin/scan/sources")
+    await expect(
+      asAdmin.getByText(/0 portail employeur repéré par la découverte/),
+    ).toBeVisible()
+  })
 })
