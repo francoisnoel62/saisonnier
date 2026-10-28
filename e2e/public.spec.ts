@@ -46,7 +46,7 @@ test("l’accueil présente quatre exemples et réserve les fiches à la connexi
   await expect(preview.getByRole("heading", { level: 3 })).toHaveCount(4)
   await expect(
     preview.getByText("Aperçu · annonces de démonstration"),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(
     preview.getByRole("link", { name: "Explorer les offres" }),
   ).toHaveAttribute("href", "/connexion?next=%2Foffres")

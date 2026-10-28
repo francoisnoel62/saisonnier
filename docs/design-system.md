@@ -206,7 +206,7 @@ La refonte applique la marque, la landing et le logo partagé, puis les annonces
 
 ### Aperçu d'annonces sur la landing
 
-Le bloc public entre la recherche et la FAQ réutilise `OfferArtwork`, `OfferCategory` et `OfferSeason`, avec une carte éditoriale et une rémunération plus visible. À ce stade, il est **statique et explicitement présenté comme une démonstration**. Une seule action réelle mène au catalogue ; les exemples ne simulent pas une fiche consultable. Le raccordement métier et l'actualisation quotidienne sont spécifiés, mais non implémentés, dans `docs/landing-featured-offers.md`.
+Le bloc public entre la recherche et la FAQ réutilise `OfferArtwork`, `OfferCategory` et `OfferSeason`, avec une carte éditoriale et une rémunération plus visible. À ce stade, il est **statique**, avec des données fictives de présentation ; la mention de démonstration a été retirée à la demande du propriétaire. Ses quatre univers distincts sont l'hôtellerie (lavande), la restauration (terracotta), les sports nautiques (glacier) et l'animation (ocre). Les couleurs suivent les familles du design system. Une seule action réelle mène au catalogue ; les exemples ne simulent pas une fiche consultable. Le raccordement métier et l'actualisation quotidienne sont spécifiés, mais non implémentés, dans `docs/landing-featured-offers.md`.
 
 Les trois directions de l'exploration du 28 octobre ont été retenues ensemble. La branche `codex/prototype-annonces-vivantes` (commit `3302a41`) conserve les maquettes comme référence. L'intégration métier se fait sur `codex/annonces-vivantes`, sans les simulations et sans la barre de prototype.
 

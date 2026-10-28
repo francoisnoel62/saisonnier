@@ -447,22 +447,7 @@
 }
 .explore {
   max-width: 1000px;
-  padding-bottom: var(--section-gap);
-}
-.destinationLink {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid var(--ms-line);
-  border-radius: var(--ms-pill);
-  padding: 9px 13px;
-}
-.destinationLink svg {
-  width: 13px;
-  height: 13px;
-}
-.destinationLink:hover {
-  background: var(--ms-canvas);
+  padding-bottom: 64px;
 }
 .faq {
   display: grid;
@@ -543,6 +528,9 @@
 @media (max-width: 800px) {
   .landing {
     --section-gap: 72px;
+  }
+  .explore {
+    padding-bottom: 48px;
   }
   .hero {
     padding-block: 54px 52px;

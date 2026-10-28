@@ -2,11 +2,15 @@
 
 ## État au 28 octobre 2026
 
-**Design uniquement, à la demande du propriétaire.** Le bloc est placé entre la recherche et la FAQ. Il montre quatre exemples statiques du catalogue fictif local, avec la mention visible « Aperçu · annonces de démonstration ». Il n'interroge pas la base, ne calcule aucun classement et n'exécute aucune tâche planifiée.
+**Design uniquement, à la demande du propriétaire.** Le bloc est placé entre la recherche et la FAQ. Il montre quatre exemples fictifs statiques. La mention « Aperçu · annonces de démonstration » a été retirée à sa demande. Il n'interroge pas la base, ne calcule aucun classement et n'exécute aucune tâche planifiée.
 
-Les cartes partagent les illustrations, catégories et repères saisonniers de l'application. Grille de quatre colonnes sur grand écran, deux sous 1 100 px et une sous 540 px. Les salaires sont mis en évidence, avec leur base nette mensuelle et la mention avant impôt. Une seule action « Explorer les offres » conduit au catalogue, via la connexion si nécessaire. Les exemples ne renvoient pas vers de fausses fiches.
+Les quatre univers sont distincts : hôtellerie/encadrement (lavande), restauration/cuisine (terracotta), sports nautiques (glacier), animation/enfance (ocre). Les couleurs restent celles des familles communes à l'application. Les lieux, entreprises, montants et fourchettes de cette maquette sont des données de présentation, pas une sélection d'offres publiée ou calculée.
+
+Les cartes partagent les illustrations, catégories et repères saisonniers de l'application. Grille de quatre colonnes sur grand écran, deux sous 1 100 px et une sous 540 px. Les montants sont mis en évidence ; la ligne « net / mois avant impôt » a été retirée des quatre cartes à la demande du propriétaire. Le futur classement reste fondé sur le net mensuel. Une seule action « Explorer les offres » conduit au catalogue, via la connexion si nécessaire. Les exemples ne renvoient pas vers de fausses fiches.
 
 Implémentation : `src/components/public/featured-offers.tsx` et son CSS Module.
+
+La recherche précède directement ce bloc : les raccourcis « À la montagne » et « Au bord de la mer » ont été retirés. L'espacement est de 64 px sur ordinateur et 48 px jusqu'à 800 px de largeur, pour rapprocher la recherche des annonces.
 
 ## Comportement futur demandé — non implémenté
 
@@ -19,7 +23,7 @@ Implémentation : `src/components/public/featured-offers.tsx` et son CSS Module.
 - Ne conserver dans la sélection que des identifiants. Relire les données publiques autorisées à l'affichage : identité confidentielle masquée, aucun contact candidat/recruteur, aucune URL de candidature privée.
 - Retirer immédiatement toute annonce dépubliée ou expirée, même entre deux renouvellements. Compléter avec la prochaine annonce admissible. S'il y en a moins de quatre, afficher le nombre réel ; ne pas fabriquer de cartes.
 - Une fois raccordées, les cartes conduisent à leur fiche en conservant la destination après connexion. L'accès au détail continue de respecter les droits du rôle.
-- Remplacer la mention de démonstration par une formulation exacte du classement et de sa dernière actualisation. Prévoir les états chargement, moins de quatre résultats, zéro résultat et indisponibilité temporaire.
+- Au raccordement, utiliser les vraies données et une formulation exacte du classement et de sa dernière actualisation. Prévoir les états chargement, moins de quatre résultats, zéro résultat et indisponibilité temporaire.
 
 La [documentation Vercel](https://vercel.com/docs/cron-jobs) précise que les horaires cron sont en UTC. La [précision dépend du forfait](https://vercel.com/docs/cron-jobs/usage-and-pricing) : le forfait Hobby peut déclencher dans l'heure, d'où le mécanisme de rattrapage à la lecture. Aucune configuration de déploiement n'a été modifiée pour cette fonctionnalité.
 

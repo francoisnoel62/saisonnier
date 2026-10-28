@@ -5,13 +5,12 @@ import {
   OfferCategory,
   OfferSeason,
 } from "@/components/offers/offer-visuals"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import type { Season } from "@/domain/offer"
 import styles from "./featured-offers.module.css"
 
-// Maquette éditoriale uniquement : exemples issus du catalogue fictif local.
+// Maquette éditoriale uniquement : quatre exemples fictifs de présentation.
 // Aucun accès à la base ni classement automatique. Voir docs/landing-featured-offers.md.
 const examples = [
   {
@@ -33,23 +32,23 @@ const examples = [
     min: 2300,
   },
   {
-    title: "Chef / cheffe de rang",
-    company: "Paillote Le Galet Bleu",
-    family: "Salle & bar",
-    place: "Saint-Tropez · Var",
+    title: "Moniteur / monitrice de voile",
+    company: "Base nautique Les Alizés",
+    family: "Sport & loisirs",
+    place: "La Rochelle · Charente-Maritime",
     season: "summer",
     period: "Saison d’été",
     min: 2200,
   },
   {
-    title: "Chef de partie",
-    company: "Hôtel du Grand Sérac",
-    family: "Cuisine",
-    place: "Chamonix-Mont-Blanc · Haute-Savoie",
-    season: "winter",
-    period: "Saison d’hiver",
-    min: 2100,
-    max: 2400,
+    title: "Animateur / animatrice mini-club",
+    company: "Camping Les Dunes d’Argent",
+    family: "Animation & enfance",
+    place: "Lacanau · Gironde",
+    season: "summer",
+    period: "Saison d’été",
+    min: 1600,
+    max: 1800,
   },
 ] satisfies {
   title: string
@@ -83,9 +82,6 @@ export function FeaturedOffers({ catalogueHref }: { catalogueHref: string }) {
             Un métier, un lieu, de nouvelles perspectives. Projetez-vous.
           </p>
         </div>
-        <Badge variant="outline" className={styles.demo}>
-          Aperçu · annonces de démonstration
-        </Badge>
       </header>
       <ul className={styles.grid}>
         {examples.map((offer) => (
@@ -115,7 +111,6 @@ export function FeaturedOffers({ catalogueHref }: { catalogueHref: string }) {
                       {euros.format(offer.min)}
                       {offer.max ? ` – ${euros.format(offer.max)}` : ""} €
                     </strong>
-                    <span>net / mois avant impôt</span>
                   </p>
                 </div>
               </div>

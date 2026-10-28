@@ -27,7 +27,6 @@ import { site } from "@/config/site"
 import { signInPath } from "@/domain/redirects"
 import { homePathFor } from "@/domain/roles"
 import { getSession } from "@/lib/dal"
-import { searchHref } from "@/server/search/search-params"
 import styles from "@/components/public/landing.module.css"
 
 export const metadata: Metadata = {
@@ -317,41 +316,6 @@ export default async function HomePage() {
           </h2>
         </div>
         <SeasonSearch signedIn={!!session} />
-        <div className="mt-5 flex flex-wrap justify-center gap-3 text-xs text-[var(--ms-muted)]">
-          <Link
-            className={styles.destinationLink}
-            href={browse(
-              searchHref({
-                departments: ["04", "05", "09", "38", "65", "73", "74"],
-              }),
-            )}
-            aria-label="Explorer les départements de montagne"
-          >
-            <MountainSnowIcon aria-hidden /> À la montagne{" "}
-            <ArrowUpRightIcon aria-hidden />
-          </Link>
-          <Link
-            className={styles.destinationLink}
-            href={browse(
-              searchHref({
-                departments: [
-                  "06",
-                  "17",
-                  "29",
-                  "33",
-                  "40",
-                  "56",
-                  "64",
-                  "83",
-                  "85",
-                ],
-              }),
-            )}
-          >
-            <WavesIcon aria-hidden /> Au bord de la mer{" "}
-            <ArrowUpRightIcon aria-hidden />
-          </Link>
-        </div>
       </section>
 
       <FeaturedOffers catalogueHref={browse("/offres")} />
