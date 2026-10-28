@@ -411,7 +411,7 @@ export async function listSourcePage(
   }
   const window = discoveryWindow(run.mode, run.startedAt)
   const postings = page.postings.slice(0, remaining)
-  for (const posting of postings) {
+  for (const [index, posting] of postings.entries()) {
     const recorded = await recordListedPosting(runId, token, key, {
       identityKey: posting.identityKey,
       discoveryUrl: posting.url,
@@ -423,7 +423,8 @@ export async function listSourcePage(
         ...(posting.index !== undefined ? { index: posting.index } : {}),
         data: posting.data,
       },
-      now,
+      // Une milliseconde par rang : les fiches se lisent dans l'ordre de la liste.
+      now: new Date(now.getTime() + index),
     })
     if (!recorded.ok) return { next: false, listed: 0, stop: "superseded" }
     // Hors périmètre dès la liste : écarté sans lecture de sa fiche.
@@ -519,7 +520,7 @@ async function processPiste(
       return {
         kind: "stop",
         stop: "unavailable",
-        retryAfterMs: scanLimits.defaultRetryAfterMs,
+        retryAfterMs: read.retryAfterMs ?? scanLimits.defaultRetryAfterMs,
       }
     if (
       reason === "robots_disallowed" ||

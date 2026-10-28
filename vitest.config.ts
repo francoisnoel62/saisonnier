@@ -47,7 +47,10 @@ export default defineConfig({
           include: ["src/**/*.wf.test.ts"],
           globalSetup: ["./src/test/integration-setup.ts"],
           fileParallelism: false,
-          testTimeout: 60_000,
+          // Serveur de fixtures démarré par les tests, sur l'origine de la source `fixture`.
+          env: { SCAN_TEST_SOURCE_URL: "http://localhost:3200" },
+          testTimeout: 120_000,
+          hookTimeout: 60_000,
         },
       },
     ],

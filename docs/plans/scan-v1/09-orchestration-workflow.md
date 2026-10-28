@@ -223,6 +223,16 @@ Si l'étape 1 échoue (compatibilité, limites du compte), les étapes restent d
 - « Scan §3 — la route du scan refuse tout appel sans le secret » ;
 - « Lieux multiples — l'employeur voit en lecture seule les lieux ajoutés par l'admin ».
 
+## Écarts de réalisation (28/10/2026)
+
+- Le curseur de liste reste en base (`scan_run_sources.cursor`) : les étapes ne le reçoivent pas du workflow, la reprise le retrouve.
+- Les données de la liste, relues par les connecteurs à la lecture de la fiche (lieux, intitulé, date), sont conservées sur la piste : colonne `scan_candidates.listing` (migration `0023`).
+- « Fiche suspendue » du serveur de fixtures : 503 avec `Retry-After: 2` plutôt qu'une réponse retenue, qui dépasserait les 15 s d'un échange et arrêterait la source.
+- Une source de fixtures (http, port) n'est jamais une source officielle : le test « dossier conforme publié automatiquement » passe par `stageCandidate` + `publishCandidate` en intégration ; le test de workflow vérifie qu'en quotidien un dossier non conforme et un doublon potentiel vont en revue.
+- E2E de livraison progressive : la décision de l'admin sur le dossier 1 est un rejet (une validation exigerait une source officielle) ; le parcours tourne sur le projet `chromium` seulement (un seul remplissage initial par base).
+- La relecture des dossiers déjà décidés (divergences, nouvelle génération) n'est pas déclenchée par le passage : seules les pistes `discovered`/`failed` sont lues. Elle relève du contrôle des annonces publiées (§8 du cahier).
+- Une publication automatique attend la revue si un texte serait tronqué (`invalid_values`), comme avant la troncature des précisions.
+
 ## Critères d'acceptation
 
 - [ ] Le workflow minimal et le scan fonctionnent en preview ; les runs sont visibles dans l'observabilité Vercel.

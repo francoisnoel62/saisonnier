@@ -43,7 +43,12 @@ export type ReadResult =
       postings?: ExtractedPosting[]
     }
   | { kind: "gone" }
-  | { kind: "unreadable"; reason: ScanFailureReason | "invalid_document" }
+  | {
+      kind: "unreadable"
+      reason: ScanFailureReason | "invalid_document"
+      // Retry-After d'un hôte à ménager (429, 503) : l'étape attend ce délai.
+      retryAfterMs?: number
+    }
 export type AdapterContext = {
   source: ScanSourceDefinition
   now: string
@@ -187,7 +192,13 @@ export function postingFailure(
 ): ReadResult {
   return result.status === 404 || result.status === 410
     ? { kind: "gone" }
-    : { kind: "unreadable", reason: result.reason }
+    : {
+        kind: "unreadable",
+        reason: result.reason,
+        ...(result.retryAfterMs !== undefined
+          ? { retryAfterMs: result.retryAfterMs }
+          : {}),
+      }
 }
 export function pageLimit(ctx: AdapterContext) {
   return Math.min(

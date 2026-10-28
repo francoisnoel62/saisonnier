@@ -126,9 +126,7 @@ export async function getRunReport(runId: string) {
         .innerJoin(scanSources, eq(scanSources.key, scanRunSources.sourceKey))
         .where(eq(scanRunSources.runId, runId))
         .orderBy(asc(scanRunSources.sourceKey))
-        .then((rows) =>
-          rows.map(({ source, label }) => ({ ...source, label })),
-        )
+        .then((rows) => rows.map(({ source, label }) => ({ ...source, label })))
       // Rapprochements ouverts ou décidés sur les dossiers livrés par ce passage.
       const [duplicates] = await tx
         .select({ count: sql<number>`count(*)::int` })
