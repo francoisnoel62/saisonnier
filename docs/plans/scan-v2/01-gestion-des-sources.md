@@ -12,11 +12,11 @@ Rédigé le 27 octobre 2026 sur `main` (`ae31948` : plans scan 01 à 08 terminé
 |---|---|---|
 | A · Registre en base | #43 | fusionné ; production migrée (`0017` à `0019`) ; relevé §17.1 consigné dans la PR |
 | B · Écran des sources | #50 (reprise de #44) | fusionné |
-| C · Ajout guidé | #45 | fusionné ; chronométrage en preview au lot G |
+| C · Ajout guidé | #45 | fusionné ; chronométrage abandonné par le fondateur le 28/10 (aucun nouveau portail Teamtailor ou Factorial officiel) |
 | D · Page carrière, recherches France Travail multiples | #46 | fusionné ; fixtures réelles à choisir avec le fondateur ; connecteur `france-travail-api` sur décision (§19) |
 | F · Apprentissage depuis la revue | #47 | fusionné |
 | E · Santé et disjoncteur | #48 | fusionné ; déclenchement en fin de passage par le plan scan 09 (contrat dans `CLAUDE.md`) |
-| G · Recette | #49 | protocole et compte rendu dans [`docs/scan/recette-sources.md`](../../scan/recette-sources.md) : à mener par le fondateur depuis la production |
+| G · Recette | #49 | menée en production le 28/10/2026 avec les décisions du fondateur ; compte rendu et écarts constatés dans [`docs/scan/recette-sources.md`](../../scan/recette-sources.md) |
 
 ## En bref
 
@@ -840,7 +840,7 @@ Branches `plan/scan-v2-01-<lot>-<slug>` (par exemple `plan/scan-v2-01-a-registre
 
 **Critères d'acceptation**
 
-- [ ] En preview, un portail Teamtailor ou Factorial et une recherche France Travail s'ajoutent jusqu'à « Prête » en moins de 10 minutes, sans développement.
+- [ ] ~~En preview, un portail Teamtailor ou Factorial et une recherche France Travail s'ajoutent jusqu'à « Prête » en moins de 10 minutes, sans développement.~~ Abandonné par le fondateur le 28/10/2026 : aucun nouveau portail Teamtailor ou Factorial officiel à ajouter (compte rendu du lot G). Club Med s'est ajouté jusqu'à « Prête » par le connecteur générique, sans développement.
 - [x] Aucune découverte sans domaine exclu ; aucune source employeur sur un domaine exclu.
 - [x] La demande d'autorisation se prépare en un clic ; la décision du fondateur est datée et motivée.
 - [x] Le rapport de détection n'affirme rien sans signal.
@@ -934,9 +934,9 @@ En preview, puis en production :
 
 **Critères d'acceptation**
 
-- [ ] Chaque source citée par le fondateur existe, avec son statut et son motif.
-- [ ] Au moins une nouvelle source employeur est prête si un format lisible existe ; sinon la raison est consignée.
-- [ ] Les décisions du fondateur sont datées dans l'application.
+- [x] Chaque source citée par le fondateur existe, avec son statut et son motif.
+- [x] Au moins une nouvelle source employeur est prête si un format lisible existe ; sinon la raison est consignée (Club Med, `career-page@1`).
+- [x] Les décisions du fondateur sont datées dans l'application.
 
 ## 16. Stratégie de tests
 
