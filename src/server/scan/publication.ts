@@ -16,6 +16,7 @@ import {
   proposalToOfferInput,
   reviewedPublicationProposal,
 } from "@/domain/scan/proposal-offer"
+import { proposalFormIssues } from "@/domain/scan/proposal-form"
 import { canAutoPublish, publicationReadiness } from "@/domain/scan/readiness"
 import type { ScanSourceDraftSnapshot } from "@/domain/scan/source"
 import { sourceAutoPublishes } from "@/domain/scan/source-lifecycle"
@@ -207,19 +208,21 @@ async function publish(
     ...(!candidate.lastFetchedAt ? [scanIssue("detail_unreadable")] : []),
     // Le formulaire de l'admin borne chaque champ ; une publication automatique ne contourne pas
     // ces bornes (une valeur hors colonne ferait échouer la transaction).
+    // Un texte qui serait tronqué attend la revue humaine (alerte « Contenu tronqué »).
     ...(request.kind === "scan" &&
-    !adminOfferInputSchema({
-      today,
-      blockedDomains,
-      departmentCodes: knownDepartments.map((row) => row.code),
-      occupationIds: [],
-    }).safeParse(
-      adminOfferToFormValues({
-        ...input,
-        occupationId: null,
-        companyId: company?.id ?? "",
-      }),
-    ).success
+    (proposalFormIssues(proposal).length > 0 ||
+      !adminOfferInputSchema({
+        today,
+        blockedDomains,
+        departmentCodes: knownDepartments.map((row) => row.code),
+        occupationIds: [],
+      }).safeParse(
+        adminOfferToFormValues({
+          ...input,
+          occupationId: null,
+          companyId: company?.id ?? "",
+        }),
+      ).success)
       ? [scanIssue("invalid_values")]
       : []),
     ...(!areExtraLocationsValid(

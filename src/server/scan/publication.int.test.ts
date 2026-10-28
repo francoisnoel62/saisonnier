@@ -6,7 +6,10 @@ import {
   insertScanCandidate,
 } from "../../../e2e/helpers/scan"
 
+import { admitPosting } from "@/domain/scan/admission"
 import { absent, established } from "@/domain/scan/field"
+import { admissionContext } from "@/domain/scan/rules-fixtures"
+import { discoveryWindow } from "@/domain/scan/window"
 import { db } from "@/lib/db"
 import {
   blockedDomains,
@@ -23,7 +26,9 @@ import {
   type PublicationFixture,
 } from "@/test/scan-publication"
 
+import { stageCandidate } from "./candidates"
 import { publishCandidate } from "./publication"
+import { getRunReport } from "./queries"
 import { setSourceSwitch } from "./sources/writes"
 
 let fixture: PublicationFixture
@@ -411,6 +416,47 @@ it("quotidien autorisé : publie sans validation humaine, sans inventer de condi
     salaryGrossMinCents: null,
   })
   expect(await stored()).toMatchObject({ publicationKind: "automatic" })
+})
+
+it("étape du scan : le dossier préparé par stageCandidate est publié « Sourcée sur internet » et compté au bilan (plan scan 09)", async () => {
+  await fixture.cleanup()
+  fixture = await createPublicationFixture("daily")
+  await fixture.discovered()
+  await db
+    .update(scanCandidates)
+    .set({ proposal: null, lastFetchedAt: null })
+    .where(eq(scanCandidates.id, fixture.candidate.id))
+  const admission = admitPosting(fixture.extraction, {
+    ...admissionContext,
+    window: discoveryWindow("daily", fixture.run.startedAt),
+    source: { kind: "employer", officialHosts: ["recrute.belambra.fr"] },
+  })
+  if (!admission.admitted) throw new Error("Fixture non admise")
+  expect(
+    await stageCandidate({
+      candidateId: fixture.candidate.id,
+      runId: fixture.run.id,
+      token: fixture.run.claimToken,
+      extraction: fixture.extraction,
+      admission,
+      proposal: admission.proposal,
+      now: publicationNow,
+    }),
+  ).toEqual({ ok: true, staged: true })
+  expect(await publishCandidate(fixture.scanRequest)).toMatchObject({
+    ok: true,
+    created: true,
+  })
+  expect(await stored()).toMatchObject({
+    status: "published",
+    publicationKind: "automatic",
+    readyForReviewAt: null,
+    deliveredRunId: fixture.run.id,
+  })
+  expect((await getRunReport(fixture.run.id))?.publications).toEqual({
+    human: 0,
+    automatic: 1,
+  })
 })
 
 it("quotidien : source non autorisée ou jeton remplacé, aucune publication", async () => {

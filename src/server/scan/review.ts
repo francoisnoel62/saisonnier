@@ -97,6 +97,17 @@ export async function getCandidateForReview(id: string) {
     run: runRows[0] ?? null,
   }
 }
+// Métier proposé par le dossier : la page de revue le propose même désactivé depuis la suggestion,
+// la validation lit donc les référentiels avec lui (getOfferFormReferentials).
+export async function candidateOccupationId(candidateId: string) {
+  if (!isUuid(candidateId)) return null
+  const [row] = await db
+    .select({ proposal: scanCandidates.proposal })
+    .from(scanCandidates)
+    .where(eq(scanCandidates.id, candidateId))
+  return row?.proposal?.occupationId ?? null
+}
+
 export async function nextReviewPath(exceptId: string) {
   const [candidate] = await db
     .select({ id: scanCandidates.id })

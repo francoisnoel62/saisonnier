@@ -1,5 +1,6 @@
 import {
   emptyOfferFormValues,
+  offerTextLimits,
   previewOfferInput,
   weeklyHoursRange,
   type AdminOfferInput,
@@ -31,6 +32,29 @@ export function truncatePostingText(text: string, limit: number) {
   return (lastSpace > 0 ? prefix.slice(0, lastSpace) : prefix).trim()
 }
 
+// Textes repris d'une proposition, bornés comme les champs du formulaire admin : au-delà, la
+// copie est tronquée à la phrase et la revue affiche « Contenu tronqué » (proposalFormIssues).
+export const proposalTextLimits = {
+  title: offerTextLimits.title,
+  description: offerTextLimits.description,
+  missions: offerTextLimits.missions,
+  additionalInfo: 1000,
+  salaryPrecision: offerTextLimits.salaryNotes,
+  profile: offerTextLimits.details,
+  organization: offerTextLimits.details,
+  practicalInfo: offerTextLimits.otherConstraints,
+} as const
+// Précisions des conditions (logement, repas, permis), bornées comme les autres précisions.
+export const conditionPrecisionLimit = offerTextLimits.details
+export type ProposalTextField = keyof typeof proposalTextLimits
+
+function boundedText(value: string | undefined, limit: number) {
+  return value ? truncatePostingText(value, limit) : null
+}
+function proposalText(proposal: ScanProposal, field: ProposalTextField) {
+  return boundedText(valueOf(proposal[field]), proposalTextLimits[field])
+}
+
 // La colonne et le formulaire bornent les heures hebdomadaires : au-delà, la valeur reste dans les preuves.
 function plausibleWeeklyHours(hours: number | undefined) {
   return hours !== undefined &&
@@ -52,14 +76,10 @@ export function proposalToOfferInput(proposal: ScanProposal) {
   const deadline = valueOf(proposal.applicationDeadline)
   return {
     ...previewOfferInput(emptyOfferFormValues()),
-    title: truncatePostingText(valueOf(proposal.title) ?? "", 150),
+    title: proposalText(proposal, "title") ?? "",
     occupationId: proposal.occupationId ?? null,
-    description: valueOf(proposal.description)
-      ? truncatePostingText(valueOf(proposal.description)!, 5000)
-      : null,
-    missions: valueOf(proposal.missions)
-      ? truncatePostingText(valueOf(proposal.missions)!, 3000)
-      : null,
+    description: proposalText(proposal, "description"),
+    missions: proposalText(proposal, "missions"),
     season: valueOf(proposal.season) ?? null,
     startDate: period?.startDate ?? null,
     endDate: period?.endDate ?? null,
@@ -83,27 +103,33 @@ export function proposalToOfferInput(proposal: ScanProposal) {
     salaryGrossMinCents: gross?.minCents ?? null,
     salaryGrossMaxCents: gross?.maxCents ?? null,
     salaryGrossUnit: gross?.unit ?? null,
-    salaryNotes: valueOf(proposal.salaryPrecision) ?? null,
+    salaryNotes: proposalText(proposal, "salaryPrecision"),
     housing: valueOf(proposal.conditions.housing) ?? "unknown",
-    housingDetails: proposal.conditionPrecisions.housing ?? null,
+    housingDetails: boundedText(
+      proposal.conditionPrecisions.housing,
+      conditionPrecisionLimit,
+    ),
     meals: valueOf(proposal.conditions.meals) ?? "unknown",
-    mealsDetails: proposal.conditionPrecisions.meals ?? null,
+    mealsDetails: boundedText(
+      proposal.conditionPrecisions.meals,
+      conditionPrecisionLimit,
+    ),
     experienceRequired:
       valueOf(proposal.conditions.experienceRequired) ?? "unknown",
-    experienceDetails: valueOf(proposal.profile) ?? null,
+    experienceDetails: proposalText(proposal, "profile"),
     drivingLicenseRequired:
       valueOf(proposal.conditions.drivingLicenceRequired) ?? "unknown",
-    drivingLicenseDetails:
-      proposal.conditionPrecisions.drivingLicenceRequired ?? null,
+    drivingLicenseDetails: boundedText(
+      proposal.conditionPrecisions.drivingLicenceRequired,
+      conditionPrecisionLimit,
+    ),
     workTime: valueOf(proposal.conditions.workTime) ?? "unknown",
     weeklyHours: plausibleWeeklyHours(valueOf(proposal.conditions.weeklyHours)),
-    scheduleDetails: valueOf(proposal.organization) ?? null,
+    scheduleDetails: proposalText(proposal, "organization"),
     couplesWelcome: valueOf(proposal.conditions.couplesAccepted) ?? "unknown",
     petsAllowed: valueOf(proposal.conditions.petsAccepted) ?? "unknown",
-    otherConstraints: valueOf(proposal.practicalInfo) ?? null,
-    additionalInfo: valueOf(proposal.additionalInfo)
-      ? truncatePostingText(valueOf(proposal.additionalInfo)!, 1000)
-      : null,
+    otherConstraints: proposalText(proposal, "practicalInfo"),
+    additionalInfo: proposalText(proposal, "additionalInfo"),
     fieldsToConfirm: proposal.fieldsToConfirm.flatMap(
       (field): ConfirmableField[] => {
         const names: Record<string, ConfirmableField> = {

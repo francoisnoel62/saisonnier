@@ -97,7 +97,9 @@ describe("lieux supplémentaires", () => {
     }
     const offer = await getOfferWithRelations(saved.id)
     expect(
-      toOfferDetailsData(offer!).places.map((place) => place.communeName),
+      toOfferDetailsData(offer!, { blockedDomains: [] }).places.map(
+        (place) => place.communeName,
+      ),
     ).toEqual(["Praz-sur-Arly", "Tignes", "Lacanau"])
     expect((await searchOffers({ departments: ["85"] }, { today })).total).toBe(
       0,

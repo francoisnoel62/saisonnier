@@ -47,6 +47,7 @@ async function otherOffer(
     .returning()
   return offer
 }
+const claim = () => ({ runId: fixture.run.id, token: fixture.run.claimToken })
 async function reviews() {
   return db.select().from(scanReviews)
 }
@@ -54,7 +55,7 @@ async function reviews() {
 it("doublon déposé : publication bloquée ; distinct : publication possible, décision non recréée", async () => {
   const other = await otherOffer()
   expect(
-    await findDuplicateSuspects(fixture.candidate, fixture.proposal),
+    await findDuplicateSuspects(fixture.candidate, fixture.proposal, claim()),
   ).toMatchObject({ suspects: [{ kind: "offer", id: other.id }] })
   const [review] = await reviews()
   expect(await publishCandidate(fixture.request)).toMatchObject({
@@ -64,7 +65,7 @@ it("doublon déposé : publication bloquée ; distinct : publication possible, d
   expect(await decideDuplicate(review.id, "distinct", fixture.adminId)).toEqual(
     { ok: true },
   )
-  await findDuplicateSuspects(fixture.candidate, fixture.proposal)
+  await findDuplicateSuspects(fixture.candidate, fixture.proposal, claim())
   expect(await reviews()).toHaveLength(1)
   expect((await reviews())[0].status).toBe("resolved")
   expect(await publishCandidate(fixture.request)).toMatchObject({ ok: true })
@@ -73,9 +74,45 @@ it("doublon déposé : publication bloquée ; distinct : publication possible, d
   ).toEqual(other)
 })
 
+it("jeton remplacé : aucun rapprochement n'est écrit (plan scan 09)", async () => {
+  await otherOffer()
+  expect(
+    await findDuplicateSuspects(fixture.candidate, fixture.proposal, {
+      runId: fixture.run.id,
+      token: crypto.randomUUID(),
+    }),
+  ).toEqual({ ok: false, reason: "superseded" })
+  expect(await reviews()).toHaveLength(0)
+})
+
+it("préfiltre : une annonce d'un autre département et d'une autre source n'est pas rapprochée", async () => {
+  const [far] = await db
+    .insert(offers)
+    .values({
+      ...fixture.input,
+      companyId: fixture.company.id,
+      origin: "deposited",
+      status: "published",
+      publishedAt: new Date(),
+      departmentCode: "33",
+      communeName: "Lacanau",
+      communeInseeCode: null,
+      sourceUrl: null,
+      sourceCheckedAt: null,
+    })
+    .returning()
+  const result = await findDuplicateSuspects(
+    fixture.candidate,
+    fixture.proposal,
+    claim(),
+  )
+  expect(result.ok && result.suspects).toEqual([])
+  expect(far.id).toBeTruthy()
+})
+
 it("doublon confirmé : rejette seulement le dossier, ferme les revues et conserve le compteur", async () => {
   const other = await otherOffer()
-  await findDuplicateSuspects(fixture.candidate, fixture.proposal)
+  await findDuplicateSuspects(fixture.candidate, fixture.proposal, claim())
   const [review] = await reviews()
   expect(
     await decideDuplicate(
@@ -117,7 +154,7 @@ it("même entreprise et métier mais périodes disjointes : aucune revue", async
     .set({ startDate: "2027-12-15", endDate: "2028-04-15" })
     .where(eq(offers.id, other.id))
   expect(
-    await findDuplicateSuspects(fixture.candidate, fixture.proposal),
+    await findDuplicateSuspects(fixture.candidate, fixture.proposal, claim()),
   ).toMatchObject({ suspects: [] })
   expect(await reviews()).toEqual([])
 })
@@ -130,7 +167,7 @@ it("même URL canonique, même identité saisie manuellement : already_known ava
     .where(eq(offers.id, other.id))
   await fixture.discovered()
   expect(
-    await findDuplicateSuspects(fixture.candidate, fixture.proposal),
+    await findDuplicateSuspects(fixture.candidate, fixture.proposal, claim()),
   ).toMatchObject({ alreadyKnown: true, offerId: other.id })
   expect(
     (
@@ -158,8 +195,8 @@ it("deux dossiers livrés : une seule revue, quel que soit l'ordre de découvert
     title: fixture.candidate.title,
     proposal: fixture.proposal,
   })
-  await findDuplicateSuspects(fixture.candidate, fixture.proposal)
-  await findDuplicateSuspects(other, fixture.proposal)
+  await findDuplicateSuspects(fixture.candidate, fixture.proposal, claim())
+  await findDuplicateSuspects(other, fixture.proposal, claim())
   const [review] = await reviews()
   expect(await reviews()).toHaveLength(1)
   expect([review.candidateId, review.otherCandidateId].sort()).toEqual(
@@ -168,10 +205,10 @@ it("deux dossiers livrés : une seule revue, quel que soit l'ordre de découvert
   expect(await decideDuplicate(review.id, "distinct", fixture.adminId)).toEqual(
     { ok: true },
   )
-  await findDuplicateSuspects(other, fixture.proposal)
+  await findDuplicateSuspects(other, fixture.proposal, claim())
   expect(await reviews()).toHaveLength(1)
   expect(await publishCandidate(fixture.request)).toMatchObject({ ok: true })
-  await findDuplicateSuspects(other, fixture.proposal)
+  await findDuplicateSuspects(other, fixture.proposal, claim())
   expect(await reviews()).toHaveLength(1)
 })
 
@@ -240,7 +277,7 @@ it("URL canonique identique mais autre poste : rapprochement sans écrasement", 
     .set({ title: "Cuisinier" })
     .where(eq(offers.id, other.id))
   expect(
-    await findDuplicateSuspects(fixture.candidate, fixture.proposal),
+    await findDuplicateSuspects(fixture.candidate, fixture.proposal, claim()),
   ).toMatchObject({
     alreadyKnown: false,
     suspects: [{ kind: "offer", id: other.id }],

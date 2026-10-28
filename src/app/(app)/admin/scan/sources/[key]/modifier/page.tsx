@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { Button } from "@/components/ui/button"
 import { SourceForm } from "@/components/admin/scan/sources/source-form"
 import { todayInParis } from "@/domain/offer-activity"
 import { sourceFormDefaults } from "@/domain/scan/source-form"
@@ -42,9 +43,13 @@ export default async function EditScanSourcePage({
   return (
     <div className="grid min-w-0 gap-6">
       <nav aria-label="Fil d’Ariane" className="text-sm">
-        <Link className="underline" href={`/admin/scan/sources/${key}`}>
-          ← {row.label}
-        </Link>
+        <Button
+          asChild
+          variant="ghost"
+          className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+        >
+          <Link href={`/admin/scan/sources/${key}`}>← {row.label}</Link>
+        </Button>
       </nav>
       <h2 className="text-xl font-semibold wrap-anywhere">
         Modifier « {row.label} »

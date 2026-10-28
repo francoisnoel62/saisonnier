@@ -312,6 +312,8 @@ describe("searchOffers — carte d'offre", () => {
         "newness",
         "fieldsToConfirm",
         "placesCount",
+        // Famille du métier : visuel de la carte (design ma saison, PR #53).
+        "occupationFamily",
       ].sort(),
     )
   })

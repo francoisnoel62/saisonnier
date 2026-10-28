@@ -51,6 +51,31 @@ it("préremplissage : troncature à la phrase et alerte, texte intégral conserv
   expect(proposal.description).toMatchObject({ value: text })
 })
 
+it("préremplissage : les précisions sont tronquées aux limites du formulaire, avec l'alerte (plan scan 09)", () => {
+  const proposal = buildProposal(posting(), { referenceDate: "2026-10-24" })
+  const long = (limit: number) =>
+    "Première phrase. " + "mot ".repeat(Math.ceil(limit / 4))
+  proposal.profile = established(long(500), [observation("profil").evidence])
+  proposal.practicalInfo = established(long(1000), [
+    observation("vie pratique").evidence,
+  ])
+  proposal.salaryPrecision = established(long(500), [
+    observation("salaire").evidence,
+  ])
+  proposal.conditionPrecisions = { housing: long(500) }
+  const values = proposalToAdminFormValues(proposal, { companyId: null })
+  expect(values.experienceDetails).toBe("Première phrase.")
+  expect(values.otherConstraints).toBe("Première phrase.")
+  expect(values.salaryNotes).toBe("Première phrase.")
+  expect(values.housingDetails).toBe("Première phrase.")
+  expect(proposalFormIssues(proposal).map((issue) => issue.field)).toEqual([
+    "salaryPrecision",
+    "profile",
+    "practicalInfo",
+    "housing",
+  ])
+})
+
 const item = (
   id: string,
   status: ScanQueueItem["status"] = "to_review",

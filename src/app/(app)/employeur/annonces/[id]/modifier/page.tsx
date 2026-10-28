@@ -109,6 +109,12 @@ export default async function EditOfferPage({
           displayName: offer.company.displayName,
         }}
         publishesDirectly={canPublishDirectly(membership.member.status)}
+        extraPlaces={{
+          labels: offer.extraLocations.map(
+            (place) => `${place.communeName} (${place.departmentCode})`,
+          ),
+          contactHref: `/contact?motif=employeur&offre=${offer.id}`,
+        }}
       />
     </div>
   )

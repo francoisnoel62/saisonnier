@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { CalendarDaysIcon } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
+import { Brand } from "@/components/public/brand"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -15,7 +15,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { navigation, secondaryNavigation } from "@/config/navigation"
-import { site } from "@/config/site"
 import { homePathFor, type Role } from "@/domain/roles"
 
 export function AppSidebar({
@@ -33,11 +32,10 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              className="h-12 data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <Link href={homePathFor(role)}>
-                <CalendarDaysIcon className="size-5!" aria-hidden />
-                <span className="text-base font-semibold">{site.name}</span>
+                <Brand />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

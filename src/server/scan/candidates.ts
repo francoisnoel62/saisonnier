@@ -1,7 +1,18 @@
 import "server-only"
 
 import { createHash } from "node:crypto"
-import { and, asc, desc, eq, inArray, lt, or, sql } from "drizzle-orm"
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  lt,
+  max,
+  or,
+  sql,
+} from "drizzle-orm"
 
 import type { AdmissionDecision } from "@/domain/scan/admission"
 import { compareRecruitment } from "@/domain/scan/identity"
@@ -26,6 +37,7 @@ import {
   scanRuns,
   scanRunSources,
   type ScanCandidate,
+  type ScanListingData,
 } from "@/lib/db/schema"
 
 import { withRunClaim, type ScanTransaction } from "./claim"
@@ -44,7 +56,22 @@ export type ListedPosting = {
   discoveryUrl: string
   externalId?: string
   listingHash: string
+  // Données de la liste, relues à la lecture de la fiche (plan scan 09).
+  listing?: ScanListingData
   now?: Date
+}
+
+const maxListingBytes = 8_000
+// Une liste anormalement lourde ne garde que l'intitulé, la date et l'index.
+export function boundListing(listing: ScanListingData): ScanListingData {
+  if (JSON.stringify(listing).length <= maxListingBytes) return listing
+  const { title, sourceDate, index } = listing
+  return {
+    ...(title ? { title: boundText(title).slice(0, 500) } : {}),
+    ...(sourceDate ? { sourceDate: sourceDate.slice(0, 100) } : {}),
+    ...(index !== undefined ? { index } : {}),
+    data: {},
+  }
 }
 
 export function recordListedPosting(
@@ -55,10 +82,12 @@ export function recordListedPosting(
 ) {
   return withRunClaim(runId, token, async (tx) => {
     const now = listed.now ?? new Date()
+    const listing = listed.listing ? boundListing(listed.listing) : null
     const [inserted] = await tx
       .insert(scanCandidates)
       .values({
         sourceKey,
+        listing,
         sourceRevision: frozenRevision(runId, sourceKey),
         identityKey: listed.identityKey,
         discoveryUrl: listed.discoveryUrl,
@@ -92,6 +121,7 @@ export function recordListedPosting(
       .update(scanCandidates)
       .set({
         lastSeenAt: now,
+        ...(listing ? { listing } : {}),
         ...(excluded && changed
           ? {
               status: "discovered" as const,
@@ -124,25 +154,32 @@ export async function nextPistesToProcess(
 ) {
   if (!Number.isInteger(limit) || limit < 1 || limit > scanLimits.maxPostings)
     throw new RangeError("Taille de lot invalide")
-  return db
-    .select({ candidate: scanCandidates })
-    .from(scanCandidates)
-    .innerJoin(scanRuns, eq(scanRuns.id, runId))
-    .where(
-      and(
-        eq(scanCandidates.sourceKey, sourceKey),
-        inArray(scanCandidates.status, ["discovered", "failed"]),
-        lt(scanCandidates.attempts, scanLimits.maxAttempts),
-        // Reprendre les pistes du passage, y compris celles déjà connues revues dans sa liste.
-        or(
-          eq(scanCandidates.firstRunId, runId),
-          sql`${scanCandidates.lastSeenAt} >= ${scanRuns.startedAt}`,
+  return (
+    db
+      .select({ candidate: scanCandidates })
+      .from(scanCandidates)
+      .innerJoin(scanRuns, eq(scanRuns.id, runId))
+      .where(
+        and(
+          eq(scanCandidates.sourceKey, sourceKey),
+          inArray(scanCandidates.status, ["discovered", "failed"]),
+          lt(scanCandidates.attempts, scanLimits.maxAttempts),
+          // Reprendre les pistes du passage, y compris celles déjà connues revues dans sa liste.
+          or(
+            eq(scanCandidates.firstRunId, runId),
+            sql`${scanCandidates.lastSeenAt} >= ${scanRuns.startedAt}`,
+          ),
         ),
-      ),
-    )
-    .orderBy(asc(scanCandidates.firstSeenAt), asc(scanCandidates.id))
-    .limit(limit)
-    .then((rows) => rows.map((row) => row.candidate))
+      )
+      // Une piste en échec temporaire est réessayée en fin de file.
+      .orderBy(
+        asc(scanCandidates.attempts),
+        asc(scanCandidates.firstSeenAt),
+        asc(scanCandidates.id),
+      )
+      .limit(limit)
+      .then((rows) => rows.map((row) => row.candidate))
+  )
 }
 
 export type CandidateDelivery = {
@@ -155,19 +192,19 @@ export type CandidateDelivery = {
   now: Date
 }
 
-async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
-  const { extraction, admission, proposal, candidateId, runId, now } = input
-  const [current] = await tx
-    .select()
+// La file avance son curseur sur `readyForReviewAt|id` : sous le verrou du passage, chaque
+// livraison est datée après la précédente, même si son `now` a été lu avant le verrou.
+async function deliveryInstant(tx: ScanTransaction, now: Date) {
+  const [{ last }] = await tx
+    .select({ last: max(scanCandidates.readyForReviewAt) })
     .from(scanCandidates)
-    .where(eq(scanCandidates.id, candidateId))
-    .for("update")
-  if (current && ["published", "rejected"].includes(current.status)) {
-    await recordCandidateDivergences(tx, current, proposal)
-    return { ok: true, delivered: false } as const
-  }
-  if (!admission.admitted)
-    throw new RangeError("Un dossier non admis ne peut pas être livré")
+    .where(isNotNull(scanCandidates.readyForReviewAt))
+  return last && last >= now ? new Date(last.getTime() + 1) : now
+}
+
+// Champs d'un dossier lu et admis : communs à la livraison et à la publication automatique.
+function candidateContent(input: CandidateDelivery, fetchedAt: Date) {
+  const { extraction, admission, proposal } = input
   const title = (
     extraction.title ??
     (proposal.title.status === "established" ? proposal.title.value : "")
@@ -180,45 +217,64 @@ async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
     extraction.observations.some(
       (o) => Array.from(o.evidence.excerpt).length > observationLimits.excerpt,
     )
-  const issues = uniqueIssues([
-    ...proposal.issues,
-    ...admission.blocking,
-    ...admission.alerts,
-    ...(truncated ? [scanIssue("text_truncated")] : []),
-  ])
+  return {
+    title,
+    officialUrl: extraction.officialUrl ?? null,
+    pageText: boundText(extraction.usefulText),
+    observations: boundObservations(extraction.observations),
+    proposal,
+    issues: uniqueIssues([
+      ...proposal.issues,
+      ...admission.blocking,
+      ...admission.alerts,
+      ...(truncated ? [scanIssue("text_truncated")] : []),
+    ]),
+    signals: admission.signals.map((signal) => ({
+      ...signal,
+      evidence: signal.evidence.map(boundEvidence),
+    })),
+    sourcePublishedDate:
+      sourceDate?.precision === "day"
+        ? sourceDate.date
+        : sourceDate
+          ? dateInZone(Date.parse(sourceDate.at), "Europe/Paris")
+          : null,
+    sourcePublishedAt:
+      sourceDate?.precision === "instant" ? new Date(sourceDate.at) : null,
+    contentHash: createHash("sha256")
+      .update(extraction.usefulText)
+      .digest("hex"),
+    extractorVersion:
+      extraction.extractorVersion ??
+      extraction.observations[0]?.extractorVersion ??
+      "unknown",
+    lastFetchedAt: fetchedAt,
+    lastError: null,
+  }
+}
+
+async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
+  const { admission, proposal, candidateId, runId } = input
+  const [current] = await tx
+    .select()
+    .from(scanCandidates)
+    .where(eq(scanCandidates.id, candidateId))
+    .for("update")
+  if (current && ["published", "rejected"].includes(current.status)) {
+    await recordCandidateDivergences(tx, current, proposal)
+    return { ok: true, delivered: false } as const
+  }
+  if (!admission.admitted)
+    throw new RangeError("Un dossier non admis ne peut pas être livré")
+  const now = await deliveryInstant(tx, input.now)
+  const content = candidateContent(input, now)
   const [candidate] = await tx
     .update(scanCandidates)
     .set({
+      ...content,
       status: "to_review",
       readyForReviewAt: now,
       deliveredRunId: runId,
-      title,
-      officialUrl: extraction.officialUrl ?? null,
-      pageText: boundText(extraction.usefulText),
-      observations: boundObservations(extraction.observations),
-      proposal,
-      issues,
-      signals: admission.signals.map((signal) => ({
-        ...signal,
-        evidence: signal.evidence.map(boundEvidence),
-      })),
-      sourcePublishedDate:
-        sourceDate?.precision === "day"
-          ? sourceDate.date
-          : sourceDate
-            ? dateInZone(Date.parse(sourceDate.at), "Europe/Paris")
-            : null,
-      sourcePublishedAt:
-        sourceDate?.precision === "instant" ? new Date(sourceDate.at) : null,
-      contentHash: createHash("sha256")
-        .update(extraction.usefulText)
-        .digest("hex"),
-      extractorVersion:
-        extraction.extractorVersion ??
-        extraction.observations[0]?.extractorVersion ??
-        "unknown",
-      lastFetchedAt: now,
-      lastError: null,
     })
     .where(
       and(
@@ -251,6 +307,29 @@ async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
     .returning()
   if (!source) throw new Error("Source du passage non initialisée")
   return { ok: true, delivered: true, candidate: attached } as const
+}
+
+// Publication automatique (passage quotidien, plan scan 09) : le dossier reçoit son contenu sans
+// entrer dans la file ; publishCandidate le publie ensuite, sinon il est livré.
+export function stageCandidate(input: CandidateDelivery) {
+  return withRunClaim(input.runId, input.token, async (tx) => {
+    if (!input.admission.admitted)
+      throw new RangeError("Un dossier non admis ne peut pas être publié")
+    const [candidate] = await tx
+      .update(scanCandidates)
+      .set({
+        ...candidateContent(input, input.now),
+        deliveredRunId: input.runId,
+      })
+      .where(
+        and(
+          eq(scanCandidates.id, input.candidateId),
+          inArray(scanCandidates.status, ["discovered", "failed"]),
+        ),
+      )
+      .returning({ id: scanCandidates.id })
+    return { ok: true, staged: !!candidate } as const
+  })
 }
 
 export function deliverCandidate(input: CandidateDelivery) {
@@ -331,6 +410,42 @@ export function recordFailure(
           inArray(scanCandidates.status, ["discovered", "failed"]),
           eq(scanCandidates.attempts, context.expectedAttempts),
           lt(scanCandidates.attempts, scanLimits.maxAttempts),
+        ),
+      )
+      .returning()
+    if (candidate)
+      await tx
+        .update(scanRunSources)
+        .set({ failedCount: sql`${scanRunSources.failedCount} + 1` })
+        .where(
+          and(
+            eq(scanRunSources.runId, context.runId),
+            eq(scanRunSources.sourceKey, candidate.sourceKey),
+          ),
+        )
+    return { ok: true, recorded: !!candidate } as const
+  })
+}
+
+// Fiche disparue (404, 410) : la piste échoue sans être relue dans ce passage ; une liste
+// modifiée la remettra en lecture (recordListedPosting).
+export function markGone(
+  candidateId: string,
+  context: { runId: string; token: string; now: Date },
+) {
+  return withRunClaim(context.runId, context.token, async (tx) => {
+    const [candidate] = await tx
+      .update(scanCandidates)
+      .set({
+        status: "failed",
+        attempts: scanLimits.maxAttempts,
+        lastError: "Fiche introuvable",
+        lastFetchedAt: context.now,
+      })
+      .where(
+        and(
+          eq(scanCandidates.id, candidateId),
+          inArray(scanCandidates.status, ["discovered", "failed"]),
         ),
       )
       .returning()

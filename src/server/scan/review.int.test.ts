@@ -10,7 +10,12 @@ vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }))
 
 import { adminOfferToFormValues } from "@/domain/offer-input"
 import { db } from "@/lib/db"
-import { offers, scanCandidates, scanReviews } from "@/lib/db/schema"
+import {
+  occupations,
+  offers,
+  scanCandidates,
+  scanReviews,
+} from "@/lib/db/schema"
 import {
   createPublicationFixture,
   type PublicationFixture,
@@ -85,6 +90,35 @@ it("hôte non officiel refusé ; validation sans modification publiée et attrib
   expect(offer.humanVerifiedByUserId).toBe(fixture.adminId)
   expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin", "layout")
   expect(mocks.revalidatePath).toHaveBeenCalledWith("/offres", "layout")
+})
+it("métier proposé puis désactivé : la validation l'accepte comme la page du dossier (plan scan 09)", async () => {
+  const [occupation] = await db
+    .insert(occupations)
+    .values({
+      slug: `metier-desactive-${fixture.candidate.id}`,
+      label: "Métier désactivé depuis la suggestion",
+      family: "Test",
+      isActive: false,
+    })
+    .returning()
+  try {
+    await db
+      .update(scanCandidates)
+      .set({
+        proposal: { ...fixture.proposal, occupationId: occupation.id },
+      })
+      .where(eq(scanCandidates.id, fixture.candidate.id))
+    expect(
+      await validateScanCandidate(fixture.candidate.id, 1, {
+        ...values(),
+        occupationId: occupation.id,
+      }),
+    ).toMatchObject({ ok: true, status: "published" })
+  } finally {
+    // L'annonce publiée cite le métier : la nettoyer d'abord (afterEach la retrouve absente).
+    await fixture.cleanup()
+    await db.delete(occupations).where(eq(occupations.id, occupation.id))
+  }
 })
 it("rejet : version périmée refusée, motif et auteur conservés après décision", async () => {
   expect(

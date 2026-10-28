@@ -1,4 +1,16 @@
 import { site } from "@/config/site"
+import {
+  BanknoteIcon,
+  BriefcaseBusinessIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  HomeIcon,
+  MapPinIcon,
+  SparklesIcon,
+  UserRoundIcon,
+  UtensilsIcon,
+} from "lucide-react"
+import styles from "./offers.module.css"
 import { languageLabel } from "@/domain/languages"
 import {
   contractPeriod,
@@ -79,6 +91,7 @@ export type OfferDetailsData = Omit<
 > & {
   season: Offer["season"] | null
   occupationLabel: string | null
+  occupationFamily?: string | null
   department: { code: string; name: string } | null
   regionName: string | null
   provenance: Provenance
@@ -88,7 +101,7 @@ export type OfferDetailsData = Omit<
 }
 
 type OfferDetailsSource = Pick<Offer, (typeof offerDetailsFields)[number]> & {
-  occupation: { label: string } | null
+  occupation: { label: string; family?: string } | null
   department: { code: string; name: string; region?: { name: string } | null }
   extraLocations?: (PlaceSource & { position: number })[]
   communeInseeCode?: string | null
@@ -111,6 +124,7 @@ type OfferDetailsSource = Pick<Offer, (typeof offerDetailsFields)[number]> & {
 // Une offre lue en base (getOfferWithRelations) → ce que la fiche affiche, et rien d'autre.
 export function toOfferDetailsData(
   offer: OfferDetailsSource,
+  { blockedDomains }: { blockedDomains: readonly string[] },
 ): OfferDetailsData {
   const fields = Object.fromEntries(
     offerDetailsFields.map((field) => [field, offer[field]]),
@@ -118,14 +132,18 @@ export function toOfferDetailsData(
   return {
     ...fields,
     occupationLabel: offer.occupation?.label ?? null,
+    occupationFamily: offer.occupation?.family ?? null,
     department: { code: offer.department.code, name: offer.department.name },
     regionName: offer.department.region?.name ?? null,
     provenance: provenanceOf({ ...offer, origin: offer.origin ?? "deposited" }),
     newness: newnessOf(offer),
-    externalApplication: isExternalApplication({
-      ...offer,
-      applicationChannel: offer.applicationChannel ?? "employer",
-    }),
+    externalApplication: isExternalApplication(
+      {
+        ...offer,
+        applicationChannel: offer.applicationChannel ?? "employer",
+      },
+      blockedDomains,
+    ),
     places: offerPlaces(
       { ...offer, departmentCode: offer.department.code },
       offer.extraLocations,
@@ -178,7 +196,7 @@ function Row({
   children: React.ReactNode
 }) {
   return (
-    <div className="grid gap-0.5 py-2.5 sm:grid-cols-[13rem_1fr] sm:gap-4">
+    <div data-narrative={label === "Description" || label === "Missions"}>
       <dt className="font-medium">{label}</dt>
       <dd>{children}</dd>
     </div>
@@ -188,14 +206,46 @@ function Row({
 function Section({
   title,
   children,
+  unknown = false,
 }: {
   title: string
   children: React.ReactNode
+  unknown?: boolean
 }) {
+  const Icon =
+    (
+      {
+        Poste: BriefcaseBusinessIcon,
+        Contrat: CalendarDaysIcon,
+        Lieu: MapPinIcon,
+        Lieux: MapPinIcon,
+        Rémunération: BanknoteIcon,
+        Conditions: UtensilsIcon,
+        Profil: UserRoundIcon,
+        Organisation: ClockIcon,
+        "Vie pratique": HomeIcon,
+      } as Record<string, typeof HomeIcon>
+    )[title] ?? SparklesIcon
+  const heading = (
+    <h3 className={styles.sectionTitle}>
+      <Icon aria-hidden />
+      {title}
+    </h3>
+  )
+  if (unknown)
+    return (
+      <details className={styles.section}>
+        <summary>
+          {heading}
+          <span>Informations à préciser</span>
+        </summary>
+        <dl>{children}</dl>
+      </details>
+    )
   return (
-    <section className="flex flex-col gap-1">
-      <h3 className="text-base font-semibold">{title}</h3>
-      <dl className="divide-y">{children}</dl>
+    <section className={styles.section}>
+      {heading}
+      <dl>{children}</dl>
     </section>
   )
 }
@@ -212,7 +262,7 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
     )
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-w-0 flex-col gap-4">
       <Section title="Poste">
         <Row label="Métier">
           <Text value={offer.occupationLabel} />
@@ -321,7 +371,17 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
         </Row>
       </Section>
 
-      <Section title="Profil">
+      <Section
+        title="Profil"
+        unknown={
+          offer.experienceRequired === "unknown" &&
+          !offer.experienceDetails?.trim() &&
+          offer.languagesRequired === "unknown" &&
+          !offer.languages.length &&
+          offer.drivingLicenseRequired === "unknown" &&
+          !offer.drivingLicenseDetails?.trim()
+        }
+      >
         <Row label="Expérience exigée">
           <Answer
             value={offer.experienceRequired}
@@ -349,7 +409,14 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
         </Row>
       </Section>
 
-      <Section title="Organisation">
+      <Section
+        title="Organisation"
+        unknown={
+          offer.workTime === "unknown" &&
+          !offer.weeklyHours &&
+          !offer.scheduleDetails?.trim()
+        }
+      >
         <Row label="Temps de travail">
           {offer.workTime === "unknown" ? (
             <InfoValue
@@ -372,7 +439,14 @@ export function OfferDetails({ offer }: { offer: OfferDetailsData }) {
         </Row>
       </Section>
 
-      <Section title="Vie pratique">
+      <Section
+        title="Vie pratique"
+        unknown={
+          offer.couplesWelcome === "unknown" &&
+          offer.petsAllowed === "unknown" &&
+          !offer.otherConstraints?.trim()
+        }
+      >
         <Row label="Couples acceptés">
           <InfoValue
             value={offer.couplesWelcome}

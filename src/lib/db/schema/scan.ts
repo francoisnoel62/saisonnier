@@ -53,6 +53,13 @@ import { companies } from "./companies"
 import { offers } from "./offers"
 import { occupations } from "./reference"
 
+export type ScanListingData = {
+  title?: string
+  sourceDate?: string
+  index?: number
+  data: Record<string, unknown>
+}
+
 export const scanModeEnum = pgEnum("scan_mode", scanModes)
 export const scanRunStatusEnum = pgEnum("scan_run_status", scanRunStatuses)
 export const scanTriggerEnum = pgEnum("scan_trigger", scanRunTriggers)
@@ -379,6 +386,9 @@ export const scanCandidates = pgTable(
     generation: integer().notNull().default(1),
     externalId: text(),
     discoveryUrl: text().notNull(),
+    // Données de la liste relues par l'adaptateur à la lecture de la fiche (plan scan 09) :
+    // intitulé, date source, lieux annoncés ; bornées à l'écriture (boundListing).
+    listing: jsonb().$type<ScanListingData>(),
     officialUrl: text(),
     status: scanCandidateStatusEnum().notNull().default("discovered"),
     exclusionReason: scanExclusionReasonEnum(),

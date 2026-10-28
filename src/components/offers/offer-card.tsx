@@ -1,136 +1,125 @@
-import {
-  BanknoteIcon,
-  BedDoubleIcon,
-  CalendarDaysIcon,
-  MapPinIcon,
-  UtensilsIcon,
-} from "lucide-react"
+import { BanknoteIcon, CalendarDaysIcon, MapPinIcon } from "lucide-react"
 import Link from "next/link"
-
 import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { contractPeriod, seasonLabels } from "@/domain/offer-display"
+import { Card } from "@/components/ui/card"
+import { contractPeriod } from "@/domain/offer-display"
 import { formatSalary } from "@/domain/salary"
-import { provenanceLabels, newnessLabel } from "@/domain/offer-labels"
+import { newnessLabel } from "@/domain/offer-labels"
 import { isToConfirm } from "@/domain/field-certainty"
 import { otherPlacesLabel } from "@/domain/offer-places"
 import type { OfferListItem } from "@/server/search/search-offers"
-
-import { InfoValue } from "./info-value"
 import { ExternalApplicationBadge } from "./external-application"
 import { SaveOfferButton } from "./tracking-buttons"
+import {
+  OfferAmenity,
+  OfferArtwork,
+  OfferCategory,
+  OfferSeason,
+  OfferTrust,
+} from "./offer-visuals"
+import styles from "./offers.module.css"
 
-// Carte d'une offre dans les résultats. Logement et repas restent affichés même inconnus ; le
-// nom de l'entreprise est déjà son nom public (publicCompanyName). `saved` (candidat seulement)
-// affiche le bouton de sauvegarde ; `expired` signale une offre suivie qui n'est plus active.
+// Le lien de lecture reste indépendant des actions de sauvegarde et de suivi.
 export function OfferCard({
   offer,
   saved,
   expired = false,
   footer,
+  layout = "card",
+  href,
+  selected = false,
 }: {
   offer: OfferListItem
   saved?: boolean
   expired?: boolean
   footer?: React.ReactNode
+  layout?: "card" | "row" | "compact"
+  href?: string
+  selected?: boolean
 }) {
   return (
-    <Card className="relative h-full gap-3 has-[a:focus-visible]:ring-3 has-[a:focus-visible]:ring-ring/50">
-      <CardHeader className="gap-1.5">
-        <div className="mb-1 flex flex-wrap gap-1.5">
-          <Badge variant="outline">{provenanceLabels[offer.provenance]}</Badge>
-          {offer.externalApplication && <ExternalApplicationBadge />}
-          {expired && <Badge variant="destructive">Offre expirée</Badge>}
+    <Card className={styles.card} data-layout={layout}>
+      {layout === "card" && (
+        <div className={styles.cover}>
+          <OfferArtwork family={offer.occupationFamily} />
+          <span className={styles.coverSeason}>
+            <OfferSeason season={offer.season} />
+          </span>
         </div>
-        {saved !== undefined && (
-          // Au-dessus du lien qui couvre la carte.
-          <CardAction className="relative z-10 -mt-1 -mr-1">
-            <SaveOfferButton
-              offerId={offer.id}
-              title={offer.title}
-              saved={saved}
-            />
-          </CardAction>
+      )}
+      {saved !== undefined && (
+        <SaveOfferButton
+          offerId={offer.id}
+          title={offer.title}
+          saved={saved}
+          className={styles.save}
+        />
+      )}
+      <div className={styles.identity}>
+        <OfferCategory family={offer.occupationFamily} />
+        <h3 className={styles.title}>
+          <Link
+            href={href ?? `/offres/${offer.id}`}
+            aria-current={selected ? "true" : undefined}
+            scroll={layout === "compact" ? false : undefined}
+          >
+            {offer.title}
+          </Link>
+        </h3>
+        <p className={styles.company}>{offer.companyName}</p>
+        {expired && (
+          <Badge variant="destructive" className="mt-2">
+            Offre expirée
+          </Badge>
         )}
-        <CardTitle>
-          <h3>
-            <Link
-              href={`/offres/${offer.id}`}
-              className="after:absolute after:inset-0 hover:underline focus-visible:outline-none"
-            >
-              {offer.title}
-            </Link>
-          </h3>
-        </CardTitle>
-        <CardDescription>{offer.companyName}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        {offer.newness && (
-          <p className="text-xs text-muted-foreground">
-            {newnessLabel(offer.newness)}
-          </p>
-        )}
-        <p className="flex items-start gap-2">
-          <MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+      </div>
+      <div className={styles.cardFacts}>
+        <p className={styles.location}>
+          <MapPinIcon aria-hidden />
           <span>
-            {`${offer.communeName} · ${offer.department.name} (${offer.department.code})`}
-            {otherPlacesLabel(offer.placesCount - 1)}
+            {offer.communeName} · {offer.department.name} (
+            {offer.department.code}){otherPlacesLabel(offer.placesCount - 1)}
           </span>
         </p>
-        <p className="flex items-start gap-2">
-          <CalendarDaysIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            {offer.season ? `${seasonLabels[offer.season]} · ` : ""}
-            {contractPeriod(offer)}
-          </span>
+        {layout !== "card" && <OfferSeason season={offer.season} />}
+        <p className={styles.period}>
+          <CalendarDaysIcon aria-hidden />
+          <span>{contractPeriod(offer)}</span>
         </p>
-        <p className="flex items-start gap-2">
-          <BanknoteIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-          {offer.salary ? (
-            <span>{formatSalary(offer.salary)}</span>
-          ) : (
-            <span className="text-muted-foreground">
-              {isToConfirm(offer, "salary")
+        <p className={styles.salary} data-unknown={!offer.salary}>
+          <BanknoteIcon aria-hidden />
+          <span>
+            {offer.salary
+              ? formatSalary(offer.salary)
+              : isToConfirm(offer, "salary")
                 ? "Salaire à confirmer"
                 : "Salaire non précisé"}
-            </span>
-          )}
+          </span>
         </p>
-        <dl className="flex flex-wrap gap-x-4 gap-y-1">
-          <div className="flex items-center gap-2">
-            <BedDoubleIcon className="size-4 shrink-0" aria-hidden />
-            <dt>Logement :</dt>
-            <dd>
-              <InfoValue
-                value={offer.housing}
-                toConfirm={isToConfirm(offer, "housing")}
-              />
-            </dd>
-          </div>
-          <div className="flex items-center gap-2">
-            <UtensilsIcon className="size-4 shrink-0" aria-hidden />
-            <dt>Repas :</dt>
-            <dd>
-              <InfoValue
-                value={offer.meals}
-                toConfirm={isToConfirm(offer, "meals")}
-              />
-            </dd>
-          </div>
-        </dl>
-      </CardContent>
+      </div>
+      <dl className={styles.perks}>
+        <OfferAmenity
+          label="Logement"
+          kind="housing"
+          value={offer.housing}
+          toConfirm={isToConfirm(offer, "housing")}
+        />
+        <OfferAmenity
+          label="Repas"
+          kind="meals"
+          value={offer.meals}
+          toConfirm={isToConfirm(offer, "meals")}
+        />
+      </dl>
+      <div className={styles.cardFoot}>
+        <OfferTrust provenance={offer.provenance} />
+        {offer.externalApplication && <ExternalApplicationBadge />}
+        {offer.newness && <p>{newnessLabel(offer.newness)}</p>}
+      </div>
       {footer && (
-        <CardFooter className="relative z-10 flex-wrap gap-2">
+        <div className="relative z-10 flex flex-wrap gap-2 px-5 pb-4">
           {footer}
-        </CardFooter>
+        </div>
       )}
     </Card>
   )

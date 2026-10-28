@@ -76,6 +76,12 @@ it("PR37: rapprochement d'un recrutement sur le lieu supplémentaire d'une annon
       fixture.proposal.locations.evidence,
     ),
   }
-  const result = await findDuplicateSuspects(fixture.candidate, proposal)
-  expect(result.suspects).toContainEqual({ kind: "offer", id: other.id })
+  const result = await findDuplicateSuspects(fixture.candidate, proposal, {
+    runId: fixture.run.id,
+    token: fixture.run.claimToken,
+  })
+  expect(result.ok && result.suspects).toContainEqual({
+    kind: "offer",
+    id: other.id,
+  })
 })

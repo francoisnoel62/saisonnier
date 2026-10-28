@@ -3,6 +3,7 @@ import "server-only"
 import { eq } from "drizzle-orm"
 
 import {
+  jobEnabledByDefault,
   scheduledJobNames,
   type ScheduledJobName,
   type ScheduledJobSummaries,
@@ -10,7 +11,8 @@ import {
 import { db } from "@/lib/db"
 import { scheduledJobs, user } from "@/lib/db/schema"
 
-// État des tâches planifiées (plan 16). Une tâche du registre sans ligne en base est active.
+// État des tâches planifiées (plan 16). Une tâche du registre sans ligne en base prend l'état de sa
+// définition : active, sauf le scan quotidien (plan scan 09).
 
 const stateColumns = {
   name: scheduledJobs.name,
@@ -34,7 +36,7 @@ export type ScheduledJobState = {
 
 const defaultState = (name: ScheduledJobName): ScheduledJobState => ({
   name,
-  enabled: true,
+  enabled: jobEnabledByDefault(name),
   enabledChangedAt: null,
   updatedByName: null,
   lastRunAt: null,

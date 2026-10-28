@@ -41,5 +41,10 @@ export function serverEnv() {
     STORAGE_DRIVER: "local",
     // Copie des emails affichés en console, lue par les tests (helpers/outbox.ts).
     EMAIL_OUTBOX_DIR: ".e2e-outbox",
+    // Vercel Workflow (monde local) : stockage distinct de celui de `npm run dev`, rappels vers
+    // ce serveur, aucune reprise des runs d'une exécution précédente.
+    WORKFLOW_LOCAL_DATA_DIR: ".workflow-data-e2e",
+    WORKFLOW_LOCAL_BASE_URL: E2E_URL,
+    WORKFLOW_LOCAL_RECOVER_ACTIVE_RUNS: "0",
   }
 }

@@ -45,6 +45,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# vercel workflow (données locales, bundles de test, routes générées)
+/.workflow-data*
+/.workflow-vitest
+/src/app/.well-known/workflow
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/.swc

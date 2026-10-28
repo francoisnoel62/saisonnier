@@ -5,6 +5,15 @@ import { unstable_rethrow, useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
 import { Button } from "@/components/ui/button"
+import { Field, FieldLabel } from "@/components/ui/field"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -93,9 +102,13 @@ export function ReviewDecisions({
           <h2 className="font-semibold">Doublons potentiels</h2>
           {duplicates.map((review) => (
             <div key={review.id} className="grid gap-2 border-t pt-3">
-              <Link className="underline" href={review.href}>
-                {review.title}
-              </Link>
+              <Button
+                asChild
+                variant="outline"
+                className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+              >
+                <Link href={review.href}>{review.title}</Link>
+              </Button>
               {closed.includes(review.id) ? (
                 <p>Recrutements distincts : décision enregistrée.</p>
               ) : (
@@ -133,31 +146,42 @@ export function ReviewDecisions({
                 Aucune annonce existante ne sera modifiée.
               </DialogDescription>
             </DialogHeader>
-            <label className="grid gap-2 text-sm">
-              Motif du rejet
-              <select
-                className="h-10 rounded-md border bg-background px-3"
+            <Field>
+              <FieldLabel htmlFor={`rejection-reason-${candidateId}`}>
+                Motif du rejet
+              </FieldLabel>
+              <Select
                 value={reason}
-                onChange={(event) =>
-                  setReason(event.target.value as RejectionReason)
-                }
+                onValueChange={(value) => setReason(value as RejectionReason)}
+                disabled={pending}
               >
-                {manualRejectionReasons.map((value) => (
-                  <option key={value} value={value}>
-                    {rejectionReasonLabels[value]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm">
-              Note facultative
-              <textarea
-                className="min-h-24 rounded-md border p-3"
+                <SelectTrigger
+                  id={`rejection-reason-${candidateId}`}
+                  className="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {manualRejectionReasons.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {rejectionReasonLabels[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor={`rejection-note-${candidateId}`}>
+                Note facultative
+              </FieldLabel>
+              <Textarea
+                id={`rejection-note-${candidateId}`}
+                className="min-h-24"
                 maxLength={2000}
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
               />
-            </label>
+            </Field>
             {error && <p role="alert">{error}</p>}
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>

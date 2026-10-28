@@ -1,0 +1,163 @@
+.searchWrap {
+  scroll-margin-top: 110px;
+  padding-top: 7px;
+}
+.searchForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
+  background: var(--card);
+  border-radius: var(--radius-xl);
+}
+.searchField {
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 24px;
+}
+.searchField:first-of-type {
+  border-right: 1px solid var(--border);
+}
+.searchField > svg {
+  width: 19px;
+  height: 19px;
+  color: var(--muted-foreground);
+}
+.searchField > span {
+  flex: 1;
+  min-width: 0;
+}
+.fieldLabel {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+.searchField select {
+  width: 100%;
+  appearance: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 3px 19px 3px 0;
+  background: transparent;
+  border: 0;
+  color: var(--foreground);
+}
+.searchField > .selectChevron {
+  position: absolute;
+  right: 24px;
+  bottom: 20px;
+  width: 13px;
+  height: 13px;
+  pointer-events: none;
+}
+.searchButton {
+  height: auto;
+  min-height: 67px;
+  gap: 12px;
+  padding-inline: 24px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.searchButton svg:last-child {
+  margin-left: 12px;
+}
+.searchBelow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 2px 0;
+  font-size: 11px;
+}
+.searchBelow > p {
+  color: var(--muted-foreground);
+}
+.quickSearches {
+  display: flex;
+  align-items: center;
+  gap: 19px;
+}
+.quickSearches a,
+.housingToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+}
+.quickSearches svg {
+  width: 13px;
+  height: 13px;
+  color: var(--muted-foreground);
+}
+.housingToggle {
+  cursor: pointer;
+}
+.housingToggle input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.quickDivider {
+  height: 15px;
+  border-left: 1px solid var(--border);
+}
+.quickSearches a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@media (max-width: 800px) {
+  .searchForm {
+    grid-template-columns: 1fr 1fr;
+  }
+  .searchButton {
+    grid-column: 1 / -1;
+    min-height: 48px;
+    margin-top: 8px;
+    border-radius: 8px;
+  }
+  .searchBelow {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .searchForm {
+    grid-template-columns: 1fr;
+  }
+  .searchField {
+    padding: 14px 15px;
+  }
+  .searchField:first-of-type {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .searchField select {
+    font-size: 14px;
+  }
+  .fieldLabel {
+    font-size: 9px;
+  }
+  .quickSearches {
+    flex-wrap: wrap;
+    gap: 8px 15px;
+  }
+  .quickSearches a,
+  .housingToggle {
+    min-height: 36px;
+  }
+  .quickDivider {
+    display: none;
+  }
+  .searchBelow > p {
+    width: 100%;
+    text-align: center;
+  }
+}

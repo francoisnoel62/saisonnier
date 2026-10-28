@@ -11,9 +11,38 @@ export type DailyJobSummary = {
   reminders: { sent: number; failed: number }
 }
 
+// Résumé d'un déclenchement du scan quotidien (plan scan 09).
+export const scanJobOutcomes = [
+  "started",
+  "already_started",
+  "run_in_progress",
+  "resumed",
+  "start_failed",
+  "no_source",
+] as const
+export type ScanJobOutcome = (typeof scanJobOutcomes)[number]
+export type ScanJobSummary = {
+  date: string
+  outcome: ScanJobOutcome
+  runId: string | null
+}
+const scanJobOutcomeLabels: Record<ScanJobOutcome, string> = {
+  started: "passage démarré",
+  already_started: "passage du jour déjà lancé",
+  run_in_progress: "un autre passage était en cours : rien n'a démarré",
+  resumed: "passage du jour relancé",
+  start_failed: "démarrage impossible : passage à relancer depuis le scan",
+  no_source: "aucune source en passages quotidiens",
+}
+export function scanJobSummaryLabel({ outcome }: ScanJobSummary) {
+  const label = scanJobOutcomeLabels[outcome]
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
 // Résumé d'un passage, par tâche.
 export type ScheduledJobSummaries = {
   daily: DailyJobSummary
+  scan: ScanJobSummary
 }
 
 export type ScheduledJobName = keyof ScheduledJobSummaries
@@ -43,6 +72,8 @@ type ScheduledJobDefinition<Summary> = {
   description: string
   // Horaire de vercel.json, en clair. Vercel Cron compte en UTC.
   schedule: string
+  // État d'une tâche sans ligne en base (active par défaut).
+  enabledByDefault?: boolean
   summaryLabel: (summary: Summary) => string
 }
 
@@ -58,6 +89,18 @@ export const scheduledJobDefinitions: {
     schedule: "Chaque nuit à 3 h UTC (4 h ou 5 h à Paris selon l'heure d'été)",
     summaryLabel: dailyJobSummaryLabel,
   },
+  scan: {
+    label: "Scan quotidien des offres",
+    description:
+      "Chaque nuit, le scan relit les sources activées pour les passages quotidiens, sur les 72 dernières heures, et livre les nouveaux dossiers à vérifier. Désactivé tant que le remplissage initial n'est pas terminé.",
+    schedule: "Chaque nuit vers 3 h, heure de Paris",
+    enabledByDefault: false,
+    summaryLabel: scanJobSummaryLabel,
+  },
+}
+
+export function jobEnabledByDefault(name: ScheduledJobName) {
+  return scheduledJobDefinitions[name].enabledByDefault ?? true
 }
 
 export const scheduledJobNames = Object.keys(

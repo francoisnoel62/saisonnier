@@ -1,3 +1,4 @@
+import { findBlockedTargets } from "./blocked-domains"
 import type { ApplicationChannel, OfferOrigin } from "./offer"
 
 export const provenances = [
@@ -28,17 +29,24 @@ export function provenanceOf(offer: ProvenanceFields): Provenance {
     : "deposited"
 }
 
-export function isExternalApplication(offer: {
-  applicationChannel: ApplicationChannel
-  applyEmail?: string | null
-  applyPhone?: string | null
-  applyUrl?: string | null
-}) {
+// Un formulaire sur un domaine devenu exclu est masqué par le panneau de candidature : il ne
+// vaut plus « Candidature externe » (même règle que findBlockedTargets).
+export function isExternalApplication(
+  offer: {
+    applicationChannel: ApplicationChannel
+    applyEmail?: string | null
+    applyPhone?: string | null
+    applyUrl?: string | null
+  },
+  blockedDomains: readonly string[] = [],
+) {
   return (
     offer.applicationChannel === "employer" &&
     !offer.applyEmail &&
     !offer.applyPhone &&
-    !!offer.applyUrl
+    !!offer.applyUrl &&
+    findBlockedTargets({ applyUrl: offer.applyUrl }, blockedDomains).length ===
+      0
   )
 }
 

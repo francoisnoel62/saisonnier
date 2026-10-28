@@ -17,9 +17,9 @@ import { homePathFor, type Role } from "@/domain/roles"
 import styles from "./public.module.css"
 
 const navigation = [
-  { href: "/#recherche", label: "Trouver ma saison" },
-  { href: "/#destinations", label: "Les destinations" },
-  { href: "/#notre-conviction", label: "Notre état d’esprit" },
+  { href: "/#saisonniers", label: "Pour les saisonniers" },
+  { href: "/#employeurs", label: "Pour les employeurs" },
+  { href: "/#notre-vision", label: "Notre vision" },
 ]
 
 export function PublicHeader({ role }: { role?: Role }) {
@@ -53,8 +53,8 @@ export function PublicHeader({ role }: { role?: Role }) {
                 Se connecter
               </Link>
               <Button asChild className={styles.buttonSmall}>
-                <Link href="/inscription/employeur">
-                  Vous recrutez ? <ArrowUpRightIcon aria-hidden />
+                <Link href="/inscription">
+                  Commencer <ArrowUpRightIcon aria-hidden />
                 </Link>
               </Button>
             </>
@@ -105,9 +105,9 @@ export function PublicHeader({ role }: { role?: Role }) {
               )}
             </nav>
             <p className={styles.mobileMenuNote}>
-              0 % IA. 100 % humain.
+              Une saison, c’est un début.
               <br />
-              Et une vraie envie de vous rencontrer.
+              Construisons la suite ensemble.
             </p>
           </SheetContent>
         </Sheet>

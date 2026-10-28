@@ -6,6 +6,9 @@ drizzle/meta
 .next
 .next-e2e
 next-env.d.ts
+.workflow-data*
+.workflow-vitest
+src/app/.well-known/workflow
 
 # Documents rédigés à la main
 docs

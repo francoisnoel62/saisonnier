@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { Button } from "@/components/ui/button"
 import { EmployerLeads } from "@/components/admin/scan/employer-leads"
 import {
   discoveryRadar,
@@ -17,9 +18,13 @@ export default async function EmployerLeadsPage() {
   return (
     <div className="grid min-w-0 gap-6">
       <nav aria-label="Fil d’Ariane" className="text-sm">
-        <Link className="underline" href="/admin/scan">
-          ← Scan
-        </Link>
+        <Button
+          asChild
+          variant="ghost"
+          className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+        >
+          <Link href="/admin/scan">← Scan</Link>
+        </Button>
       </nav>
       <p className="max-w-3xl text-sm text-muted-foreground">
         Employeurs révélés par la découverte qui n’ont pas de portail carrière :

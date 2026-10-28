@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { Button } from "@/components/ui/button"
 import { SourceHeader } from "@/components/admin/scan/sources/source-header"
 import { SourceHistory } from "@/components/admin/scan/sources/source-history"
 import { SourceQualification } from "@/components/admin/scan/sources/source-qualification"
@@ -17,7 +18,6 @@ import { site } from "@/config/site"
 import { isBlockedHost } from "@/domain/blocked-domains"
 import { authorizationRequestText } from "@/domain/scan/authorization-request"
 import { env } from "@/lib/env"
-import { cn } from "@/lib/utils"
 import { getBlockedDomains } from "@/server/offers/application"
 import { sourceActivity } from "@/server/scan/sources/health"
 import { sourceCoverage } from "@/server/scan/sources/learning"
@@ -60,9 +60,13 @@ export default async function ScanSourcePage({
   return (
     <article className="grid min-w-0 gap-6">
       <nav aria-label="Fil d’Ariane" className="text-sm">
-        <Link className="underline" href="/admin/scan/sources">
-          ← Sources
-        </Link>
+        <Button
+          asChild
+          variant="ghost"
+          className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+        >
+          <Link href="/admin/scan/sources">← Sources</Link>
+        </Button>
       </nav>
       <SourceHeader
         source={summary}
@@ -73,22 +77,22 @@ export default async function ScanSourcePage({
       {row.kind === "discovery" && (
         <SourceCoverage coverage={await sourceCoverage(key)} />
       )}
-      <nav aria-label="Onglets de la source" className="border-b">
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+      <nav aria-label="Onglets de la source">
+        <ul className="flex flex-wrap gap-2">
           {tabs.map((item) => (
             <li key={item.id}>
-              <Link
-                href={`/admin/scan/sources/${key}?onglet=${item.id}`}
-                aria-current={item.id === tab ? "page" : undefined}
-                className={cn(
-                  "inline-block border-b-2 py-2",
-                  item.id === tab
-                    ? "border-primary font-medium"
-                    : "border-transparent text-muted-foreground",
-                )}
+              <Button
+                asChild
+                variant={item.id === tab ? "secondary" : "ghost"}
+                className="min-h-11"
               >
-                {item.label}
-              </Link>
+                <Link
+                  href={`/admin/scan/sources/${key}?onglet=${item.id}`}
+                  aria-current={item.id === tab ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              </Button>
             </li>
           ))}
         </ul>
