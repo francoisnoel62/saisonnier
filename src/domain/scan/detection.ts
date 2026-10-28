@@ -2,6 +2,7 @@ import { isBlockedHost } from "@/domain/blocked-domains"
 
 import { parseFranceTravailSearchUrl } from "./france-travail-search"
 import { knownPlatformFor, type KnownPlatform } from "./known-platforms"
+import { suggestUrlPattern } from "./url-pattern"
 import type { ScanAdapterKind, ScanSourceKind } from "./vocabulary"
 
 // Détection du connecteur d'une page de départ (§8.2). Pure : les signaux viennent d'une lecture
@@ -21,6 +22,8 @@ export type DetectionSignals = {
   textLength: number
   rssItems: number
   rssNamespaces: string[]
+  // Lien « page suivante » (rel=next) de la liste.
+  nextLink: string | null
 }
 export type DetectionProposal = {
   adapter: ScanAdapterKind | null
@@ -206,11 +209,34 @@ export function detectSource(
     })
   }
 
-  // Fiches structurées sans format connu : connecteur générique (page carrière).
-  if (signals.jobPosting !== "absent" && !proposals.length)
+  // Liens réguliers sans format connu : connecteur générique (page carrière), motif proposé
+  // avec le nombre de liens reconnus et des exemples, à accepter par l'admin.
+  const suggestion = proposals.length ? null : suggestUrlPattern(links)
+  if (suggestion)
+    proposals.push({
+      adapter: "career-page",
+      kind: "employer",
+      label: "Page carrière",
+      params: {
+        listUrl: url.href,
+        postingPattern: suggestion.pattern,
+        pagination: { kind: signals.nextLink ? "next" : "none" },
+        extraHosts: [],
+        requireJsonLd: false,
+      },
+      evidence: [
+        `Motif proposé : ${suggestion.pattern} (${suggestion.matched} liens reconnus).`,
+        `Exemples : ${suggestion.examples.join(", ")}.`,
+        ...(signals.jobPosting === "valid"
+          ? ["JSON-LD JobPosting présent sur la page."]
+          : []),
+        ...(signals.nextLink ? ["Lien « page suivante » détecté."] : []),
+      ],
+    })
+  else if (signals.jobPosting !== "absent" && !proposals.length)
     notes.push(
       signals.jobPosting === "valid"
-        ? "JSON-LD JobPosting présent : une page carrière générique pourra être configurée."
+        ? "JSON-LD JobPosting présent, mais aucun lien régulier vers des fiches."
         : "JSON-LD JobPosting présent mais invalide.",
     )
 

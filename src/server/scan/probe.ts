@@ -63,9 +63,17 @@ export async function probeScanSource(
     })
     return { response, links: inspection?.links ?? [] }
   }
-  const list = await read(source.listUrls[0], "list")
-  if (list.response.ok) {
-    for (const url of list.links.slice(0, 3)) {
+  // France Travail : la première page de chaque recherche ; les autres : la première liste.
+  const links: string[] = []
+  for (const url of source.adapter === "france-travail"
+    ? source.listUrls
+    : source.listUrls.slice(0, 1)) {
+    const list = await read(url, "list")
+    if (list.response.ok) links.push(...list.links)
+    else if (stopsSource(list.response.reason)) break
+  }
+  if (links.length) {
+    for (const url of [...new Set(links)].slice(0, 3)) {
       const dataUrl = postingReadUrl(source, url)
       const { response } = await read(
         dataUrl ?? url,

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."scan_adapter" ADD VALUE 'career-page';

@@ -210,3 +210,68 @@ describe("formulaire et instantané", () => {
     ])
   })
 })
+
+describe("connecteur générique et recherches multiples (lot D)", () => {
+  const career = {
+    ...emptySourceFormValues(),
+    label: "Hôtel test",
+    employerName: "Hôtel test",
+    employerWebsite: "https://www.hotel-test.example/",
+    adapter: "career-page" as const,
+    careerPage: {
+      listUrl: "https://recrute.hotel-test.example/offres",
+      postingPattern: "https://recrute.hotel-test.example/offres/{slug}-{id}",
+      pagination: "param" as const,
+      pageParam: "p",
+      extraHosts: "",
+      requireJsonLd: true,
+    },
+  }
+  it("une page carrière se configure par motif simplifié, sans expression", () => {
+    const parsed = schema.parse(career)
+    expect(parsed.snapshot).toMatchObject({
+      adapter: "career-page",
+      postingUrlPattern:
+        "^https://recrute\\.hotel-test\\.example/offres/[^/?#]+-([0-9]+)/?$",
+      officialHosts: ["recrute.hotel-test.example"],
+      adapterParams: { pagination: { kind: "param", name: "p" } },
+    })
+    expect(sourceFormDefaults(parsed.snapshot)).toEqual({
+      ...career,
+      employerSiren: "",
+    })
+    expect(
+      errorsOf({
+        ...career,
+        careerPage: { ...career.careerPage, postingPattern: "^https://(.*)$" },
+      }),
+    ).toContain("careerPage.postingPattern")
+    expect(
+      errorsOf({
+        ...career,
+        careerPage: {
+          ...career.careerPage,
+          postingPattern: "https://autre.example/offres/{slug}-{id}",
+        },
+      }),
+    ).toContain("careerPage.postingPattern")
+  })
+  it("France Travail : jusqu'à cinq recherches dans une même source", () => {
+    const base = sourceFormDefaults(
+      toSnapshot(testScanSourceDefinitions()["france-travail"]),
+    )
+    const second = sh17SearchUrl.replace("lieux=99100", "lieux=74D")
+    const parsed = schema.parse({ ...base, extraSearchUrls: second })
+    expect(parsed.snapshot.listUrls).toEqual([sh17SearchUrl, second])
+    expect(sourceFormDefaults(parsed.snapshot).extraSearchUrls).toBe(second)
+    expect(
+      errorsOf({
+        ...base,
+        extraSearchUrls: Array(5).fill(second).join("\n"),
+      }),
+    ).toContain("extraSearchUrls")
+    expect(
+      errorsOf({ ...base, extraSearchUrls: "https://www.indeed.fr/emplois" }),
+    ).toContain("extraSearchUrls")
+  })
+})

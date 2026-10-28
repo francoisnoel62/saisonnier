@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { compileUrlPattern, parseUrlPattern } from "./url-pattern"
 import { isLocalTestOrigin } from "./url-safety"
 import {
   scanAdapterLabels,
@@ -73,14 +74,37 @@ export function isFranceTravailSearchUrl(value: string) {
     return false
   }
 }
-// Le lot D portera la borne à cinq recherches ; l'adaptateur n'en lit qu'une aujourd'hui.
-export const maxFranceTravailSearches = 1
+// Plusieurs recherches dans une même source (D7 : un hôte, une source).
+export const maxFranceTravailSearches = 5
 
 export type TeamtailorParams = { portalUrl: string }
 export type FactorialParams = { portalUrl: string }
 export type FranceTravailParams = { searchUrls: string[] }
 export type FixtureParams = { origin: string }
 export type SmartRecruitersParams = Record<string, never>
+export const careerPagePaginations = ["none", "next", "param"] as const
+export type CareerPageParams = {
+  listUrl: string
+  postingPattern: string
+  pagination:
+    { kind: "none" } | { kind: "next" } | { kind: "param"; name: string }
+  extraHosts: string[]
+  requireJsonLd: boolean
+}
+// Liste d'une page carrière : https sans identifiants ni port, ou l'origine locale de test.
+function listUrlOk(value: string) {
+  try {
+    const url = new URL(value)
+    return (
+      !url.username &&
+      !url.password &&
+      ((url.protocol === "https:" && !url.port) ||
+        isLocalTestOrigin(url.origin))
+    )
+  } catch {
+    return false
+  }
+}
 
 const teamtailor: AdapterDescriptor<TeamtailorParams> = {
   kind: "teamtailor",
@@ -178,12 +202,72 @@ const smartrecruiters: AdapterDescriptor<SmartRecruitersParams> = {
     "Connecteur indisponible : le robots.txt de l’API SmartRecruiters refuse notre robot (plan scan 01).",
 }
 
+const careerPage: AdapterDescriptor<CareerPageParams> = {
+  kind: "career-page",
+  label: scanAdapterLabels["career-page"],
+  version: "career-page@1",
+  sourceKinds: ["employer"],
+  paramsSchema: z
+    .object({
+      listUrl: z.string().max(2048).refine(listUrlOk, {
+        message: "Adresse https de la liste des offres.",
+      }),
+      postingPattern: z.string().superRefine((value, context) => {
+        const parsed = parseUrlPattern(value)
+        if (!parsed.ok)
+          context.addIssue({ code: "custom", message: parsed.message })
+      }),
+      pagination: z.discriminatedUnion("kind", [
+        z.object({ kind: z.literal("none") }),
+        z.object({ kind: z.literal("next") }),
+        z.object({
+          kind: z.literal("param"),
+          name: z.string().regex(/^[A-Za-z0-9_.-]{1,30}$/, {
+            message: "Nom du paramètre de page (lettres, chiffres, _ . -).",
+          }),
+        }),
+      ]),
+      extraHosts: z.array(z.string().regex(/^[a-z0-9.-]+$/)).max(5),
+      requireJsonLd: z.boolean(),
+    })
+    .strict()
+    .superRefine((params, context) => {
+      const parsed = parseUrlPattern(params.postingPattern)
+      if (!parsed.ok || !listUrlOk(params.listUrl)) return
+      const hosts = [new URL(params.listUrl).hostname, ...params.extraHosts]
+      if (!hosts.includes(parsed.pattern.host))
+        context.addIssue({
+          code: "custom",
+          path: ["postingPattern"],
+          message:
+            "Les fiches doivent être sur l'hôte de la liste ou un hôte supplémentaire déclaré.",
+        })
+    }),
+  derive: ({ listUrl, postingPattern, extraHosts }) => ({
+    listUrls: [listUrl],
+    postingUrlPattern: compileUrlPattern(postingPattern)!,
+    officialHosts: [
+      ...new Set([
+        new URL(listUrl).hostname,
+        ...(() => {
+          const parsed = parseUrlPattern(postingPattern)
+          return parsed.ok ? [parsed.pattern.host] : []
+        })(),
+        ...extraHosts,
+      ]),
+    ],
+  }),
+  help: "Site carrière rendu côté serveur : adresse de la liste (HTML, plan de site ou flux RSS), motif simplifié des fiches (ex. https://recrute.exemple.fr/offres/{slug}-{id}) et pagination.",
+  availability: "available",
+}
+
 export const adapterCatalog = {
   teamtailor,
   factorial,
   "france-travail": franceTravail,
   fixture,
   smartrecruiters,
+  "career-page": careerPage,
 } satisfies Record<ScanAdapterKind, { kind: ScanAdapterKind }>
 
 export function adapterDescriptor(
