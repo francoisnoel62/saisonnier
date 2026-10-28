@@ -29,7 +29,7 @@ describe("dailyJobSummaryLabel", () => {
 
 describe("registre des tâches planifiées", () => {
   it("chaque tâche a un nom, un libellé, un horaire et un résumé", () => {
-    expect(scheduledJobNames).toEqual(["daily"])
+    expect(scheduledJobNames).toEqual(["daily", "scan"])
     for (const name of scheduledJobNames) {
       expect(scheduledJobDefinitions[name].label).not.toBe("")
       expect(scheduledJobDefinitions[name].schedule).not.toBe("")

@@ -162,6 +162,13 @@
       "when": 1793134849610,
       "tag": "0022_scan_source_health",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793178809690,
+      "tag": "0023_scan_candidate_listing",
+      "breakpoints": true
     }
   ]
 }

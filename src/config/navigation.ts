@@ -114,6 +114,11 @@ export function pageTitleFor(role: Role, pathname: string) {
             url: "/admin/scan/suggestions",
             icon: RadarIcon,
           },
+          {
+            title: "Passages du scan",
+            url: "/admin/scan/passages",
+            icon: RadarIcon,
+          },
         ]
       : []
   return activeNavItem(

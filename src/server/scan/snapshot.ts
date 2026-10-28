@@ -170,14 +170,23 @@ export async function getScanSnapshot({
           deliveredCount: run.deliveredCount,
           targetCount: run.targetCount,
           targetReachedAt: run.targetReachedAt?.toISOString() ?? null,
+          firstDeliveredAt: run.firstDeliveredAt?.toISOString() ?? null,
+          lastProgressAt: run.lastProgressAt?.toISOString() ?? null,
           finishedAt: run.finishedAt?.toISOString() ?? null,
+          orchestrated: !!run.workflowRunId,
           sources: sources.map(({ source, label }) => ({
             key: source.sourceKey,
             label,
+            revision: source.sourceRevision,
             status: source.status,
             listedCount: source.listedCount,
             fetchedCount: source.fetchedCount,
             deliveredCount: source.deliveredCount,
+            excludedCount: source.excludedCount,
+            failedCount: source.failedCount,
+            requestCount: source.requestCount,
+            // Libellé déjà français (scanFailureLabels), jamais un code brut.
+            lastError: source.lastError,
           })),
         }
       : null,

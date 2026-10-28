@@ -242,17 +242,19 @@ describe("sendValidityReminders", () => {
 })
 
 describe("tâches planifiées activables depuis l'admin", () => {
-  it("une tâche du registre est active tant que personne ne l'a désactivée", async () => {
-    await db.delete(scheduledJobs).where(eq(scheduledJobs.name, "daily"))
+  it("une tâche sans ligne prend l'état de sa définition : la quotidienne active, le scan désactivé", async () => {
+    await db
+      .delete(scheduledJobs)
+      .where(inArray(scheduledJobs.name, ["daily", "scan"]))
+    const blank = {
+      enabledChangedAt: null,
+      updatedByName: null,
+      lastRunAt: null,
+      lastSummary: null,
+    }
     expect(await listScheduledJobs()).toEqual([
-      {
-        name: "daily",
-        enabled: true,
-        enabledChangedAt: null,
-        updatedByName: null,
-        lastRunAt: null,
-        lastSummary: null,
-      },
+      { name: "daily", enabled: true, ...blank },
+      { name: "scan", enabled: false, ...blank },
     ])
   })
 

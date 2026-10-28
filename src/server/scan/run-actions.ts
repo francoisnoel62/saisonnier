@@ -1,9 +1,71 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { getRun, start } from "workflow/api"
+import { z } from "zod"
 
 import { requireRole } from "@/lib/dal"
 import { scanSmokeWorkflow } from "@/workflows/smoke"
+
+import {
+  launchBootstrap,
+  resumeRun,
+  stopRun,
+  type LaunchResult,
+} from "./launch"
+
+const launchMessages: Record<
+  Extract<LaunchResult, { ok: false }>["reason"],
+  string
+> = {
+  no_source:
+    "Aucune source activée pour le remplissage initial : activez-en une depuis les sources du scan.",
+  run_in_progress: "Un autre passage est en cours : attendez sa fin.",
+  already_exists:
+    "Le remplissage initial a déjà été lancé : ouvrez-le pour le suivre ou le reprendre.",
+  start_failed:
+    "Le passage est créé, mais son exécution n’a pas démarré : utilisez « Relancer ».",
+  not_found: "Passage introuvable.",
+  not_resumable: "Ce passage est terminé : il ne se reprend pas.",
+  orchestration_active:
+    "Ce passage progresse encore : la reprise n’est possible qu’après son arrêt ou 15 minutes sans progrès.",
+}
+
+function launchResponse(result: LaunchResult) {
+  revalidatePath("/admin/scan", "layout")
+  return result.ok
+    ? ({ ok: true, runId: result.runId } as const)
+    : ({
+        ok: false,
+        runId: result.runId ?? null,
+        message: launchMessages[result.reason],
+      } as const)
+}
+
+// Lancement du premier remplissage (SH3) : la réponse arrive dès que le workflow est pris en
+// charge, sans attendre la collecte.
+export async function launchBootstrapScanAction() {
+  const { user } = await requireRole("admin")
+  return launchResponse(await launchBootstrap(user.id))
+}
+
+export async function resumeScanRunAction(runId: string) {
+  await requireRole("admin")
+  if (!z.uuid().safeParse(runId).success)
+    return { ok: false, runId: null, message: "Passage introuvable." } as const
+  return launchResponse(await resumeRun(runId))
+}
+
+export async function stopScanRunAction(runId: string) {
+  await requireRole("admin")
+  if (!z.uuid().safeParse(runId).success)
+    return { ok: false, message: "Passage introuvable." } as const
+  const stopped = await stopRun(runId)
+  revalidatePath("/admin/scan", "layout")
+  return stopped
+    ? ({ ok: true } as const)
+    : ({ ok: false, message: "Ce passage n’est plus en cours." } as const)
+}
 
 // Diagnostic « Tester l'orchestration » (plan scan 09, étape 1) : il démarre un workflow minimal
 // et l'écran suit son statut ; aucune source n'est lue.

@@ -8,7 +8,13 @@ import {
   rejectionReasons,
 } from "@/domain/scan/vocabulary"
 import { db } from "@/lib/db"
-import { scanCandidates, scanRuns, scanRunSources } from "@/lib/db/schema"
+import {
+  scanCandidates,
+  scanReviews,
+  scanRuns,
+  scanRunSources,
+  scanSources,
+} from "@/lib/db/schema"
 
 export async function getActiveRun() {
   const [run] = await db
@@ -17,6 +23,15 @@ export async function getActiveRun() {
     .where(inArray(scanRuns.status, activeRunStatuses))
     .limit(1)
   return run ?? null
+}
+
+// SH3 : un seul remplissage initial ; une fois créé, l'écran ne propose plus de le lancer.
+export async function bootstrapRunExists() {
+  const [run] = await db
+    .select({ id: scanRuns.id })
+    .from(scanRuns)
+    .where(eq(scanRuns.runKey, "bootstrap"))
+  return !!run
 }
 
 export function listRuns(limit = 20) {
@@ -106,11 +121,27 @@ export async function getRunReport(runId: string) {
             .limit(1)
         : []
       const sources = await tx
-        .select()
+        .select({ source: scanRunSources, label: scanSources.label })
         .from(scanRunSources)
+        .innerJoin(scanSources, eq(scanSources.key, scanRunSources.sourceKey))
         .where(eq(scanRunSources.runId, runId))
         .orderBy(asc(scanRunSources.sourceKey))
+        .then((rows) =>
+          rows.map(({ source, label }) => ({ ...source, label })),
+        )
+      // Rapprochements ouverts ou décidés sur les dossiers livrés par ce passage.
+      const [duplicates] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(scanReviews)
+        .innerJoin(
+          scanCandidates,
+          eq(scanCandidates.id, scanReviews.candidateId),
+        )
+        .where(
+          sql`${scanReviews.kind} = 'duplicate' and ${scanCandidates.deliveredRunId} = ${runId}`,
+        )
       return {
+        duplicates: duplicates.count,
         run,
         byStatus,
         exclusions,

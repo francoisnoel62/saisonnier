@@ -292,3 +292,74 @@ export function membershipDecisionEmail({
     }),
   }
 }
+
+// Bilan d'un passage du scan (SH16), envoyé une fois au fondateur : jamais un email par dossier.
+export function scanRunReportEmail({
+  mode,
+  statusLabel,
+  date,
+  delivered,
+  target,
+  targetReachedAt,
+  automaticPublications,
+  blockedSources,
+  suspendedSources,
+  url,
+}: {
+  mode: "bootstrap" | "daily"
+  statusLabel: string
+  // Jour de Paris du passage, déjà formaté.
+  date: string
+  delivered: number
+  target: number | null
+  targetReachedAt: string | null
+  automaticPublications: number
+  blockedSources: string[]
+  suspendedSources: string[]
+  url: string
+}): Template {
+  const greeting =
+    mode === "bootstrap"
+      ? `Bilan du remplissage initial du scan (${date}).`
+      : `Bilan du scan quotidien du ${date}.`
+  const details = [
+    `Statut : ${statusLabel}.`,
+    target
+      ? `Dossiers livrés pour vérification : ${delivered} / ${target}.`
+      : `Dossiers livrés pour vérification : ${delivered}.`,
+    ...(target
+      ? [
+          targetReachedAt
+            ? `Seuil de ${target} atteint le ${targetReachedAt}.`
+            : `Le seuil de ${target} n'est pas atteint : activez une source de réserve, puis reprenez le passage depuis l'écran du scan.`,
+        ]
+      : []),
+    ...(automaticPublications
+      ? [`Annonces publiées automatiquement : ${automaticPublications}.`]
+      : []),
+    ...(blockedSources.length
+      ? [
+          `Sources arrêtées (accès refusé ou indisponibles) : ${blockedSources.join(", ")}.`,
+        ]
+      : []),
+    ...(suspendedSources.length
+      ? [
+          `Sources suspendues par le disjoncteur : ${suspendedSources.join(", ")}.`,
+        ]
+      : []),
+  ]
+  const footer = "Le détail figure dans le bilan du passage."
+  return {
+    subject:
+      mode === "bootstrap"
+        ? "Scan — bilan du remplissage initial"
+        : `Scan quotidien du ${date} — bilan`,
+    text: `${greeting}\n\n${details.join("\n")}\n\n${url}\n\n${footer}`,
+    html: layout({
+      greeting,
+      paragraphs: details,
+      action: { label: "Ouvrir le bilan", url },
+      footer,
+    }),
+  }
+}

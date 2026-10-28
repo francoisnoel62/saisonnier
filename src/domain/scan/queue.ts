@@ -28,14 +28,23 @@ export type ScanSnapshot = {
     deliveredCount: number
     targetCount: number | null
     targetReachedAt: string | null
+    firstDeliveredAt: string | null
+    lastProgressAt: string | null
     finishedAt: string | null
+    // Un workflow a pris le passage en charge (sinon « Relancer »).
+    orchestrated: boolean
     sources: {
       key: string
       label: string
+      revision: number
       status: ScanRunSourceStatus
       listedCount: number
       fetchedCount: number
       deliveredCount: number
+      excludedCount: number
+      failedCount: number
+      requestCount: number
+      lastError: string | null
     }[]
   } | null
   counts: {
