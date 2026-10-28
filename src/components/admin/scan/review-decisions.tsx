@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   rejectionReasonLabels,
-  rejectionReasons,
+  manualRejectionReasons,
   type RejectionReason,
 } from "@/domain/scan/vocabulary"
 import {
@@ -142,7 +142,7 @@ export function ReviewDecisions({
                   setReason(event.target.value as RejectionReason)
                 }
               >
-                {rejectionReasons.map((value) => (
+                {manualRejectionReasons.map((value) => (
                   <option key={value} value={value}>
                     {rejectionReasonLabels[value]}
                   </option>

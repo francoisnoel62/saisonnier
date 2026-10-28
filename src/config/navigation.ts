@@ -95,6 +95,11 @@ export function pageTitleFor(role: Role, pathname: string) {
     role === "admin"
       ? [
           {
+            title: "Sources du scan",
+            url: "/admin/scan/sources",
+            icon: RadarIcon,
+          },
+          {
             title: "Dossiers du scan",
             url: "/admin/scan/dossiers",
             icon: RadarIcon,

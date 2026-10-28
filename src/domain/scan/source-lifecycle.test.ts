@@ -1,16 +1,23 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  moveInOrder,
   sourceAutoPublishes,
   sourceParticipates,
+  sourceTransitionMoves,
+  sourceTransitions,
   switchBlockerMessage,
   switchBlockers,
+  transitionBlockerMessage,
+  transitionBlockers,
   type SourceSwitchState,
+  type SourceTransition,
 } from "./source-lifecycle"
 import {
   scanModes,
   scanSourceKinds,
   scanSourceStatuses,
+  type ScanSourceStatus,
   type ScanSourceSwitch,
 } from "./vocabulary"
 
@@ -175,5 +182,48 @@ describe("portes des interrupteurs", () => {
     expect(switchBlockerMessage("not_ready", { status: "archived" })).toContain(
       "archivée",
     )
+  })
+})
+
+describe("transitions du cycle de vie", () => {
+  const allowed: Record<SourceTransition, ScanSourceStatus[]> = {
+    mark_ready: ["draft"],
+    back_to_draft: ["ready"],
+    reject: ["draft", "ready"],
+    reexamine: ["rejected"],
+    archive: ["draft", "ready", "rejected"],
+    restore: ["archived"],
+  }
+  it("table complète : depuis, vers, conditions", () => {
+    for (const transition of sourceTransitions)
+      for (const status of scanSourceStatuses) {
+        const blockers = transitionBlockers(status, transition, {
+          reason: "Liste construite par JavaScript.",
+        })
+        expect(
+          blockers.includes("wrong_status"),
+          `${status} ${transition}`,
+        ).toBe(!allowed[transition].includes(status))
+      }
+    expect(sourceTransitionMoves.archive.to).toBe("archived")
+    expect(sourceTransitionMoves.restore.to).toBe("draft")
+  })
+  it("écarter exige un motif de 10 à 500 caractères", () => {
+    expect(transitionBlockers("draft", "reject")).toEqual(["reason_required"])
+    expect(transitionBlockers("draft", "reject", { reason: "court" })).toEqual([
+      "reason_required",
+    ])
+    expect(
+      transitionBlockers("draft", "reject", { reason: "x".repeat(501) }),
+    ).toEqual(["reason_required"])
+    expect(
+      transitionBlockerMessage("wrong_status", "restore", "draft"),
+    ).toContain("Brouillon")
+  })
+  it("monter et descendre échangent deux voisines, sans sortir de la liste", () => {
+    expect(moveInOrder(["a", "b", "c"], 1, -1)).toEqual(["b", "a", "c"])
+    expect(moveInOrder(["a", "b", "c"], 1, 1)).toEqual(["a", "c", "b"])
+    expect(moveInOrder(["a", "b", "c"], 0, -1)).toEqual(["a", "b", "c"])
+    expect(moveInOrder(["a", "b", "c"], 2, 1)).toEqual(["a", "b", "c"])
   })
 })

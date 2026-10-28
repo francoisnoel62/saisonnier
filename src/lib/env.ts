@@ -17,6 +17,8 @@ const serverEnvSchema = z
     // Injectées par Vercel (sans protocole) : hôtes de la preview, acceptés en plus de BETTER_AUTH_URL.
     VERCEL_URL: z.string().optional(),
     VERCEL_BRANCH_URL: z.string().optional(),
+    // Injectée par Vercel : environnement consigné avec chaque test de source (« local » sinon).
+    VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
 
     // Emails : sans clé Resend (en local), ils s'affichent dans la console.
     RESEND_API_KEY: z.string().optional(),

@@ -11,10 +11,14 @@ import {
   scanSources,
 } from "../../src/lib/db/schema/scan"
 import { sourceConfigHash } from "../../src/server/scan/sources/config-hash"
+import { deriveSourceConfig } from "../../src/domain/scan/adapter-catalog"
+import { sourceKeyFromLabel } from "../../src/domain/scan/source-key"
 import {
   fixtureSourceKey,
   fixtureSourceState,
   replaySourceSeed,
+  testScanSourceDefinitions,
+  toSnapshot,
 } from "../../src/test/scan-sources"
 
 // Pas de TRUNCATE CASCADE : les annonces publiées par les tests restent en place. Les sources
@@ -175,4 +179,97 @@ export async function insertScanSource(
     configHash: sourceConfigHash(definition),
   })
   return source
+}
+
+// Source « E2E — … » propre à un test, sur le connecteur de fixtures : prête (reprise acceptée)
+// ou brouillon. `origin` peut viser une autre origine que le serveur de fixtures, pour une
+// configuration à corriger. Supprimée par `deleteTestSources` en `finally`.
+export async function insertTestSource(
+  db: Pool,
+  {
+    label,
+    status = "draft",
+    origin,
+  }: { label: string; status?: "draft" | "ready"; origin?: string },
+) {
+  const key = sourceKeyFromLabel(label, [])
+  const fixtureOrigin = `http://localhost:${Number(process.env.E2E_PORT ?? 3100) + 1}`
+  // Identité et preuves sur l'origine de test ; seule la configuration lue peut viser ailleurs.
+  const definition = {
+    ...toSnapshot({
+      ...testScanSourceDefinitions(fixtureOrigin).fixture,
+      label,
+    }),
+    ...(origin
+      ? {
+          adapterParams: { origin },
+          ...deriveSourceConfig("fixture", { origin }),
+        }
+      : {}),
+  }
+  const orm = drizzle({ client: db, casing: "snake_case" })
+  await orm.insert(scanSources).values({
+    key,
+    label,
+    kind: "employer",
+    adapter: "fixture",
+    status,
+    revision: 1,
+    priority: 900,
+    employerName: definition.employer?.name ?? null,
+    employerWebsite: definition.employerWebsite,
+    ...(status === "ready"
+      ? {
+          reuseDecision: "accepted" as const,
+          reuseDecisionNote: "Acceptée pour un test.",
+          reuseDecidedAt: new Date(),
+        }
+      : {}),
+  })
+  await orm.insert(scanSourceRevisions).values({
+    sourceKey: key,
+    revision: 1,
+    definition,
+    complete: true,
+    configHash: sourceConfigHash(definition),
+  })
+  return key
+}
+
+// Supprime les sources « E2E — … » et ce qui les cite.
+export async function deleteTestSources(db: Pool) {
+  const client = await db.connect()
+  try {
+    await client.query("begin")
+    const keys = (
+      await client.query<{ key: string }>(
+        "select key from scan_sources where label like 'E2E — %'",
+      )
+    ).rows.map((row) => row.key)
+    if (keys.length) {
+      await client.query(
+        "update scan_candidates set occupation_review_id = null where source_key = any($1)",
+        [keys],
+      )
+      await client.query(
+        "delete from scan_reviews where source_key = any($1) or candidate_id in (select id from scan_candidates where source_key = any($1)) or other_candidate_id in (select id from scan_candidates where source_key = any($1))",
+        [keys],
+      )
+      await client.query(
+        "delete from scan_run_sources where source_key = any($1)",
+        [keys],
+      )
+      await client.query(
+        "delete from scan_candidates where source_key = any($1)",
+        [keys],
+      )
+      await client.query("delete from scan_sources where key = any($1)", [keys])
+    }
+    await client.query("commit")
+  } catch (error) {
+    await client.query("rollback")
+    throw error
+  } finally {
+    client.release()
+  }
 }

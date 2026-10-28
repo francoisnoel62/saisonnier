@@ -9,7 +9,7 @@ import {
   offerInputContext,
   type AdminOfferFormValues,
 } from "@/domain/offer-input"
-import { rejectionReasons } from "@/domain/scan/vocabulary"
+import { manualRejectionReasons } from "@/domain/scan/vocabulary"
 import { requireRole } from "@/lib/dal"
 import type { AdminOfferFormResult } from "@/server/offers/admin-actions"
 import { getOfferFormReferentials } from "@/server/offers/employer-offers"
@@ -90,7 +90,7 @@ export async function rejectScanCandidate(
     .object({
       candidateId: z.uuid(),
       version: z.number().int().positive(),
-      reason: z.enum(rejectionReasons),
+      reason: z.enum(manualRejectionReasons),
       note: z.string().max(2000).optional(),
     })
     .safeParse({ candidateId, version, reason, note })

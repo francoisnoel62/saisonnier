@@ -1,8 +1,11 @@
 import "server-only"
 
-import { and, asc, eq, ne } from "drizzle-orm"
+import { and, asc, count, desc, eq, inArray, ne, type SQL } from "drizzle-orm"
 
-import { isAdapterAvailable } from "@/domain/scan/adapter-catalog"
+import {
+  adapterDescriptor,
+  isAdapterAvailable,
+} from "@/domain/scan/adapter-catalog"
 import {
   scanSourceDefinitionErrors,
   scanSourceKeyPattern,
@@ -16,17 +19,26 @@ import {
   switchBlockerMessage,
   switchBlockers,
 } from "@/domain/scan/source-lifecycle"
+import {
+  qualificationGaps,
+  type QualificationItem,
+} from "@/domain/scan/source-qualification"
 import { scanSourceSwitches, type ScanMode } from "@/domain/scan/vocabulary"
 import { db } from "@/lib/db"
 import {
+  scanCandidates,
+  scanSourceEvents,
   scanSourceRevisions,
   scanSources,
+  user,
+  type ScanSourceEvent,
   type ScanSourceRevision,
   type ScanSourceRow,
 } from "@/lib/db/schema"
 import { env } from "@/lib/env"
 
 import type { ScanTransaction } from "../claim"
+import { sourceCompany, sourceQualification } from "./qualification"
 
 // SH20 : lectures du registre des sources ; aucune écriture ici (voir writes.ts).
 type Reader = typeof db | ScanTransaction
@@ -142,51 +154,11 @@ function checkedAt(definition: ScanSourceDraftSnapshot) {
 
 // Ce que l'écran admin montre des sources non archivées, par priorité puis libellé.
 export async function listScanSources(): Promise<ScanSourceSummary[]> {
-  const rows = await db
-    .select({ row: scanSources, revision: scanSourceRevisions })
-    .from(scanSources)
-    .innerJoin(
-      scanSourceRevisions,
-      and(
-        eq(scanSourceRevisions.sourceKey, scanSources.key),
-        eq(scanSourceRevisions.revision, scanSources.revision),
-      ),
-    )
-    .where(ne(scanSources.status, "archived"))
-    .orderBy(asc(scanSources.priority), asc(scanSources.label))
+  const rows = await sourceRows(ne(scanSources.status, "archived"))
   const enabledCount = rows.filter(({ row }) => row.enabled).length
-  return rows.map(({ row, revision }) => {
-    const definition = revision.definition as ScanSourceDraftSnapshot
-    const adapterAvailable = isSourceAdapterAvailable(row)
-    const context = {
-      adapterAvailable,
-      enabledCount: enabledCount - (row.enabled ? 1 : 0),
-    }
-    return {
-      key: row.key,
-      label: row.label,
-      kind: row.kind,
-      role: row.role,
-      status: row.status,
-      adapter: row.adapter,
-      revision: row.revision,
-      version: row.version,
-      officialHosts: definition.officialHosts ?? [],
-      checkedAt: checkedAt(definition),
-      complete: revision.complete,
-      testable: sourceTestRefusal(row, revision) === null,
-      enabled: row.enabled,
-      dailyEnabled: row.dailyEnabled,
-      autoPublish: row.autoPublish,
-      suspended: row.suspendedAt !== null,
-      switchBlockers: Object.fromEntries(
-        scanSourceSwitches.map((flag) => {
-          const [blocker] = switchBlockers(row, flag, true, context)
-          return [flag, blocker ? switchBlockerMessage(blocker, row) : null]
-        }),
-      ) as ScanSourceSummary["switchBlockers"],
-    }
-  })
+  return rows.map(({ row, revision }) =>
+    summarize(row, revision, enabledCount, null),
+  )
 }
 
 // Sources lues par un passage de ce mode, avec leur version courante (figée par
@@ -214,3 +186,218 @@ export async function listRunnableSources(mode: ScanMode, tx: Reader = db) {
     )
     .map((row) => ({ key: row.key, revision: row.revision }))
 }
+
+// Liste de /admin/scan/sources : toutes les sources, archivées comprises, avec leur dernier
+// test, le premier point de qualification manquant et leurs dossiers à vérifier.
+export type SourceTestSummary = {
+  kind: "probe" | "sample"
+  at: string
+  // null : test interrompu.
+  ok: boolean | null
+  // Empreinte de la configuration actuelle.
+  current: boolean
+}
+export type ScanSourceListRow = ScanSourceSummary & {
+  adapterVersion: string | null
+  lastTest: SourceTestSummary | null
+  gap: string | null
+  pendingCandidates: number
+}
+export function testSummary(
+  event: Pick<ScanSourceEvent, "kind" | "createdAt" | "details">,
+  configHash: string,
+): SourceTestSummary {
+  const details = event.details as {
+    configHash?: string
+    status?: string
+    ok?: boolean
+  }
+  return {
+    kind: event.kind === "probed" ? "probe" : "sample",
+    at: event.createdAt.toISOString(),
+    ok:
+      details.status === "done"
+        ? details.ok === true
+        : details.status === "failed"
+          ? false
+          : null,
+    current: details.configHash === configHash,
+  }
+}
+
+async function sourceRows(where?: SQL) {
+  return db
+    .select({ row: scanSources, revision: scanSourceRevisions })
+    .from(scanSources)
+    .innerJoin(
+      scanSourceRevisions,
+      and(
+        eq(scanSourceRevisions.sourceKey, scanSources.key),
+        eq(scanSourceRevisions.revision, scanSources.revision),
+      ),
+    )
+    .where(where)
+    .orderBy(asc(scanSources.priority), asc(scanSources.label))
+}
+
+function summarize(
+  row: ScanSourceRow,
+  revision: ScanSourceRevision,
+  enabledCount: number,
+  gap: string | null,
+): ScanSourceSummary {
+  const definition = revision.definition as ScanSourceDraftSnapshot
+  const context = {
+    adapterAvailable: isSourceAdapterAvailable(row),
+    enabledCount: enabledCount - (row.enabled ? 1 : 0),
+  }
+  return {
+    key: row.key,
+    label: row.label,
+    kind: row.kind,
+    role: row.role,
+    status: row.status,
+    adapter: row.adapter,
+    revision: row.revision,
+    version: row.version,
+    officialHosts: definition.officialHosts ?? [],
+    checkedAt: checkedAt(definition),
+    complete: revision.complete,
+    testable: sourceTestRefusal(row, revision) === null,
+    enabled: row.enabled,
+    dailyEnabled: row.dailyEnabled,
+    autoPublish: row.autoPublish,
+    suspended: row.suspendedAt !== null,
+    switchBlockers: Object.fromEntries(
+      scanSourceSwitches.map((flag) => {
+        const [blocker] = switchBlockers(row, flag, true, context)
+        return [
+          flag,
+          blocker === "not_ready" && row.status === "draft" && gap
+            ? gap
+            : blocker
+              ? switchBlockerMessage(blocker, row)
+              : null,
+        ]
+      }),
+    ) as ScanSourceSummary["switchBlockers"],
+  }
+}
+
+async function lastTests(keys: string[]) {
+  if (!keys.length) return new Map<string, ScanSourceEvent>()
+  const events = await db
+    .selectDistinctOn([scanSourceEvents.sourceKey])
+    .from(scanSourceEvents)
+    .where(
+      and(
+        inArray(scanSourceEvents.sourceKey, keys),
+        inArray(scanSourceEvents.kind, ["probed", "sampled"]),
+      ),
+    )
+    .orderBy(scanSourceEvents.sourceKey, desc(scanSourceEvents.createdAt))
+  return new Map(events.map((event) => [event.sourceKey, event]))
+}
+async function pendingCandidateCounts() {
+  const rows = await db
+    .select({ key: scanCandidates.sourceKey, count: count() })
+    .from(scanCandidates)
+    .where(eq(scanCandidates.status, "to_review"))
+    .groupBy(scanCandidates.sourceKey)
+  return new Map(rows.map((row) => [row.key, row.count]))
+}
+// Premier point bloquant de la qualification d'un brouillon, pour la liste et les interrupteurs.
+function gapMessage(items: QualificationItem[]) {
+  const [gap] = qualificationGaps(items)
+  return gap ? `À qualifier : ${gap.detail ?? gap.label}` : null
+}
+
+export async function listScanSourceRows(): Promise<ScanSourceListRow[]> {
+  const rows = await sourceRows()
+  const enabledCount = rows.filter(({ row }) => row.enabled).length
+  const [tests, pending] = await Promise.all([
+    lastTests(rows.map(({ row }) => row.key)),
+    pendingCandidateCounts(),
+  ])
+  return Promise.all(
+    rows.map(async ({ row, revision }) => {
+      const gap =
+        row.status === "draft"
+          ? gapMessage(await sourceQualification(row, revision))
+          : null
+      const test = tests.get(row.key)
+      return {
+        ...summarize(row, revision, enabledCount, gap),
+        adapterVersion: row.adapter
+          ? adapterDescriptor(row.adapter).version
+          : null,
+        lastTest: test ? testSummary(test, revision.configHash) : null,
+        gap,
+        pendingCandidates: pending.get(row.key) ?? 0,
+      }
+    }),
+  )
+}
+
+// Fiche d'une source : ligne, version courante, historique, journal, qualification, tests.
+export async function getScanSourceDetail(key: string) {
+  const source = await loadScanSource(key)
+  if (!source) return null
+  const { row, revision } = source
+  const [revisions, events, qualification, company, pending, enabled] =
+    await Promise.all([
+      db
+        .select()
+        .from(scanSourceRevisions)
+        .where(eq(scanSourceRevisions.sourceKey, key))
+        .orderBy(desc(scanSourceRevisions.revision)),
+      db
+        .select()
+        .from(scanSourceEvents)
+        .where(eq(scanSourceEvents.sourceKey, key))
+        .orderBy(desc(scanSourceEvents.createdAt))
+        .limit(200),
+      sourceQualification(row, revision),
+      row.kind === "employer" ? sourceCompany(row) : null,
+      pendingCandidateCounts(),
+      db
+        .select({ count: count() })
+        .from(scanSources)
+        .where(eq(scanSources.enabled, true)),
+    ])
+  const actors = [
+    ...new Set(
+      [
+        ...revisions.map((item) => item.createdByUserId),
+        ...events.map((item) => item.actorUserId),
+        row.reuseDecidedByUserId,
+      ].filter((id): id is string => !!id),
+    ),
+  ]
+  const names = new Map(
+    actors.length
+      ? (
+          await db
+            .select({ id: user.id, name: user.name })
+            .from(user)
+            .where(inArray(user.id, actors))
+        ).map((item) => [item.id, item.name])
+      : [],
+  )
+  const gap = row.status === "draft" ? gapMessage(qualification) : null
+  return {
+    row,
+    revision,
+    definition: revision.definition as ScanSourceDraftSnapshot,
+    summary: summarize(row, revision, enabled[0].count, gap),
+    revisions,
+    events,
+    qualification,
+    company,
+    pendingCandidates: pending.get(key) ?? 0,
+    actorNames: Object.fromEntries(names) as Record<string, string>,
+  }
+}
+export type ScanSourceDetail = NonNullable<
+  Awaited<ReturnType<typeof getScanSourceDetail>>
+>

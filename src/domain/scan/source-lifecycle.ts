@@ -1,9 +1,10 @@
 import { scanLimits } from "./limits"
-import type {
-  ScanMode,
-  ScanSourceKind,
-  ScanSourceStatus,
-  ScanSourceSwitch,
+import {
+  scanSourceStatusLabels,
+  type ScanMode,
+  type ScanSourceKind,
+  type ScanSourceStatus,
+  type ScanSourceSwitch,
 } from "./vocabulary"
 
 // D11 : trois interrupteurs stockés séparément ; l'effet est leur conjonction.
@@ -107,4 +108,101 @@ export function switchBlockerMessage(
   if (blocker === "not_ready" && source.status === "archived")
     return "Source archivée : restaurez-la avant toute activation."
   return switchBlockerLabels[blocker]
+}
+
+// Cycle de vie (§10.1). « Activée » n'est pas un statut : c'est un interrupteur d'une source prête.
+export const sourceTransitions = [
+  "mark_ready",
+  "back_to_draft",
+  "reject",
+  "reexamine",
+  "archive",
+  "restore",
+] as const
+export type SourceTransition = (typeof sourceTransitions)[number]
+export const sourceTransitionLabels: Record<SourceTransition, string> = {
+  mark_ready: "Marquer prête",
+  back_to_draft: "Repasser en brouillon",
+  reject: "Écarter",
+  reexamine: "Réexaminer",
+  archive: "Archiver",
+  restore: "Restaurer",
+}
+export const sourceTransitionMoves: Record<
+  SourceTransition,
+  { from: readonly ScanSourceStatus[]; to: ScanSourceStatus }
+> = {
+  mark_ready: { from: ["draft"], to: "ready" },
+  back_to_draft: { from: ["ready"], to: "draft" },
+  reject: { from: ["draft", "ready"], to: "rejected" },
+  reexamine: { from: ["rejected"], to: "draft" },
+  archive: { from: ["draft", "ready", "rejected"], to: "archived" },
+  restore: { from: ["archived"], to: "draft" },
+}
+export const rejectionReasonBounds = { min: 10, max: 500 } as const
+
+export type TransitionBlocker =
+  "wrong_status" | "reason_required" | "qualification"
+// Conditions propres à la transition ; la qualification et les hôtes sont vérifiés par le
+// service, dans la transaction.
+export function transitionBlockers(
+  status: ScanSourceStatus,
+  transition: SourceTransition,
+  { reason }: { reason?: string } = {},
+): TransitionBlocker[] {
+  const blockers: TransitionBlocker[] = []
+  if (!sourceTransitionMoves[transition].from.includes(status))
+    blockers.push("wrong_status")
+  if (transition === "reject") {
+    const length = reason?.trim().length ?? 0
+    if (
+      length < rejectionReasonBounds.min ||
+      length > rejectionReasonBounds.max
+    )
+      blockers.push("reason_required")
+  }
+  return blockers
+}
+export function transitionBlockerMessage(
+  blocker: TransitionBlocker,
+  transition: SourceTransition,
+  status: ScanSourceStatus,
+) {
+  if (blocker === "reason_required")
+    return `Motif de ${rejectionReasonBounds.min} à ${rejectionReasonBounds.max} caractères.`
+  if (blocker === "qualification")
+    return "Qualification incomplète : voir l’onglet Qualification."
+  return `${sourceTransitionLabels[transition]} : impossible depuis le statut « ${scanSourceStatusLabels[status]} ».`
+}
+
+// Ordre des sources : priorité puis libellé ; monter ou descendre échange deux voisines.
+export function moveInOrder<T>(
+  items: readonly T[],
+  index: number,
+  offset: -1 | 1,
+) {
+  const target = index + offset
+  if (index < 0 || target < 0 || target >= items.length) return [...items]
+  const next = [...items]
+  ;[next[index], next[target]] = [next[target], next[index]]
+  return next
+}
+
+// Onglets de la liste (§11.2) ; « Toutes » laisse de côté les sources archivées.
+export const sourceListFilters = [
+  "toutes",
+  "actives",
+  "pretes",
+  "brouillons",
+  "ecartees",
+  "archivees",
+] as const
+export type SourceListFilter = (typeof sourceListFilters)[number]
+export const sourceListFilterLabels: Record<SourceListFilter, string> = {
+  toutes: "Toutes",
+  actives: "Actives",
+  pretes: "Prêtes",
+  brouillons: "Brouillons",
+  ecartees: "Écartées",
+  archivees: "Archivées",
 }
