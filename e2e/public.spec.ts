@@ -39,7 +39,7 @@ test("§1/§5 — l'accueil ne montre aucune offre ni aucun lien vers une fiche"
 }) => {
   await page.goto("/")
   await expect(
-    page.getByRole("heading", { level: 1, name: /Un job. Un lieu./ }),
+    page.getByRole("heading", { level: 1, name: /Votre prochaine saison./ }),
   ).toBeVisible()
 
   // Les offres sont réservées aux comptes : aucun lien vers le catalogue ni vers une fiche.
@@ -58,7 +58,7 @@ test("§1/§5 — l'accueil ne montre aucune offre ni aucun lien vers une fiche"
     ).toBeVisible()
   }
   await expect(
-    page.getByRole("link", { name: "Créer un compte" }).first(),
+    page.getByRole("link", { name: "Créer mon espace" }).first(),
   ).toBeVisible()
   await expect(
     page.getByRole("link", { name: "Publier une offre", exact: true }).first(),
@@ -79,7 +79,7 @@ test("accueil — un utilisateur connecté accède à son espace", async ({
 }) => {
   await asCandidate.goto("/")
   await asCandidate
-    .getByRole("link", { name: "Accéder à mon espace" })
+    .getByRole("link", { name: "Mon espace", exact: true })
     .first()
     .click()
   await expect(asCandidate).toHaveURL(homePaths.candidate)
@@ -89,7 +89,7 @@ test("accueil — un utilisateur connecté accède à son espace", async ({
     asEmployer.getByRole("link", { name: "Se connecter" }),
   ).toHaveCount(0)
   await asEmployer
-    .getByRole("link", { name: "Accéder à mon espace" })
+    .getByRole("link", { name: "Mon espace", exact: true })
     .first()
     .click()
   await expect(asEmployer).toHaveURL(homePaths.employer)
@@ -425,4 +425,47 @@ test("accueil — les réponses sont accessibles au clavier", async ({ page }) =
       { exact: false },
     ),
   ).not.toBeVisible()
+})
+
+test("accueil — les deux parcours et les captures sont accessibles", async ({
+  page,
+}) => {
+  await page.goto("/")
+  const tabs = page.getByRole("tablist", {
+    name: "Découvrir le logiciel selon mon profil",
+  })
+  await tabs.getByRole("tab", { name: "Je suis employeur" }).click()
+  const employerPanel = page.getByRole("tabpanel", {
+    name: "Je suis employeur",
+  })
+  await expect(
+    employerPanel.getByRole("heading", { name: "Fidéliser et réembaucher" }),
+  ).toBeVisible()
+  await expect(employerPanel.getByText("À venir", { exact: true })).toHaveCount(
+    2,
+  )
+
+  await tabs.getByRole("tab", { name: "Je suis employeur" }).press("ArrowLeft")
+  await expect(
+    page.getByRole("tabpanel", { name: "Je suis saisonnier" }),
+  ).toBeVisible()
+
+  const preview = page.getByRole("button", {
+    name: "Agrandir l’aperçu : L’espace saisonnier : mes offres et mes candidatures",
+  })
+  await preview.click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole("img")).toBeVisible()
+  await expect
+    .poll(() =>
+      dialog
+        .getByRole("img")
+        .evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0)
+  await dialog.getByRole("button", { name: "Fermer l’aperçu" }).press("Escape")
+  await expect(dialog).not.toBeVisible()
+  await expect(preview).toBeFocused()
+  await expectNoHorizontalScroll(page)
 })

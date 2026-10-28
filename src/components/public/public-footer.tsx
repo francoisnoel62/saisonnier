@@ -1,4 +1,4 @@
-import { ArrowUpRightIcon, HeartIcon } from "lucide-react"
+import { ArrowUpRightIcon } from "lucide-react"
 import Link from "next/link"
 import { Brand } from "@/components/public/brand"
 import { site } from "@/config/site"
@@ -20,35 +20,44 @@ export function PublicFooter() {
             <Brand />
           </Link>
           <p>
-            Les belles saisons commencent
+            Des carrières qui se construisent.
             <br />
-            par une rencontre.
+            Des équipes qui se retrouvent.
+            <br />
+            Saison après saison.
           </p>
         </div>
         <nav aria-label="Découvrir la plateforme">
-          <span>À VOUS DE JOUER</span>
+          <span>VOTRE PROCHAINE SAISON</span>
+          <Link href="/#saisonniers">
+            Pour les saisonniers <ArrowUpRightIcon aria-hidden />
+          </Link>
+          <Link href="/#employeurs">
+            Pour les employeurs <ArrowUpRightIcon aria-hidden />
+          </Link>
           <Link href="/#recherche">
             Trouver ma saison <ArrowUpRightIcon aria-hidden />
           </Link>
           <Link href="/inscription/employeur">
-            Recruter mon équipe <ArrowUpRightIcon aria-hidden />
-          </Link>
-          <Link href="/contact">
-            Nous écrire <ArrowUpRightIcon aria-hidden />
+            Publier une offre <ArrowUpRightIcon aria-hidden />
           </Link>
         </nav>
-        <div className={styles.footerSignature}>
-          <HeartIcon aria-hidden />
-          <p>
-            Pensé pour les rencontres.
-            <br />
-            <strong>Fait pour la vraie vie.</strong>
-          </p>
-        </div>
+        <nav aria-label="À propos de ma saison">
+          <span>ON CONSTRUIT LA SUITE</span>
+          <Link href="/#notre-vision">
+            Notre vision <ArrowUpRightIcon aria-hidden />
+          </Link>
+          <Link href="/#questions">
+            Vos questions <ArrowUpRightIcon aria-hidden />
+          </Link>
+          <Link href="/contact">
+            Parlons de vos besoins <ArrowUpRightIcon aria-hidden />
+          </Link>
+        </nav>
       </div>
       <div className={styles.footerBottom}>
         <p>
-          © {new Date().getFullYear()} {site.name}
+          © {new Date().getFullYear()} {site.name} · ma-saison.fr
         </p>
         <nav aria-label="Informations légales et contact">
           {links.map(({ href, label }) => (
@@ -57,7 +66,7 @@ export function PublicFooter() {
             </Link>
           ))}
         </nav>
-        <span>À chaque saison, un nouveau départ.</span>
+        <span>Pensé pour durer plus d’une saison.</span>
       </div>
     </footer>
   )

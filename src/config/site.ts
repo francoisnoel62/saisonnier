@@ -1,7 +1,7 @@
-// Nom provisoire du service (H14) : c'est le seul endroit à modifier quand le nom sera choisi.
 export const site = {
-  name: "Saisonnier",
+  name: "ma saison",
+  url: "https://www.ma-saison.fr",
   description:
-    "Offres d'emploi saisonnier en France : hôtellerie, restauration, animation, loisirs et domaines skiables.",
+    "Le logiciel pour construire sa carrière saisonnière et recruter, fidéliser et réembaucher ses équipes, saison après saison.",
   locale: "fr-FR",
 } as const

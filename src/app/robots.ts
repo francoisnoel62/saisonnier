@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 
-import { env } from "@/lib/env"
+import { site } from "@/config/site"
 
 // Les pages publiques sont indexables ; l'application et l'authentification ne le sont pas (H12).
 export default function robots(): MetadataRoute.Robots {
@@ -25,6 +25,6 @@ export default function robots(): MetadataRoute.Robots {
         "/annonce/",
       ],
     },
-    sitemap: `${env.BETTER_AUTH_URL}/sitemap.xml`,
+    sitemap: `${site.url}/sitemap.xml`,
   }
 }

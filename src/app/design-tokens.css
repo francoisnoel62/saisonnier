@@ -1,0 +1,17 @@
+/* Source de vérité visuelle — voir docs/design-system.md. */
+:root {
+  --ms-ink: #20231f;
+  --ms-muted: #666b63;
+  --ms-paper: #ffffff;
+  --ms-canvas: #f7f8f2;
+  --ms-line: #e3e6dc;
+  --ms-sage: #eaf0e4;
+  --ms-peach: #f6eae1;
+  --ms-lime: #d6ec8b;
+  --ms-green: #3c5745;
+  --ms-serif: Georgia, "Times New Roman", serif;
+  --ms-radius: 14px;
+  --ms-pill: 999px;
+  --ms-content: 1240px;
+  --ms-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
