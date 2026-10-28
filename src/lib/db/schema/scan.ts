@@ -341,6 +341,8 @@ export const scanRunSources = pgTable(
     bytesDownloaded: bigint({ mode: "number" }).notNull().default(0),
     lastRequestAt: instant(),
     lastError: text(),
+    // Empreinte du robots.txt lu pendant le passage (lot E : changement signalé).
+    robotsDigest: text(),
     startedAt: instant(),
     finishedAt: instant(),
   },
@@ -355,6 +357,8 @@ export const scanRunSources = pgTable(
         scanSourceRevisions.revision,
       ],
     }).onDelete("restrict"),
+    // Santé et rendement par source (lot E).
+    index().on(t.sourceKey, t.runId),
     check(
       "scan_run_sources_counts",
       sql`${t.listedCount} >= 0 and ${t.fetchedCount} >= 0 and ${t.deliveredCount} >= 0 and ${t.excludedCount} >= 0 and ${t.failedCount} >= 0 and ${t.requestCount} >= 0 and ${t.bytesDownloaded} >= 0`,

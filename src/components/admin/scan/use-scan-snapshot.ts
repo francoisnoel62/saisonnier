@@ -11,9 +11,12 @@ import {
 export function useScanSnapshot({
   initial,
   openedId,
+  source = null,
 }: {
   initial: ScanSnapshot
   openedId: string | null
+  // File filtrée par source : la clé est transmise à chaque lecture.
+  source?: string | null
 }) {
   const [snapshot, setSnapshot] = useState(initial)
   const [items, setItems] = useState(initial.items)
@@ -29,83 +32,88 @@ export function useScanSnapshot({
   const last = initial.items.at(-1)
   const cursor = useRef(last ? `${last.readyForReviewAt}|${last.id}` : null)
 
-  const refresh = useCallback(async function refreshSnapshot(): Promise<void> {
-    if (
-      !active.current ||
-      document.visibilityState !== "visible" ||
-      controller.current
-    )
-      return
-    if (timer.current) clearTimeout(timer.current)
-    const request = new AbortController()
-    const startedAt = Date.now()
-    controller.current = request
-    let delay: number | null = null
-    try {
-      const ids = queue.current.map((item) => item.id)
-      const tracked = ids.slice(
-        trackedOffset.current,
-        trackedOffset.current + 49,
-      )
-      trackedOffset.current =
-        trackedOffset.current + 49 >= ids.length
-          ? 0
-          : trackedOffset.current + 49
-      if (opened.current) tracked.unshift(opened.current)
-      const params = new URLSearchParams({ limite: "50" })
-      if (cursor.current) params.set("apres", cursor.current)
-      if (tracked.length) params.set("suivis", [...new Set(tracked)].join(","))
-      const response = await fetch(`/api/admin/scan/etat?${params}`, {
-        cache: "no-store",
-        signal: request.signal,
-      })
-      if (!response.ok) throw new Error("Actualisation impossible")
-      const next = (await response.json()) as ScanSnapshot
-      if (!active.current || request.signal.aborted) return
-      const known = new Set(queue.current.map((item) => item.id))
-      const added = next.items.filter((item) => !known.has(item.id)).length
-      const merged = mergeQueueItems(
-        queue.current,
-        next.items,
-        next.tracked,
-        opened.current,
-      )
-      queue.current = merged
-      setItems(merged)
-      setSnapshot(next)
-      setError(null)
-      if (added)
-        setAnnouncement(
-          `${added} ${added > 1 ? "nouveaux dossiers" : "nouveau dossier"}`,
-        )
-      const latest = next.items.at(-1)
-      if (latest) cursor.current = `${latest.readyForReviewAt}|${latest.id}`
-      failures.current = 0
-      delay = next.nextCursor
-        ? 0
-        : next.run?.active
-          ? Math.max(0, 5000 - (Date.now() - startedAt))
-          : null
-    } catch (error) {
-      if (!active.current || request.signal.aborted) return
-      void error
-      failures.current += 1
-      delay = snapshotRetryDelay(failures.current)
-      setError(
-        `Actualisation interrompue — nouvel essai dans ${delay / 1000} s`,
-      )
-    } finally {
-      if (controller.current === request) controller.current = null
+  const refresh = useCallback(
+    async function refreshSnapshot(): Promise<void> {
       if (
-        active.current &&
-        delay !== null &&
-        document.visibilityState === "visible"
+        !active.current ||
+        document.visibilityState !== "visible" ||
+        controller.current
       )
-        timer.current = setTimeout(() => {
-          void refreshSnapshot()
-        }, delay)
-    }
-  }, [])
+        return
+      if (timer.current) clearTimeout(timer.current)
+      const request = new AbortController()
+      const startedAt = Date.now()
+      controller.current = request
+      let delay: number | null = null
+      try {
+        const ids = queue.current.map((item) => item.id)
+        const tracked = ids.slice(
+          trackedOffset.current,
+          trackedOffset.current + 49,
+        )
+        trackedOffset.current =
+          trackedOffset.current + 49 >= ids.length
+            ? 0
+            : trackedOffset.current + 49
+        if (opened.current) tracked.unshift(opened.current)
+        const params = new URLSearchParams({ limite: "50" })
+        if (cursor.current) params.set("apres", cursor.current)
+        if (tracked.length)
+          params.set("suivis", [...new Set(tracked)].join(","))
+        if (source) params.set("source", source)
+        const response = await fetch(`/api/admin/scan/etat?${params}`, {
+          cache: "no-store",
+          signal: request.signal,
+        })
+        if (!response.ok) throw new Error("Actualisation impossible")
+        const next = (await response.json()) as ScanSnapshot
+        if (!active.current || request.signal.aborted) return
+        const known = new Set(queue.current.map((item) => item.id))
+        const added = next.items.filter((item) => !known.has(item.id)).length
+        const merged = mergeQueueItems(
+          queue.current,
+          next.items,
+          next.tracked,
+          opened.current,
+        )
+        queue.current = merged
+        setItems(merged)
+        setSnapshot(next)
+        setError(null)
+        if (added)
+          setAnnouncement(
+            `${added} ${added > 1 ? "nouveaux dossiers" : "nouveau dossier"}`,
+          )
+        const latest = next.items.at(-1)
+        if (latest) cursor.current = `${latest.readyForReviewAt}|${latest.id}`
+        failures.current = 0
+        delay = next.nextCursor
+          ? 0
+          : next.run?.active
+            ? Math.max(0, 5000 - (Date.now() - startedAt))
+            : null
+      } catch (error) {
+        if (!active.current || request.signal.aborted) return
+        void error
+        failures.current += 1
+        delay = snapshotRetryDelay(failures.current)
+        setError(
+          `Actualisation interrompue — nouvel essai dans ${delay / 1000} s`,
+        )
+      } finally {
+        if (controller.current === request) controller.current = null
+        if (
+          active.current &&
+          delay !== null &&
+          document.visibilityState === "visible"
+        )
+          timer.current = setTimeout(() => {
+            void refreshSnapshot()
+          }, delay)
+      }
+    },
+    [source],
+  )
   useEffect(() => {
     opened.current = openedId
     void refresh()

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useSelectedLayoutSegment } from "next/navigation"
+import { useSearchParams, useSelectedLayoutSegment } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,10 +22,39 @@ export function ScanQueue({
   initial: ScanSnapshot
   children: React.ReactNode
 }) {
+  const source = useSearchParams().get("source")
+  return (
+    <FilteredQueue
+      key={source ?? ""}
+      initial={
+        source
+          ? {
+              ...initial,
+              items: initial.items.filter((item) => item.sourceKey === source),
+            }
+          : initial
+      }
+      source={source}
+    >
+      {children}
+    </FilteredQueue>
+  )
+}
+
+function FilteredQueue({
+  initial,
+  source,
+  children,
+}: {
+  initial: ScanSnapshot
+  source: string | null
+  children: React.ReactNode
+}) {
   const openedId = useSelectedLayoutSegment()
   const { snapshot, items, error, announcement, refresh } = useScanSnapshot({
     initial,
     openedId,
+    source,
   })
   return (
     <div className="grid min-w-0 gap-6 md:grid-cols-[18rem_minmax(0,1fr)]">

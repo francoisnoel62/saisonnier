@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 import { adapterCatalog } from "@/domain/scan/adapter-catalog"
 import { formatIsoDate } from "@/domain/offer-display"
 import type { ScanProbeResult } from "@/domain/scan/probe"
@@ -7,7 +9,14 @@ import {
   formatCoverage,
   type DiscoveryCoverage,
 } from "@/domain/scan/source-health"
+import {
+  exclusionReasonLabels,
+  rejectionReasonLabels,
+  scanModeLabels,
+  scanRunSourceStatusLabels,
+} from "@/domain/scan/vocabulary"
 import { formatDateTime } from "@/lib/format"
+import type { SourceActivity } from "@/server/scan/sources/health"
 
 import { ProbeResultView, safeHref, SampleResultView } from "./test-results"
 
@@ -341,5 +350,99 @@ export function SourceCoverage({ coverage }: { coverage: DiscoveryCoverage }) {
         </table>
       </details>
     </section>
+  )
+}
+
+// Onglet « Activité » (lot E) : rendement et coût sur 30 jours, derniers passages, incidents.
+export function SourceActivityView({
+  sourceKey,
+  activity,
+}: {
+  sourceKey: string
+  activity: SourceActivity
+}) {
+  const { totals } = activity
+  const figures = [
+    ["Passages", totals.runs],
+    ["Pistes listées", totals.listed],
+    ["Fiches lues", totals.fetched],
+    ["Dossiers livrés", totals.delivered],
+    ["Pistes écartées", totals.excluded],
+    ["Échecs de lecture", totals.failed],
+    ["Requêtes", totals.requests],
+    ["Octets lus", totals.bytes],
+    ["Publiées après revue", activity.publications.human],
+    ["Publiées automatiquement", activity.publications.automatic],
+    ["Dossiers à vérifier", activity.pending],
+    ["Incidents ouverts", activity.incidents],
+  ] as const
+  return (
+    <div className="flex min-w-0 flex-col gap-6 text-sm">
+      <section>
+        <h3 className="mb-2 font-semibold">30 derniers jours</h3>
+        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {figures.map(([label, value]) => (
+            <div key={label} className="rounded-lg border p-2">
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="font-semibold tabular-nums">
+                {Number(value).toLocaleString("fr-FR")}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {!activity.autoPublish.ready && (
+          <p className="mt-2 text-muted-foreground">
+            Publication automatique : {activity.autoPublish.clean} passage(s)
+            quotidien(s) terminé(s) sans échec sur {activity.autoPublish.needed}{" "}
+            recommandés.
+          </p>
+        )}
+      </section>
+      {(activity.exclusions.length > 0 || activity.rejections.length > 0) && (
+        <section>
+          <h3 className="mb-2 font-semibold">Motifs</h3>
+          <ul className="list-inside list-disc">
+            {activity.exclusions.map((row) => (
+              <li key={`e-${row.reason}`}>
+                Écartées :{" "}
+                {row.reason ? exclusionReasonLabels[row.reason] : "—"} (
+                {row.count})
+              </li>
+            ))}
+            {activity.rejections.map((row) => (
+              <li key={`r-${row.reason}`}>
+                Rejetées :{" "}
+                {row.reason ? rejectionReasonLabels[row.reason] : "—"} (
+                {row.count})
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <section>
+        <h3 className="mb-2 font-semibold">Derniers passages</h3>
+        {activity.runs.length ? (
+          <ul className="flex flex-col gap-1">
+            {activity.runs.map((run) => (
+              <li key={run.runId}>
+                {formatDateTime(run.startedAt)} · {scanModeLabels[run.mode]} ·{" "}
+                {scanRunSourceStatusLabels[run.status]} · version{" "}
+                {run.sourceRevision} · {run.listed} listées, {run.delivered}{" "}
+                livrées
+                {run.failed ? `, ${run.failed} échecs` : ""}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground">Aucun passage.</p>
+        )}
+      </section>
+      <Link
+        className="underline"
+        href={`/admin/scan/dossiers?source=${encodeURIComponent(sourceKey)}`}
+      >
+        Dossiers de cette source
+      </Link>
+    </div>
   )
 }

@@ -1,5 +1,6 @@
 import "server-only"
 
+import { createHash } from "node:crypto"
 import { promises as dns, type LookupAddress } from "node:dns"
 import { request as httpRequest, type IncomingHttpHeaders } from "node:http"
 import { request as httpsRequest } from "node:https"
@@ -59,6 +60,7 @@ type Robots = {
   parser: ReturnType<typeof robotsParser>
   status: number
   crawlDelayMs: number
+  digest: string
 }
 // Une lecture et ses redirections : échéance commune et durées cumulées.
 type Reading = PacerTurn & {
@@ -390,11 +392,13 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
       // 404 : tout est permis ; toute autre erreur rend l'hôte indisponible pour l'étape.
       if (status !== 404 && (status < 200 || status >= 300))
         return failureForStatus(status, headers)
-      const parser = robotsParser(robotsUrl.href, status === 404 ? "" : body)
+      const text = status === 404 ? "" : body
+      const parser = robotsParser(robotsUrl.href, text)
       const seconds = parser.getCrawlDelay(userAgent)
       return {
         parser,
         status,
+        digest: createHash("sha256").update(text).digest("hex"),
         crawlDelayMs:
           seconds && Number.isFinite(seconds) && seconds > 0
             ? Math.min(seconds * 1_000, Number.MAX_SAFE_INTEGER)
@@ -450,6 +454,7 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
           status: rules.status,
           allowed,
           crawlDelayMs: rules.crawlDelayMs,
+          digest: rules.digest,
         })
         if (!allowed) return { ok: false, reason: "robots_disallowed" }
         return send(url, reading, "page", rules.crawlDelayMs)

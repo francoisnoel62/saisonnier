@@ -7,6 +7,7 @@ import { SourceHistory } from "@/components/admin/scan/sources/source-history"
 import { SourceQualification } from "@/components/admin/scan/sources/source-qualification"
 import { QualificationTools } from "@/components/admin/scan/sources/source-qualification-tools"
 import {
+  SourceActivityView,
   SourceConfiguration,
   SourceCoverage,
   SourceTests,
@@ -18,6 +19,7 @@ import { authorizationRequestText } from "@/domain/scan/authorization-request"
 import { env } from "@/lib/env"
 import { cn } from "@/lib/utils"
 import { getBlockedDomains } from "@/server/offers/application"
+import { sourceActivity } from "@/server/scan/sources/health"
 import { sourceCoverage } from "@/server/scan/sources/learning"
 import { getScanSourceDetail } from "@/server/scan/sources/registry"
 
@@ -29,6 +31,7 @@ const tabs = [
   { id: "configuration", label: "Configuration" },
   { id: "qualification", label: "Qualification" },
   { id: "tests", label: "Tests" },
+  { id: "activite", label: "Activité" },
   { id: "historique", label: "Historique" },
 ] as const
 type Tab = (typeof tabs)[number]["id"]
@@ -65,6 +68,7 @@ export default async function ScanSourcePage({
         source={summary}
         pendingCandidates={detail.pendingCandidates}
         rejectionReason={row.rejectionReason}
+        suspensionReason={row.suspensionReason}
       />
       {row.kind === "discovery" && (
         <SourceCoverage coverage={await sourceCoverage(key)} />
@@ -170,6 +174,12 @@ export default async function ScanSourcePage({
                     details: event.details,
                   }) as SourceTestRow,
               )}
+          />
+        )}
+        {tab === "activite" && (
+          <SourceActivityView
+            sourceKey={key}
+            activity={await sourceActivity(key)}
           />
         )}
         {tab === "historique" && (

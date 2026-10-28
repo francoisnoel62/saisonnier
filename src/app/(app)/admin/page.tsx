@@ -10,16 +10,19 @@ import { todayInParis } from "@/domain/offer-activity"
 import { scheduledJobSummaryLabel } from "@/domain/scheduled-job"
 import { getAdminIndicators, getDailyActivity } from "@/server/admin/dashboard"
 import { listScheduledJobs } from "@/server/jobs/settings"
+import { sourceHealthSummaries } from "@/server/scan/sources/health"
 
 export const metadata: Metadata = { title: "Tableau de bord" }
 
 export default async function AdminHomePage() {
   const today = todayInParis(new Date())
-  const [indicators, activity, jobs] = await Promise.all([
+  const [indicators, activity, jobs, health] = await Promise.all([
     getAdminIndicators(today),
     getDailyActivity(today),
     listScheduledJobs(),
+    sourceHealthSummaries(),
   ])
+  const sources = [...health.values()]
 
   return (
     <div className="flex flex-col gap-6">
@@ -70,6 +73,34 @@ export default async function AdminHomePage() {
           },
         ]}
       />
+      <section aria-labelledby="sources-watch" className="flex flex-col gap-3">
+        <h2 id="sources-watch" className="font-semibold">
+          Sources à surveiller
+        </h2>
+        <SectionCards
+          cards={[
+            {
+              label: "Sources suspendues",
+              value: sources.filter((source) => source.health === "suspended")
+                .length,
+              description: "Trois passages bloqués de suite",
+              href: "/admin/scan/sources",
+            },
+            {
+              label: "robots.txt modifié",
+              value: sources.filter((source) => source.robotsChanged).length,
+              description: "Entre les deux derniers passages",
+              href: "/admin/scan/sources",
+            },
+            {
+              label: "Qualification à renouveler",
+              value: sources.filter((source) => source.qualificationDue).length,
+              description: "Vérification de plus de 180 jours",
+              href: "/admin/scan/sources",
+            },
+          ]}
+        />
+      </section>
       <ChartAreaInteractive data={activity} />
       <ScheduledJobsCard
         jobs={jobs.map((job) => ({

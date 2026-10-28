@@ -78,10 +78,13 @@ export async function getScanSnapshot({
   after = null,
   limit = 50,
   trackedIds = [],
+  source = null,
 }: {
   after?: string | null
   limit?: number
   trackedIds?: string[]
+  // File filtrée par source (lot E du plan scan V2-01).
+  source?: string | null
 } = {}): Promise<ScanSnapshot> {
   if (
     !Number.isInteger(limit) ||
@@ -116,6 +119,7 @@ export async function getScanSnapshot({
       .where(
         and(
           eq(scanCandidates.status, "to_review"),
+          source ? eq(scanCandidates.sourceKey, source) : undefined,
           cursor
             ? or(
                 gt(scanCandidates.readyForReviewAt, cursor.date),

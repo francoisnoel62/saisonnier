@@ -2,11 +2,17 @@ import { describe, expect, it } from "vitest"
 
 import { employerLeadKey, normalizeEmployerName } from "./employer-lead"
 import {
+  autoPublishReadiness,
   classifyDossier,
   discoveryCoverage,
   formatCoverage,
+  qualificationDue,
+  robotsChanged,
+  shouldSuspendSource,
+  sourceHealth,
   type CoverageContext,
   type CoverageDossier,
+  type RunSourceOutcome,
 } from "./source-health"
 
 describe("nom d'employeur normalisé", () => {
@@ -115,5 +121,83 @@ describe("couverture d'une découverte", () => {
     expect(formatCoverage(discoveryCoverage([], context).last30)).toBe(
       "Aucun dossier sur la période.",
     )
+  })
+})
+
+describe("santé et disjoncteur (lot E)", () => {
+  const run = (
+    status: RunSourceOutcome["status"],
+    patch: Partial<RunSourceOutcome> = {},
+  ): RunSourceOutcome => ({
+    status,
+    mode: "daily",
+    failedCount: 0,
+    robotsDigest: null,
+    ...patch,
+  })
+  it("santé d'après le dernier passage terminé", () => {
+    expect(sourceHealth([], { suspended: false })).toBe("unknown")
+    expect(sourceHealth([run("done")], { suspended: true })).toBe("suspended")
+    expect(
+      sourceHealth([run("processing"), run("done")], { suspended: false }),
+    ).toBe("healthy")
+    expect(sourceHealth([run("blocked")], { suspended: false })).toBe("blocked")
+    expect(sourceHealth([run("failed")], { suspended: false })).toBe("degraded")
+    expect(
+      sourceHealth([run("done", { failedCount: 2 })], { suspended: false }),
+    ).toBe("degraded")
+  })
+  it("trois passages bloqués de suite suspendent ; une indisponibilité non", () => {
+    expect(shouldSuspendSource([run("blocked"), run("blocked")])).toBe(false)
+    expect(
+      shouldSuspendSource([run("blocked"), run("blocked"), run("blocked")]),
+    ).toBe(true)
+    expect(
+      shouldSuspendSource([
+        run("blocked"),
+        run("failed"),
+        run("blocked"),
+        run("blocked"),
+      ]),
+    ).toBe(false)
+    expect(
+      shouldSuspendSource([
+        run("listing"),
+        run("blocked"),
+        run("blocked"),
+        run("blocked"),
+      ]),
+    ).toBe(true)
+  })
+  it("publication automatique : trois passages quotidiens sans échec recommandés", () => {
+    expect(autoPublishReadiness([run("done"), run("done")]).ready).toBe(false)
+    expect(
+      autoPublishReadiness([
+        run("done"),
+        run("done", { failedCount: 1 }),
+        run("done", { mode: "bootstrap" }),
+        run("done"),
+        run("done"),
+      ]),
+    ).toEqual({ ready: true, clean: 3, needed: 3 })
+  })
+  it("qualification à renouveler au-delà de 180 jours ; robots.txt modifié", () => {
+    const today = new Date("2026-10-27T00:00:00Z")
+    expect(qualificationDue("2026-10-23", today)).toBe(false)
+    expect(qualificationDue("2026-04-01", today)).toBe(true)
+    expect(qualificationDue(null, today)).toBe(true)
+    expect(
+      robotsChanged([
+        run("done", { robotsDigest: "b" }),
+        run("done"),
+        run("done", { robotsDigest: "a" }),
+      ]),
+    ).toBe(true)
+    expect(
+      robotsChanged([
+        run("done", { robotsDigest: "a" }),
+        run("done", { robotsDigest: "a" }),
+      ]),
+    ).toBe(false)
   })
 })
