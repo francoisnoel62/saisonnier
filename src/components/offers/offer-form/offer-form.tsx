@@ -347,6 +347,9 @@ type EmployerFormProps = {
   company: Company
   // Déposant vérifié : l'annonce créée est publiée aussitôt (H2).
   publishesDirectly: boolean
+  // Lieux supplémentaires ajoutés par l'admin (« Commune (département) ») : montrés en lecture
+  // seule, conservés par l'enregistrement (décision du fondateur du 28/10/2026).
+  extraPlaces?: { labels: string[]; contactHref: string }
 }
 
 // Back-office (plan 15) : toutes les annonces, collectées comme déposées.
@@ -578,6 +581,30 @@ export function OfferForm({
               {admin && (
                 <ExtraLocations departments={referentials.departments} />
               )}
+              {props.space === "employer" &&
+                !!props.extraPlaces?.labels.length && (
+                  <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+                    <p className="font-medium">
+                      Autres lieux ajoutés par notre équipe
+                    </p>
+                    <ul className="mt-1 list-disc pl-5">
+                      {props.extraPlaces.labels.map((label) => (
+                        <li key={label}>{label}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-muted-foreground">
+                      Ils restent affichés sur l&rsquo;annonce. Pour les
+                      modifier,{" "}
+                      <Link
+                        href={props.extraPlaces.contactHref}
+                        className="underline underline-offset-4"
+                      >
+                        contactez-nous
+                      </Link>
+                      .
+                    </p>
+                  </div>
+                )}
             </Section>
 
             <Section

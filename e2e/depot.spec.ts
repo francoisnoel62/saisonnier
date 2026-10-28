@@ -296,6 +296,44 @@ test("§6 — une annonce modifiée puis mise hors ligne disparaît de la recher
   ).toBeVisible()
 })
 
+test("Lieux multiples — l'employeur voit en lecture seule les lieux ajoutés par l'admin", async ({
+  newEmployer,
+  db,
+}) => {
+  const { page, email } = await newEmployer("depot-lieux-admin")
+  await insertMembership(db, email, "verified")
+  const title = uniqueTitle("Saisonnier multi-sites")
+  const id = await insertDepositedOffer(db, email, { title })
+  await db.query(
+    `insert into offer_locations (offer_id, position, commune_name, commune_insee_code, department_code)
+     values ($1, 1, 'Tignes', '73296', '73')`,
+    [id],
+  )
+
+  await stubCommuneSearch(page)
+  await page.goto(`/employeur/annonces/${id}/modifier`, {
+    waitUntil: "networkidle",
+  })
+  const notice = page
+    .getByText("Autres lieux ajoutés par notre équipe")
+    .locator("..")
+  await expect(notice.getByText("Tignes (73)")).toBeVisible()
+  await expect(
+    notice.getByRole("link", { name: "contactez-nous" }),
+  ).toHaveAttribute("href", `/contact?motif=employeur&offre=${id}`)
+
+  await page.getByLabel("Intitulé du poste").fill(`${title} (modifiée)`)
+  await page
+    .getByRole("button", { name: "Enregistrer les modifications" })
+    .click()
+  await expect(page.getByText("Modifications enregistrées.")).toBeVisible()
+  const { rows } = await db.query(
+    "select commune_name from offer_locations where offer_id = $1",
+    [id],
+  )
+  expect(rows).toEqual([{ commune_name: "Tignes" }])
+})
+
 test("§6 — une annonce échue ne se remet en ligne qu'une fois ses dates corrigées", async ({
   newEmployer,
   asCandidate,
