@@ -77,8 +77,8 @@ Deux pistes peuvent avancer en parallèle : **01 → 05** (sources et extracteur
 | 06 | [Revue admin et suggestions](06-revue-admin.md) | 04 | L | 5 | file « À vérifier » actualisée, revue préremplie, décisions, suggestions de métiers | ☑ |
 | 07 | [Labels et présentation](07-labels-presentation.md) | 04 | M | 6 | labels de provenance, « Candidature externe », dates, « À confirmer », « Divers » | ☑ |
 | 08 | [Lieux multiples](08-lieux-multiples.md) | 07 | M | 6 | une fiche à plusieurs lieux, trouvée par chacun, comptée une fois | ☑ |
-| 09 | [Orchestration durable](09-orchestration-workflow.md) | 03, 05, 06 | L | 7 | lancement admin, cron quotidien, lots bornés, reprise, arrêt, bilan | ☐ |
-| 10 | [Recette et installation](10-recette-installation.md) | 01 à 09 | M | 8 | 50 dossiers livrés avant T+6 h en production, puis scan quotidien actif | ☐ |
+| 09 | [Orchestration durable](09-orchestration-workflow.md) | 03, 05, 06 | L | 7 | lancement admin, cron quotidien, lots bornés, reprise, arrêt, bilan | ☑ |
+| 10 | [Recette et installation](10-recette-installation.md) | 01 à 09 | M | 8 | 50 dossiers livrés avant T+6 h en production, puis scan quotidien actif | en cours : 128 livrés à T+4 min 51 s le 28/10, premier passage quotidien à contrôler |
 
 Taille : **S** = session courte, **M** = une session, **L** = session longue (à découper si besoin).
 
