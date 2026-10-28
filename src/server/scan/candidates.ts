@@ -1,7 +1,18 @@
 import "server-only"
 
 import { createHash } from "node:crypto"
-import { and, asc, desc, eq, inArray, lt, or, sql } from "drizzle-orm"
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  lt,
+  max,
+  or,
+  sql,
+} from "drizzle-orm"
 
 import type { AdmissionDecision } from "@/domain/scan/admission"
 import { compareRecruitment } from "@/domain/scan/identity"
@@ -155,8 +166,18 @@ export type CandidateDelivery = {
   now: Date
 }
 
+// La file avance son curseur sur `readyForReviewAt|id` : sous le verrou du passage, chaque
+// livraison est datée après la précédente, même si son `now` a été lu avant le verrou.
+async function deliveryInstant(tx: ScanTransaction, now: Date) {
+  const [{ last }] = await tx
+    .select({ last: max(scanCandidates.readyForReviewAt) })
+    .from(scanCandidates)
+    .where(isNotNull(scanCandidates.readyForReviewAt))
+  return last && last >= now ? new Date(last.getTime() + 1) : now
+}
+
 async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
-  const { extraction, admission, proposal, candidateId, runId, now } = input
+  const { extraction, admission, proposal, candidateId, runId } = input
   const [current] = await tx
     .select()
     .from(scanCandidates)
@@ -180,6 +201,7 @@ async function deliver(tx: ScanTransaction, input: CandidateDelivery) {
     extraction.observations.some(
       (o) => Array.from(o.evidence.excerpt).length > observationLimits.excerpt,
     )
+  const now = await deliveryInstant(tx, input.now)
   const issues = uniqueIssues([
     ...proposal.issues,
     ...admission.blocking,

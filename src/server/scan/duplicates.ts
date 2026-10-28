@@ -1,6 +1,16 @@
 import "server-only"
 
-import { and, eq, isNotNull, ne, or, sql } from "drizzle-orm"
+import {
+  and,
+  eq,
+  exists,
+  inArray,
+  isNotNull,
+  isNull,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm"
 
 import { absent, valueOf } from "@/domain/scan/field"
 import { canonicalUrl, compareRecruitment } from "@/domain/scan/identity"
@@ -10,6 +20,7 @@ import { normalizeJobTitle } from "@/domain/scan/title"
 import { db } from "@/lib/db"
 import {
   companies,
+  offerLocations,
   offers,
   scanCandidates,
   scanReviews,
@@ -17,7 +28,7 @@ import {
 } from "@/lib/db/schema"
 import { isUuid } from "@/server/offers/queries"
 
-import type { ScanTransaction } from "./claim"
+import { withRunClaim, type ScanTransaction } from "./claim"
 
 export type DuplicateSuspect = { kind: "offer" | "candidate"; id: string }
 function matchingRecruitment(
@@ -37,11 +48,15 @@ function matchingRecruitment(
 const reviewGroup = (candidateId: string, suspect: DuplicateSuspect) =>
   [`candidate:${candidateId}`, `${suspect.kind}:${suspect.id}`].sort().join("|")
 
+// Étape du workflow (plan scan 09) : écrit sous le jeton du passage, verrouillé avant le dossier.
+// Un préfiltre SQL (départements, lieux supplémentaires compris, entreprise, hôte de la source)
+// limite les annonces et dossiers comparés ; la comparaison exacte reste celle du code.
 export async function findDuplicateSuspects(
   candidate: Pick<ScanCandidate, "id">,
   proposal: ScanProposal,
+  claim: { runId: string; token: string },
 ) {
-  return db.transaction(async (tx) => {
+  return withRunClaim(claim.runId, claim.token, async (tx) => {
     const [current] = await tx
       .select()
       .from(scanCandidates)
@@ -51,7 +66,11 @@ export async function findDuplicateSuspects(
       !current ||
       !["discovered", "failed", "to_review"].includes(current.status)
     )
-      return { alreadyKnown: false, suspects: [] as DuplicateSuspect[] }
+      return {
+        ok: true,
+        alreadyKnown: false,
+        suspects: [] as DuplicateSuspect[],
+      } as const
     const name = valueOf(proposal.company)
     const company = name
       ? (
@@ -67,20 +86,63 @@ export async function findDuplicateSuspects(
         )[0]
       : undefined
     const places = valueOf(proposal.locations) ?? []
+    const departments = [
+      ...new Set(
+        places.flatMap((place) =>
+          place.departmentCode ? [place.departmentCode] : [],
+        ),
+      ),
+    ]
     const sourceUrl = canonicalUrl(
       valueOf(proposal.officialUrl) ??
         current.officialUrl ??
         current.discoveryUrl,
     )
     const suspects: DuplicateSuspect[] = []
-    const linkedCandidates = await tx
-      .select({ id: scanCandidates.id, offerId: scanCandidates.offerId })
-      .from(scanCandidates)
-      .where(isNotNull(scanCandidates.offerId))
+    const samePlaceOffer = departments.length
+      ? or(
+          inArray(offers.departmentCode, departments),
+          exists(
+            tx
+              .select({ id: offerLocations.id })
+              .from(offerLocations)
+              .where(
+                and(
+                  eq(offerLocations.offerId, sql`"offers"."id"`),
+                  inArray(offerLocations.departmentCode, departments),
+                ),
+              ),
+          ),
+        )
+      : sql`false`
+    // Préfiltre large : l'URL canonique exacte est comparée ensuite.
+    const sameHostOffer = sourceUrl
+      ? sql`strpos(lower(${offers.sourceUrl}), ${`//${new URL(sourceUrl).hostname}`}) > 0`
+      : sql`false`
     const knownOffers = await tx.query.offers.findMany({
-      where: ne(offers.status, "rejected"),
+      where: and(
+        ne(offers.status, "rejected"),
+        or(
+          and(
+            samePlaceOffer,
+            company ? eq(offers.companyId, company.id) : undefined,
+          ),
+          sameHostOffer,
+        ),
+      ),
       with: { extraLocations: true },
     })
+    const linkedCandidates = knownOffers.length
+      ? await tx
+          .select({ id: scanCandidates.id, offerId: scanCandidates.offerId })
+          .from(scanCandidates)
+          .where(
+            inArray(
+              scanCandidates.offerId,
+              knownOffers.map((offer) => offer.id),
+            ),
+          )
+      : []
     for (const offer of knownOffers) {
       const sameUrl =
         !!sourceUrl &&
@@ -126,10 +188,11 @@ export async function findDuplicateSuspects(
             })
             .where(eq(scanCandidates.id, current.id))
           return {
+            ok: true,
             alreadyKnown: true,
             offerId: offer.id,
             suspects: [] as DuplicateSuspect[],
-          }
+          } as const
         }
       }
       if (sameUrl || same) {
@@ -142,16 +205,20 @@ export async function findDuplicateSuspects(
         )
       }
     }
-    const dossiers = await tx
-      .select()
-      .from(scanCandidates)
-      .where(
-        and(
-          ne(scanCandidates.id, current.id),
-          isNotNull(scanCandidates.readyForReviewAt),
-          ne(scanCandidates.status, "rejected"),
-        ),
-      )
+    const dossiers = departments.length
+      ? await tx
+          .select()
+          .from(scanCandidates)
+          .where(
+            and(
+              ne(scanCandidates.id, current.id),
+              isNotNull(scanCandidates.readyForReviewAt),
+              ne(scanCandidates.status, "rejected"),
+              isNull(scanCandidates.offerId),
+              sql`exists (select 1 from jsonb_array_elements(case when ${scanCandidates.proposal} -> 'locations' ->> 'status' = 'established' then ${scanCandidates.proposal} -> 'locations' -> 'value' else '[]'::jsonb end) as place where place ->> 'departmentCode' in ${departments})`,
+            ),
+          )
+      : []
     for (const other of dossiers) {
       if (other.offerId || !other.proposal || !other.title) continue
       const otherCompany = valueOf(other.proposal.company)
@@ -190,7 +257,7 @@ export async function findDuplicateSuspects(
           setWhere: eq(scanReviews.status, "open"),
         })
     }
-    return { alreadyKnown: false, suspects }
+    return { ok: true, alreadyKnown: false, suspects } as const
   })
 }
 

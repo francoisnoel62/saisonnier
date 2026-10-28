@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, inArray, sql } from "drizzle-orm"
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
@@ -98,6 +98,23 @@ it("livraison rejouée : compteur inchangé, décision et contenu préservés", 
   expect(
     await db.select().from(scanCandidates).where(eq(scanCandidates.id, c.id)),
   ).toMatchObject([{ status: "rejected", readyForReviewAt: now }])
+})
+
+it("livraisons validées dans l'ordre inverse de leur horloge : la file les date dans l'ordre de validation (plan scan 09)", async () => {
+  const a = await candidate(),
+    b = await candidate()
+  await deliverCandidate(input(a.id, { now: new Date(+now + 5_000) }))
+  // Lu avant le verrou, le `now` de b est plus ancien que la livraison de a.
+  await deliverCandidate(input(b.id))
+  const rows = await db
+    .select({
+      id: scanCandidates.id,
+      readyForReviewAt: scanCandidates.readyForReviewAt,
+    })
+    .from(scanCandidates)
+    .where(inArray(scanCandidates.id, [a.id, b.id]))
+  const at = new Map(rows.map((row) => [row.id, +row.readyForReviewAt!]))
+  expect(at.get(b.id)).toBeGreaterThan(at.get(a.id)!)
 })
 
 it("50e livraison : seuil horodaté une fois ; la 51e ne le modifie pas", async () => {
