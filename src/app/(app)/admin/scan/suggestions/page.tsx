@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { Button } from "@/components/ui/button"
 import { OccupationSuggestions } from "@/components/admin/scan/occupation-suggestions"
 import { getOfferFormReferentials } from "@/server/offers/employer-offers"
 import { listOccupationFamilies } from "@/server/referentials/admin"
@@ -24,9 +25,13 @@ export default async function ScanSuggestionsPage() {
   }))
   return (
     <div className="grid gap-6">
-      <Link className="text-sm underline" href="/admin/scan/dossiers">
-        ← Retour à la file
-      </Link>
+      <Button
+        asChild
+        variant="ghost"
+        className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+      >
+        <Link href="/admin/scan/dossiers">← Retour à la file</Link>
+      </Button>
       <h2 className="text-xl font-semibold">Suggestions de métiers</h2>
       <p className="text-sm text-muted-foreground">
         Une décision vaut pour les prochaines occurrences du même intitulé. Elle

@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { Button } from "@/components/ui/button"
 import { adapterCatalog } from "@/domain/scan/adapter-catalog"
 import { formatIsoDate } from "@/domain/offer-display"
 import type { ScanProbeResult } from "@/domain/scan/probe"
@@ -437,12 +438,17 @@ export function SourceActivityView({
           <p className="text-muted-foreground">Aucun passage.</p>
         )}
       </section>
-      <Link
-        className="underline"
-        href={`/admin/scan/dossiers?source=${encodeURIComponent(sourceKey)}`}
+      <Button
+        asChild
+        variant="outline"
+        className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
       >
-        Dossiers de cette source
-      </Link>
+        <Link
+          href={`/admin/scan/dossiers?source=${encodeURIComponent(sourceKey)}`}
+        >
+          Dossiers de cette source
+        </Link>
+      </Button>
     </div>
   )
 }

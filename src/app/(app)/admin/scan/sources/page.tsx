@@ -37,17 +37,27 @@ async function rowsWithHealth() {
 async function RadarCounters() {
   const radar = await discoveryRadar()
   return (
-    <p className="text-sm">
-      {radar.portalsWithoutSource} portail
-      {radar.portalsWithoutSource > 1 ? "s" : ""} employeur
-      {radar.portalsWithoutSource > 1 ? "s" : ""} repéré
-      {radar.portalsWithoutSource > 1 ? "s" : ""} par la découverte, sans source
-      ·{" "}
-      <Link className="underline" href="/admin/scan/employeurs">
-        {radar.employersToInvite} employeur
-        {radar.employersToInvite > 1 ? "s" : ""} à inviter
-      </Link>
-    </p>
+    <div className="flex flex-wrap items-center gap-3 text-sm">
+      <p className="text-muted-foreground">
+        {radar.portalsWithoutSource} portail
+        {radar.portalsWithoutSource > 1 ? "s" : ""} employeur
+        {radar.portalsWithoutSource > 1 ? "s" : ""} repéré
+        {radar.portalsWithoutSource > 1 ? "s" : ""} par la découverte, sans
+        source
+      </p>
+      <Button
+        asChild
+        variant="outline"
+        className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+      >
+        <Link href="/admin/scan/employeurs">
+          <span>
+            {radar.employersToInvite} employeur
+            {radar.employersToInvite > 1 ? "s" : ""} à inviter
+          </span>
+        </Link>
+      </Button>
+    </div>
   )
 }
 
@@ -66,11 +76,15 @@ export default async function ScanSourcesPage({
     <div className="grid min-w-0 gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <nav aria-label="Fil d’Ariane" className="text-sm">
-          <Link className="underline" href="/admin/scan">
-            ← Scan
-          </Link>
+          <Button
+            asChild
+            variant="ghost"
+            className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+          >
+            <Link href="/admin/scan">← Scan</Link>
+          </Button>
         </nav>
-        <Button asChild className="w-full sm:w-fit">
+        <Button asChild className="min-h-11 w-full sm:w-fit">
           <Link href="/admin/scan/sources/nouvelle">
             <PlusIcon aria-hidden />
             Ajouter une source

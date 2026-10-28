@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { Button } from "@/components/ui/button"
 import { CandidateLearning } from "@/components/admin/scan/candidate-learning"
 import { ReviewDecisions } from "@/components/admin/scan/review-decisions"
 import { OfferForm } from "@/components/offers/offer-form/offer-form"
@@ -123,9 +124,13 @@ export default async function ScanCandidatePage({
   ]
   return (
     <article className="grid min-w-0 gap-6">
-      <Link className="text-sm underline" href="/admin/scan/dossiers">
-        ← Retour à la file
-      </Link>
+      <Button
+        asChild
+        variant="ghost"
+        className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+      >
+        <Link href="/admin/scan/dossiers">← Retour à la file</Link>
+      </Button>
       <header className="grid gap-2">
         <h2 className="text-xl font-semibold">
           {candidate.title ?? "Dossier du scan"}
@@ -141,24 +146,26 @@ export default async function ScanCandidatePage({
         )}
         <div className="flex flex-wrap gap-4 text-sm">
           {discovery && (
-            <a
-              className="underline"
-              href={discovery}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-            >
-              Lien de découverte
-            </a>
+            <Button asChild variant="outline" className="min-h-11">
+              <a
+                href={discovery}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+              >
+                Lien de découverte
+              </a>
+            </Button>
           )}
           {official && (
-            <a
-              className="underline"
-              href={official}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-            >
-              Source officielle
-            </a>
+            <Button asChild variant="outline" className="min-h-11">
+              <a
+                href={official}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+              >
+                Source officielle
+              </a>
+            </Button>
           )}
         </div>
         <p className="text-sm text-muted-foreground">
@@ -210,12 +217,15 @@ export default async function ScanCandidatePage({
                 ))}
             </ul>
             {candidate.occupationReviewId && (
-              <Link
-                href="/admin/scan/suggestions"
-                className="text-sm underline"
+              <Button
+                asChild
+                variant="outline"
+                className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
               >
-                Voir la suggestion de métier
-              </Link>
+                <Link href="/admin/scan/suggestions">
+                  Voir la suggestion de métier
+                </Link>
+              </Button>
             )}
           </section>
           <ReviewDecisions
@@ -245,12 +255,15 @@ export default async function ScanCandidatePage({
         </>
       )}
       {candidate.status === "published" && candidate.offerId && (
-        <Link
-          className="underline"
-          href={`/admin/annonces/${candidate.offerId}/modifier`}
+        <Button
+          asChild
+          variant="outline"
+          className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
         >
-          Voir l’annonce publiée
-        </Link>
+          <Link href={`/admin/annonces/${candidate.offerId}/modifier`}>
+            Voir l’annonce publiée
+          </Link>
+        </Button>
       )}
       {candidate.status === "rejected" && (
         <p>
