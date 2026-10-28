@@ -1,6 +1,6 @@
 # ma saison — Bible du design system
 
-Version 1.0 · 28 octobre 2026
+Version 1.1 · 28 octobre 2026
 
 Ce document est le contrat de design commun à la landing, à l’authentification et aux espaces saisonnier, employeur et administration. Il doit être consulté avant de créer ou modifier une interface. Les tokens et composants existants sont la source de vérité exécutable ; une évolution de ces règles s’accompagne d’une mise à jour du code et de ce document.
 
@@ -200,4 +200,52 @@ Contrastes vérifiés pour cette palette : texte principal de 13,45:1 à 15,89:1
 4. Vérifier les états et les tailles d’écran concernés.
 5. Mettre à jour cette bible et les captures si elles sont affectées.
 
-La refonte initiale applique la marque, les tokens communs, la landing et le logo partagé. Elle ne prétend pas avoir refondu tous les écrans métier ni livré les fonctions de la feuille de route. Leur évolution suit ce contrat, écran par écran.
+La refonte applique la marque, la landing et le logo partagé, puis les annonces : catalogue, suivi, fiche, aperçus employeur/admin et repères des tableaux de gestion. Les autres écrans métier évoluent selon ce contrat ; les fonctions de la feuille de route restent identifiées comme telles.
+
+## 14. Annonces : découvrir, comparer, comprendre
+
+### Aperçu d'annonces sur la landing
+
+Le bloc public entre la recherche et la FAQ réutilise `OfferArtwork`, `OfferCategory` et `OfferSeason`, avec une carte éditoriale et une rémunération plus visible. À ce stade, il est **statique et explicitement présenté comme une démonstration**. Une seule action réelle mène au catalogue ; les exemples ne simulent pas une fiche consultable. Le raccordement métier et l'actualisation quotidienne sont spécifiés, mais non implémentés, dans `docs/landing-featured-offers.md`.
+
+Les trois directions de l'exploration du 28 octobre ont été retenues ensemble. La branche `codex/prototype-annonces-vivantes` (commit `3302a41`) conserve les maquettes comme référence. L'intégration métier se fait sur `codex/annonces-vivantes`, sans les simulations et sans la barre de prototype.
+
+### Une identité de métier, distincte des statuts
+
+Les tokens `--offer-*` de `src/app/design-tokens.css` ont une paire texte/fond en clair et en sombre. Les classes sont regroupées dans `src/components/offers/offers.module.css` et les composants dans `offer-visuals.tsx`.
+
+| Famille visuelle | Texte / fond clair | Familles du référentiel |
+| --- | --- | --- |
+| Terracotta | `#914D34` / `#F8EAE1` | Cuisine ; Salle & bar |
+| Lavande | `#65518A` / `#F0EBF8` | Réception & hébergement ; Étages & entretien ; Encadrement |
+| Glacier | `#315F79` / `#E6F1F6` | Domaine skiable ; Sport & loisirs ; Commerce & location |
+| Ocre | `#79571D` / `#FAF0D9` | Animation & enfance ; Accueil touristique |
+| Sauge | `#3C5745` / `#EAF0E4` | Bien-être ; Technique & transport ; Agriculture ; familles libres |
+
+Le libellé reste celui du référentiel. Une famille absente devient « Catégorie non précisée » ; aucune famille n'est déduite du titre. Une famille personnalisée conserve son libellé et utilise l'icône générique. Les illustrations sont abstraites et décoratives : elles n'affirment rien sur le bâtiment ou le paysage du lieu de travail.
+
+Contrastes texte/fond métier : de 5,38:1 à 6,85:1 en clair et de 7,89:1 à 8,45:1 en sombre. Le statut reste un composant distinct : vert et coche « En ligne », ocre et horloge « En attente de vérification », neutre pour hors ligne/expirée, `destructive` pour refusée. Toujours une icône et un texte, jamais la couleur seule.
+
+### Trois vues d'un même catalogue
+
+- **Escales** : cartes illustrées ; métier, entreprise, destination, dates, salaire puis vie pratique. Vue par défaut.
+- **Comparateur** : lignes avec les informations disposées en colonnes ; empilement sur mobile.
+- **Immersion** : liste et fiche côte à côte à partir de 1 024 px ; panneau shadcn pleine largeur en dessous. La fermeture rend le focus à l'annonce.
+
+Le sélecteur réutilise `Button`, dans un groupe nommé, avec `aria-pressed`. Les modes sont des préférences de présentation portées par `vue=`, pas des filtres métier : le compteur, les critères et la pagination restent les mêmes. Une offre sélectionnée en Immersion est portée par `offre=` et doit appartenir à la page de résultats autorisés. Le retour d'une fiche conserve la recherche et la vue ; sa destination reste limitée à `/offres`.
+
+`OfferCard` sert aussi aux offres sauvegardées et candidatures déclarées. Les dates de publication/découverte, lieux multiples, salaires dans leur unité d'origine, provenance, canal externe et états expirés restent présents.
+
+### Une fiche commune et des actions selon les droits
+
+`OfferHero` et `OfferSummary` donnent immédiatement le métier, le lieu, la saison, les dates, le salaire, le logement et les repas. `OfferDetails` organise le poste, le contrat, les lieux, la rémunération, les conditions, le profil, l'organisation et la vie pratique. Les rubriques profil/organisation/vie pratique entièrement inconnues sont repliables, annoncées « Informations à préciser ». Les valeurs restent consultables ; rien n'est inventé.
+
+Les informations décisives — dates, salaire, logement, repas — restent visibles même inconnues. « Non », « Non précisé » et « À confirmer » restent distincts. Les salaires net/brut ne sont jamais convertis pour la présentation.
+
+`OfferContent` rend la même fiche côté serveur sur la page dédiée et en Immersion, avec les mêmes contrôles de rôle, d'activité et de dossier. Le panneau unique `ApplicationPanel` réunit l'explication et les actions autorisées. Les coordonnées ne sont pas envoyées au navigateur d'un candidat dont le dossier est incomplet. Une sauvegarde reste distincte d'une candidature déclarée, et un clic sur un contact ne déclare jamais une candidature.
+
+Les aperçus de saisie et de gestion réutilisent le même en-tête, résumé et contenu. Les tableaux employeur/admin conservent leur densité et leurs actions ; catégorie, statut et informations à préciser facilitent leur lecture. La provenance détaillée et le lien de correction des annonces collectées restent disponibles sur la fiche.
+
+### Mouvement et contrôle
+
+Survol de carte : translation maximale de 2 px, ombre douce et transition de 200 ms. Signet rempli pour une offre sauvegardée. Respect de la réduction des animations. Vérifier les vues, la pagination, les filtres, le retour, l'ouverture/fermeture mobile, les cas incomplets/anonymes/expirés et les droits de candidature avant de modifier ces composants.

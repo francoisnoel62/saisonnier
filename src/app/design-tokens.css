@@ -1,5 +1,15 @@
 /* Source de vérité visuelle — voir docs/design-system.md. */
 :root {
+  --offer-terra: #914d34;
+  --offer-terra-bg: #f8eae1;
+  --offer-lavender: #65518a;
+  --offer-lavender-bg: #f0ebf8;
+  --offer-sage: #3c5745;
+  --offer-sage-bg: #eaf0e4;
+  --offer-glacier: #315f79;
+  --offer-glacier-bg: #e6f1f6;
+  --offer-ochre: #79571d;
+  --offer-ochre-bg: #faf0d9;
   --ms-ink: #20231f;
   --ms-muted: #666b63;
   --ms-paper: #ffffff;
@@ -14,4 +24,17 @@
   --ms-pill: 999px;
   --ms-content: 1240px;
   --ms-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.dark {
+  --offer-terra: #efbea7;
+  --offer-terra-bg: #3c2d27;
+  --offer-lavender: #d2c1f1;
+  --offer-lavender-bg: #332c41;
+  --offer-sage: #c3d8ba;
+  --offer-sage-bg: #29352c;
+  --offer-glacier: #b3d7eb;
+  --offer-glacier-bg: #27353e;
+  --offer-ochre: #ead099;
+  --offer-ochre-bg: #3c3525;
 }

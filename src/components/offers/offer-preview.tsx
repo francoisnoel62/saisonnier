@@ -1,14 +1,13 @@
 "use client"
 
-import { BadgeCheckIcon, CircleAlertIcon, GlobeIcon, XIcon } from "lucide-react"
+import { CircleAlertIcon, XIcon } from "lucide-react"
 
-import { HowToApply } from "@/components/offers/application-panel"
+import { OfferHero, OfferSummary } from "./offer-visuals"
 import {
   OfferDetails,
   type OfferDetailsData,
 } from "@/components/offers/offer-details"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -20,7 +19,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import type { OfferOrigin } from "@/domain/offer"
-import { seasonLabels } from "@/domain/offer-display"
 
 // Ce que voit un candidat : l'en-tête et la fiche (OfferDetails, plan 11), plus les coordonnées
 // de candidature, que la fiche ne montre qu'aux dossiers complets (H3).
@@ -34,7 +32,13 @@ export type OfferPreviewData = {
   contacts: { email: string | null; phone: string | null; url: string | null }
 }
 
-function Contacts({ contacts }: { contacts: OfferPreviewData["contacts"] }) {
+function Contacts({
+  contacts,
+  explanation,
+}: {
+  contacts: OfferPreviewData["contacts"]
+  explanation: string
+}) {
   const rows: [string, string | null][] = [
     ["Email", contacts.email],
     ["Téléphone", contacts.phone],
@@ -42,6 +46,11 @@ function Contacts({ contacts }: { contacts: OfferPreviewData["contacts"] }) {
   ]
   return (
     <section className="flex flex-col gap-1 rounded-lg border p-4">
+      <h3 className="text-base font-semibold">Comment postuler</h3>
+      <p className="mb-4 text-sm leading-relaxed">
+        {explanation} Vous transmettez vous-même votre dossier ; ma saison
+        n’envoie aucun document.
+      </p>
       <h3 className="text-base font-semibold">Coordonnées de candidature</h3>
       <p className="text-muted-foreground">
         Visibles des candidats dont le dossier est complet.
@@ -88,31 +97,16 @@ export function OfferPreview({
         </Alert>
       )}
 
-      <header className="flex flex-col gap-2">
-        {details.season && (
-          <Badge variant="secondary">{seasonLabels[details.season]}</Badge>
-        )}
-        <h2 className="text-2xl font-semibold tracking-tight break-words">
-          {preview.title || (
-            <span className="text-muted-foreground">Intitulé à préciser</span>
-          )}
-        </h2>
-        <p className="text-lg text-muted-foreground">{preview.companyName}</p>
-        {preview.origin === "deposited" ? (
-          <p className="flex items-start gap-2 text-sm text-muted-foreground">
-            <BadgeCheckIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-            Annonce déposée par l&rsquo;employeur
-          </p>
-        ) : (
-          <p className="flex items-start gap-2 text-sm text-muted-foreground">
-            <GlobeIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-            Annonce publiée sur le site officiel de {preview.companyName}
-          </p>
-        )}
-      </header>
-
-      <HowToApply explanation={preview.applicationExplanation} />
-      <Contacts contacts={preview.contacts} />
+      <OfferHero
+        title={preview.title}
+        companyName={preview.companyName}
+        details={details}
+      />
+      <OfferSummary offer={details} />
+      <Contacts
+        contacts={preview.contacts}
+        explanation={preview.applicationExplanation}
+      />
       <OfferDetails offer={details} />
     </div>
   )

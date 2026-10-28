@@ -8,6 +8,7 @@ import {
   companies,
   departments,
   offers,
+  occupations,
   offerTracking,
   user,
 } from "@/lib/db/schema"
@@ -128,6 +129,7 @@ export async function getTrackedOffers(userId: string) {
     .innerJoin(companies, eq(companies.id, offers.companyId))
     .innerJoin(departments, eq(departments.code, offers.departmentCode))
     .leftJoin(user, eq(user.id, offers.createdByUserId))
+    .leftJoin(occupations, eq(occupations.id, offers.occupationId))
     .where(eq(offerTracking.userId, userId))
     .orderBy(desc(offerTracking.updatedAt), desc(offerTracking.createdAt))
 

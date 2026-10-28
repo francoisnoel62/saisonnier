@@ -18,6 +18,7 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { AudienceFeatures } from "@/components/public/audience-features"
+import { FeaturedOffers } from "@/components/public/featured-offers"
 import { ProductScreenshot } from "@/components/public/product-screenshot"
 import { productImages } from "@/components/public/product-images"
 import { SeasonSearch } from "@/components/public/season-search"
@@ -352,6 +353,8 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
+      <FeaturedOffers catalogueHref={browse("/offres")} />
 
       <section
         id="questions"

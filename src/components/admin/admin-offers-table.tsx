@@ -1,6 +1,13 @@
 "use client"
 
 import {
+  OfferCategory,
+  OfferStatus,
+  OfferMissingInfo,
+  OfferTrust,
+} from "@/components/offers/offer-visuals"
+
+import {
   columnFilteringFeature,
   columnVisibilityFeature,
   createColumnHelper,
@@ -118,24 +125,15 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, AdminOfferRow>()
 
-const stateVariant: Record<
-  EmployerOfferState,
-  "default" | "secondary" | "outline" | "destructive"
-> = {
-  online: "default",
-  pending_review: "secondary",
-  offline: "outline",
-  expired: "outline",
-  rejected: "destructive",
-}
-
 const columns = columnHelper.columns([
   columnHelper.accessor("title", {
     header: "Intitulé",
     filterFn: filterFn_includesString,
     cell: ({ row }) => (
       <div className="flex min-w-48 flex-col items-start gap-1 whitespace-normal">
+        <OfferCategory family={row.original.preview.details.occupationFamily} />
         <span className="font-medium">{row.original.title}</span>
+        <OfferMissingInfo offer={row.original.preview.details} />
         {row.original.blocked.length > 0 && (
           <>
             <Badge variant="destructive">
@@ -161,11 +159,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("provenance", {
     header: "Provenance",
     filterFn: filterFn_equalsString,
-    cell: ({ row }) => (
-      <Badge variant="outline">
-        {provenanceLabels[row.original.provenance]}
-      </Badge>
-    ),
+    cell: ({ row }) => <OfferTrust provenance={row.original.provenance} />,
   }),
   columnHelper.accessor("companyName", {
     header: "Entreprise",
@@ -179,11 +173,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("state", {
     header: "Statut",
     filterFn: filterFn_equalsString,
-    cell: ({ row }) => (
-      <Badge variant={stateVariant[row.original.state]}>
-        {employerOfferStateLabels[row.original.state]}
-      </Badge>
-    ),
+    cell: ({ row }) => <OfferStatus state={row.original.state} />,
   }),
   columnHelper.accessor("location", {
     header: "Lieu et période",

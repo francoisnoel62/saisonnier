@@ -23,6 +23,7 @@ import type { ApplicationDetails } from "@/server/offers/application"
 
 import { AppliedButton } from "./tracking-buttons"
 import { ExternalApplicationNotice } from "./external-application"
+import styles from "./offers.module.css"
 
 // « Comment postuler » : toujours visible, même sans dossier (§7).
 export function HowToApply({ explanation }: { explanation: string }) {
@@ -53,6 +54,19 @@ function Unavailable({ what }: { what: string }) {
   )
 }
 
+function ApplicationExplanation({ explanation }: { explanation: string }) {
+  return (
+    <div className="space-y-2 border-b pb-4">
+      <h4 className="font-medium">Comment postuler</h4>
+      <p className="text-sm leading-relaxed">{explanation}</p>
+      <p className="text-sm text-muted-foreground">
+        Vous transmettez vous-même votre dossier ; {site.name} n&rsquo;envoie
+        aucun document.
+      </p>
+    </div>
+  )
+}
+
 // Coordonnées de candidature, calculées côté serveur (getApplicationDetails) : un dossier incomplet
 // ne reçoit que la liste de ce qui lui manque.
 export function ApplicationPanel({
@@ -60,16 +74,18 @@ export function ApplicationPanel({
   details,
   appliedAt = null,
   externalApplication = false,
+  explanation,
 }: {
   offerId: string
   details: Exclude<ApplicationDetails, { status: "inactive" }>
   // Déclaration « J'ai postulé » du candidat (plan 12).
   appliedAt?: Date | null
   externalApplication?: boolean
+  explanation?: string
 }) {
   if (details.status === "incomplete") {
     return (
-      <Card size="sm">
+      <Card size="sm" className={styles.application}>
         <CardHeader>
           <CardTitle>
             <h3>Candidater</h3>
@@ -79,6 +95,7 @@ export function ApplicationPanel({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
+          {explanation && <ApplicationExplanation explanation={explanation} />}
           {externalApplication && <ExternalApplicationNotice />}
           <div>
             <p>Il manque :</p>
@@ -102,7 +119,7 @@ export function ApplicationPanel({
 
   const { contacts, recruiter, forAdmin } = details
   return (
-    <Card size="sm">
+    <Card size="sm" className={styles.application}>
       <CardHeader>
         <CardTitle>
           <h3>Candidater</h3>
@@ -114,6 +131,7 @@ export function ApplicationPanel({
         )}
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        {explanation && <ApplicationExplanation explanation={explanation} />}
         {externalApplication && <ExternalApplicationNotice />}
         {recruiter && (
           <p className="flex items-start gap-2">

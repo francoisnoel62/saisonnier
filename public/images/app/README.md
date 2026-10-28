@@ -2,6 +2,8 @@
 
 Captures réalisées le 28 octobre 2026 sur l’application locale, avec les deux comptes fictifs de démonstration autorisés par le propriétaire du projet.
 
+Actualisées après la refonte des annonces : cartes illustrées côté saisonnier, catégories et statuts colorés côté employeur. Encodage JPEG sans retouche du contenu.
+
 | Fichier | Écran | Données |
 | --- | --- | --- |
 | `candidate-tracking.jpg` | `/mes-offres` | Six offres sauvegardées, deux candidatures déclarées ; entreprises fictives du jeu de démonstration |

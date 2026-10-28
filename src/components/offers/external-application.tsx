@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge"
 
 export function ExternalApplicationBadge() {
   return (
-    <Badge>
+    <Badge className="border-0 bg-[var(--offer-glacier-bg)] text-[var(--offer-glacier)]">
       <ExternalLinkIcon aria-hidden />
       Candidature externe
     </Badge>

@@ -34,7 +34,7 @@ async function fillAndSend(
   await page.getByRole("button", { name: "Envoyer le message" }).click()
 }
 
-test("§1/§5 — l'accueil ne montre aucune offre ni aucun lien vers une fiche", async ({
+test("l’accueil présente quatre exemples et réserve les fiches à la connexion", async ({
   page,
 }) => {
   await page.goto("/")
@@ -42,7 +42,15 @@ test("§1/§5 — l'accueil ne montre aucune offre ni aucun lien vers une fiche"
     page.getByRole("heading", { level: 1, name: /Votre prochaine saison./ }),
   ).toBeVisible()
 
-  // Les offres sont réservées aux comptes : aucun lien vers le catalogue ni vers une fiche.
+  const preview = page.locator("#annonces-a-la-une")
+  await expect(preview.getByRole("heading", { level: 3 })).toHaveCount(4)
+  await expect(
+    preview.getByText("Aperçu · annonces de démonstration"),
+  ).toBeVisible()
+  await expect(
+    preview.getByRole("link", { name: "Explorer les offres" }),
+  ).toHaveAttribute("href", "/connexion?next=%2Foffres")
+  // Seuls des exemples statiques sont publics ; les fiches restent réservées aux comptes.
   await expect(page.locator('a[href^="/offres"]')).toHaveCount(0)
   if (await page.getByRole("button", { name: "Ouvrir le menu" }).isVisible()) {
     await page.getByRole("button", { name: "Ouvrir le menu" }).click()
