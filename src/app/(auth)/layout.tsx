@@ -1,7 +1,6 @@
-import { SunSnowIcon } from "lucide-react"
 import Link from "next/link"
 
-import { site } from "@/config/site"
+import { Brand } from "@/components/public/brand"
 
 // Mise en page centrée des pages d'authentification (inspirée du bloc shadcn login-03).
 export default function AuthLayout({ children }: LayoutProps<"/">) {
@@ -12,10 +11,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           href="/"
           className="flex items-center gap-2 self-center font-medium"
         >
-          <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <SunSnowIcon className="size-4" aria-hidden />
-          </span>
-          {site.name}
+          <Brand />
         </Link>
         {children}
       </div>

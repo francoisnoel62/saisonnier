@@ -66,7 +66,12 @@ function FilteredQueue({
           <h2 className="font-semibold">
             À vérifier ({snapshot.counts.toReview})
           </h2>
-          <Button size="sm" variant="outline" onClick={() => void refresh()}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            onClick={() => void refresh()}
+          >
             Actualiser
           </Button>
         </div>
@@ -104,33 +109,40 @@ function FilteredQueue({
         <ul className="grid gap-2">
           {items.map((item) => (
             <li key={item.id}>
-              <Link
-                aria-current={item.id === openedId ? "page" : undefined}
-                href={`/admin/scan/dossiers/${item.id}`}
+              <Button
+                asChild
+                variant="outline"
                 className={cn(
-                  "block rounded-lg border p-3 text-sm hover:bg-muted",
+                  "h-auto min-h-11 w-full justify-start p-3 text-left whitespace-normal",
                   item.id === openedId && "border-primary bg-muted",
                 )}
               >
-                <span className="font-medium">{item.title}</span>
-                <span className="mt-1 block text-muted-foreground">
-                  {item.companyName ?? "Entreprise à identifier"} ·{" "}
-                  {item.location ?? "Lieu à vérifier"}
-                </span>
-                <span className="block text-muted-foreground">
-                  {item.sourceLabel}
-                </span>
-                {item.status === "to_review" ? (
-                  <span className="mt-1 block">
-                    {item.blockingCount} points à vérifier · {item.alertCount}{" "}
-                    alertes
+                <Link
+                  aria-current={item.id === openedId ? "page" : undefined}
+                  href={`/admin/scan/dossiers/${item.id}`}
+                >
+                  <span className="min-w-0 font-normal wrap-anywhere">
+                    <span className="font-medium">{item.title}</span>
+                    <span className="mt-1 block text-muted-foreground">
+                      {item.companyName ?? "Entreprise à identifier"} ·{" "}
+                      {item.location ?? "Lieu à vérifier"}
+                    </span>
+                    <span className="block text-muted-foreground">
+                      {item.sourceLabel}
+                    </span>
+                    {item.status === "to_review" ? (
+                      <span className="mt-1 block">
+                        {item.blockingCount} points à vérifier ·{" "}
+                        {item.alertCount} alertes
+                      </span>
+                    ) : (
+                      <span className="mt-1 block">
+                        {scanCandidateStatusLabels[item.status]}
+                      </span>
+                    )}
                   </span>
-                ) : (
-                  <span className="mt-1 block">
-                    {scanCandidateStatusLabels[item.status]}
-                  </span>
-                )}
-              </Link>
+                </Link>
+              </Button>
             </li>
           ))}
         </ul>
@@ -139,15 +151,18 @@ function FilteredQueue({
             Passage terminé le {formatDateTime(snapshot.run.finishedAt)}
           </p>
         )}
-        <Link
-          href="/admin/scan/suggestions"
-          className="block text-sm underline"
-        >
-          Suggestions de métiers ({snapshot.counts.suggestions})
-        </Link>
-        <Link href="/admin/scan" className="block text-sm underline">
-          Sources du scan
-        </Link>
+        <nav aria-label="Navigation du scan" className="grid gap-2">
+          <Button asChild variant="outline" className="min-h-11 justify-start">
+            <Link href="/admin/scan/suggestions">
+              <span>
+                Suggestions de métiers ({snapshot.counts.suggestions})
+              </span>
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="min-h-11 justify-start">
+            <Link href="/admin/scan/sources">Sources du scan</Link>
+          </Button>
+        </nav>
       </aside>
       <div className={cn("min-w-0", !openedId && "hidden md:block")}>
         {children}

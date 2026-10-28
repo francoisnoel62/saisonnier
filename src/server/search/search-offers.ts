@@ -15,7 +15,13 @@ import { displayedSalary, type SalaryStatement } from "@/domain/salary"
 import type { SearchCriteria } from "@/domain/search-criteria"
 import type { TriState } from "@/domain/tri-state"
 import { db } from "@/lib/db"
-import { companies, departments, offers, user } from "@/lib/db/schema"
+import {
+  companies,
+  departments,
+  occupations,
+  offers,
+  user,
+} from "@/lib/db/schema"
 import { getBlockedDomains } from "@/server/offers/application"
 
 import { searchConditions } from "./build-conditions"
@@ -25,6 +31,7 @@ import { searchConditions } from "./build-conditions"
 export type OfferListItem = {
   id: string
   title: string
+  occupationFamily?: string | null
   // publicCompanyName : « Entreprise confidentielle » si l'identité est masquée.
   companyName: string
   communeName: string
@@ -52,6 +59,7 @@ export type OfferListItem = {
 export const offerListColumns = {
   id: offers.id,
   title: offers.title,
+  occupationFamily: occupations.family,
   hideCompanyIdentity: offers.hideCompanyIdentity,
   company: {
     legalName: companies.legalName,
@@ -97,6 +105,7 @@ function offerListQuery() {
     .innerJoin(companies, eq(companies.id, offers.companyId))
     .innerJoin(departments, eq(departments.code, offers.departmentCode))
     .leftJoin(user, eq(user.id, offers.createdByUserId))
+    .leftJoin(occupations, eq(occupations.id, offers.occupationId))
 }
 type OfferListRow = Awaited<ReturnType<typeof offerListQuery>>[number]
 
@@ -107,6 +116,7 @@ export function toOfferListItem(
   return {
     id: row.id,
     title: row.title,
+    occupationFamily: row.occupationFamily,
     companyName: publicCompanyName(row),
     communeName: row.communeName,
     department: row.department,

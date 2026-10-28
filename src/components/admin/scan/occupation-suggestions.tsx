@@ -6,6 +6,14 @@ import { useState, useTransition } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Field, FieldLabel } from "@/components/ui/field"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { decideOccupationAction } from "@/server/scan/review-actions"
 
 type Suggestion = {
@@ -63,24 +71,26 @@ function SuggestionCard({
       <p className="text-sm whitespace-pre-line">{suggestion.context}</p>
       <ul className="grid gap-1 text-sm">
         {suggestion.candidates.map((candidate) => (
-          <li key={candidate.id}>
-            <Link
-              className="underline"
-              href={`/admin/scan/dossiers/${candidate.id}`}
+          <li key={candidate.id} className="flex flex-wrap items-center gap-2">
+            <Button
+              asChild
+              variant="outline"
+              className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
             >
-              {candidate.title ?? "Voir le dossier"}
-            </Link>
+              <Link href={`/admin/scan/dossiers/${candidate.id}`}>
+                {candidate.title ?? "Voir le dossier"}
+              </Link>
+            </Button>
             {candidate.offerId && (
-              <>
-                {" "}
-                ·{" "}
-                <Link
-                  className="underline"
-                  href={`/admin/annonces/${candidate.offerId}/modifier`}
-                >
+              <Button
+                asChild
+                variant="outline"
+                className="h-auto min-h-11 w-fit max-w-full text-left whitespace-normal"
+              >
+                <Link href={`/admin/annonces/${candidate.offerId}/modifier`}>
                   Voir l’annonce
                 </Link>
-              </>
+              </Button>
             )}
           </li>
         ))}
@@ -89,21 +99,30 @@ function SuggestionCard({
         <p role="status">Suggestion traitée. La décision est conservée.</p>
       ) : (
         <>
-          <label className="grid gap-2 text-sm">
-            Métier existant
-            <select
-              className="h-10 min-w-0 rounded-md border bg-background px-3"
+          <Field>
+            <FieldLabel htmlFor={`occupation-${suggestion.id}`}>
+              Métier existant
+            </FieldLabel>
+            <Select
               value={occupationId}
-              onChange={(event) => setOccupationId(event.target.value)}
+              onValueChange={setOccupationId}
+              disabled={pending}
             >
-              <option value="">Choisir un métier actif</option>
-              {occupations.map((occupation) => (
-                <option key={occupation.id} value={occupation.id}>
-                  {occupation.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger
+                id={`occupation-${suggestion.id}`}
+                className="w-full min-w-0"
+              >
+                <SelectValue placeholder="Choisir un métier actif" />
+              </SelectTrigger>
+              <SelectContent>
+                {occupations.map((occupation) => (
+                  <SelectItem key={occupation.id} value={occupation.id}>
+                    {occupation.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
           <Button
             className="w-fit"
             disabled={pending || !occupationId}
@@ -113,23 +132,29 @@ function SuggestionCard({
           </Button>
           <fieldset className="grid gap-3 border-t pt-4">
             <legend className="pt-4 font-medium">Créer le métier</legend>
-            <label className="grid gap-2 text-sm">
-              Intitulé du métier
+            <Field>
+              <FieldLabel htmlFor={`occupation-label-${suggestion.id}`}>
+                Intitulé du métier
+              </FieldLabel>
               <Input
+                id={`occupation-label-${suggestion.id}`}
                 value={label}
                 maxLength={100}
                 onChange={(event) => setLabel(event.target.value)}
               />
-            </label>
-            <label className="grid gap-2 text-sm">
-              Famille existante ou nouvelle
+            </Field>
+            <Field>
+              <FieldLabel htmlFor={`occupation-family-${suggestion.id}`}>
+                Famille existante ou nouvelle
+              </FieldLabel>
               <Input
+                id={`occupation-family-${suggestion.id}`}
                 list={`families-${suggestion.id}`}
                 value={family}
                 maxLength={60}
                 onChange={(event) => setFamily(event.target.value)}
               />
-            </label>
+            </Field>
             <datalist id={`families-${suggestion.id}`}>
               {families.map((family) => (
                 <option key={family} value={family} />

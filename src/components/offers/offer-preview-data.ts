@@ -136,6 +136,7 @@ export function draftOfferPreview(
     details: {
       ...fields,
       occupationLabel: occupation?.label ?? null,
+      occupationFamily: occupation?.family ?? null,
       department: department
         ? { code: department.code, name: department.name }
         : null,

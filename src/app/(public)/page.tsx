@@ -1,469 +1,342 @@
 import {
   ArrowDownIcon,
-  ArrowRightIcon,
   ArrowUpRightIcon,
-  CheckIcon,
-  HandshakeIcon,
-  MapPinIcon,
+  CalendarDaysIcon,
+  ChevronRightIcon,
+  HeartHandshakeIcon,
+  HotelIcon,
   MountainSnowIcon,
   PlusIcon,
-  ShieldCheckIcon,
-  SunSnowIcon,
+  Repeat2Icon,
+  SproutIcon,
+  SunIcon,
+  TentTreeIcon,
   UtensilsIcon,
   WavesIcon,
 } from "lucide-react"
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-
+import { AudienceFeatures } from "@/components/public/audience-features"
+import { FeaturedOffers } from "@/components/public/featured-offers"
+import { ProductScreenshot } from "@/components/public/product-screenshot"
+import { productImages } from "@/components/public/product-images"
 import { SeasonSearch } from "@/components/public/season-search"
 import { Button } from "@/components/ui/button"
 import { site } from "@/config/site"
 import { signInPath } from "@/domain/redirects"
 import { homePathFor } from "@/domain/roles"
 import { getSession } from "@/lib/dal"
-import { searchHref } from "@/server/search/search-params"
-
-import styles from "@/components/public/public.module.css"
+import styles from "@/components/public/landing.module.css"
 
 export const metadata: Metadata = {
-  title: { absolute: `${site.name} · Un job. Un lieu. Une saison à vivre.` },
-  description:
-    "Trouvez votre prochain emploi saisonnier en France. Hôtellerie, restauration, tourisme, animation : une destination, un job et de vraies rencontres. 0 % IA, 100 % humain.",
+  title: {
+    absolute: "ma saison · Votre prochaine saison. Et toutes celles d’après.",
+  },
+  description: site.description,
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "fr_FR",
     siteName: site.name,
-    title: `${site.name} · Une saison à vivre`,
-    description:
-      "Un job, une destination, une aventure humaine. Votre prochaine saison commence ici.",
     url: "/",
+    title: "ma saison · Bien plus qu’un job, la suite de votre histoire.",
+    description: site.description,
     images: [
       {
         url: "/images/alpine-lake.jpg",
         width: 1500,
         height: 1125,
-        alt: "Un lac face aux sommets des Alpes",
+        alt: "Un nouvel horizon dans les Alpes avec ma saison",
       },
     ],
   },
 }
 
-const destinations = [
-  {
-    title: "L’air du large.",
-    subtitle: "Les pieds dans le sable, la tête ailleurs.",
-    image: "/images/coast.jpg",
-    alt: "Une plage de sable ouverte sur la mer",
-    icon: WavesIcon,
-    label: "CÔTÉ MER",
-    criteria: {
-      departments: [
-        "06",
-        "13",
-        "17",
-        "22",
-        "29",
-        "33",
-        "34",
-        "40",
-        "44",
-        "56",
-        "64",
-        "66",
-        "83",
-        "85",
-        "2A",
-        "2B",
-      ],
-    },
-    searchLabel: "Explorer les départements du littoral",
-  },
-  {
-    title: "La vie au sommet.",
-    subtitle: "Prendre de la hauteur. Pour de vrai.",
-    image: "/images/alpine-lake.jpg",
-    alt: "Les sommets de Chamonix se reflètent dans un lac",
-    icon: MountainSnowIcon,
-    label: "CÔTÉ MONTAGNE",
-    criteria: { departments: ["04", "05", "09", "38", "65", "73", "74"] },
-    searchLabel: "Explorer les départements de montagne",
-  },
-  {
-    title: "Le goût des autres.",
-    subtitle: "De belles tables. De belles rencontres.",
-    image: "/images/restaurant.jpg",
-    alt: "Un plat servi à table dans un restaurant chaleureux",
-    icon: UtensilsIcon,
-    label: "CÔTÉ RENCONTRES",
-    criteria: { occupations: ["serveur", "cuisinier", "receptionniste"] },
-    searchLabel: "Explorer les métiers de l’accueil et de la restauration",
-  },
-]
-
 const questions = [
+  {
+    title: "En quoi ma saison est plus qu’un site d’emploi ?",
+    answer:
+      "Une offre est un point de départ. Aujourd’hui, ma saison réunit la recherche, le dossier candidat, les offres sauvegardées et les candidatures déclarées. Les employeurs disposent d’un espace pour gérer leurs annonces. La suite du produit vise à relier les saisons : calendrier de carrière, vivier, réembauche et amélioration des recrutements.",
+  },
   {
     title: "Est-ce gratuit pour les candidats ?",
     answer:
-      "Oui. La création du compte, la recherche d’offres et la candidature sont gratuites. Créez votre compte pour consulter les annonces, puis complétez votre dossier lorsque vous êtes prêt à candidater.",
+      "Oui. La création du compte, la recherche d’offres et la candidature sont gratuites. Vous pouvez commencer à explorer sans CV, puis compléter votre dossier avant de candidater.",
   },
   {
-    title: "Puis-je trouver un emploi avec un logement ?",
+    title: "Comment ma saison accompagne les employeurs ?",
     answer:
-      "Oui, le filtre « Avec logement » sélectionne les offres qui mentionnent un logement proposé. Consultez chaque annonce et échangez avec l’employeur pour en connaître les conditions : disponibilité, coût éventuel et type de logement.",
+      "Dès aujourd’hui, les employeurs peuvent créer leur espace entreprise et gérer leurs annonces. Le rattachement à l’entreprise est vérifié avant publication. Notre feuille de route va plus loin : anticiper les besoins, entretenir un vivier, proposer un retour aux anciens saisonniers et tirer les enseignements de chaque saison.",
   },
   {
-    title: "Je n’ai jamais fait de saison. Je peux me lancer ?",
+    title: "Le calendrier et le vivier sont-ils déjà disponibles ?",
     answer:
-      "Bien sûr. Le filtre « Débutants acceptés » vous permet de trouver les employeurs ouverts à une première expérience. Aucun CV n’est nécessaire pour commencer vos recherches ; votre dossier vous sera demandé avant votre première candidature.",
+      "Pas encore. Les captures montrent l’application actuelle avec des données de démonstration. Le calendrier de carrière, le vivier employeur, les campagnes de réembauche et les bilans sont des évolutions prévues, signalées « À venir ». Aucune date de lancement n’est annoncée à ce stade.",
   },
   {
-    title: "Comment se passe la candidature ?",
+    title: "Puis-je trouver une saison avec un logement ?",
     answer:
-      "Vous repérez une offre, complétez votre dossier, puis contactez l’employeur selon les modalités indiquées dans l’annonce. Vous choisissez vous-même ce que vous envoyez et à qui : aucune candidature n’est transmise automatiquement.",
+      "Oui. Le filtre « Avec logement » permet de sélectionner les offres qui mentionnent un logement proposé. Consultez l’annonce et échangez avec l’employeur pour vérifier sa disponibilité, son coût éventuel et ses conditions.",
   },
 ]
 
 export default async function HomePage() {
   const session = await getSession()
-  const browse = (path: string) => (session ? path : signInPath(path))
-  const accountHref = session
+  const candidateHref = session
     ? homePathFor(session.user.role)
     : "/inscription/candidat"
-  const employerHref =
-    session?.user.role === "employer" ? "/employeur" : "/inscription/employeur"
+  const employerHref = session
+    ? homePathFor(session.user.role)
+    : "/inscription/employeur"
+  const browse = (path: string) => (session ? path : signInPath(path))
 
   return (
-    <div className={styles.landing}>
+    <div data-landing className={styles.landing}>
       <section className={styles.hero} aria-labelledby="hero-title">
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>
-            <span className={styles.liveDot} /> LE DÉBUT DE VOTRE PROCHAINE
-            HISTOIRE
-          </p>
-          <h1 id="hero-title">
-            Un job. Un lieu.
-            <br />
-            <em>
-              Une saison
-              <br /> à vivre.
-            </em>
-          </h1>
-          <p className={styles.heroDescription}>
-            Il y a des jobs qui changent le quotidien.
-            <br />
-            Et des saisons qui changent tout.
-          </p>
-          <p className={styles.heroDetail}>
-            Mer, montagne ou grand air : trouvez votre emploi saisonnier et les
-            rencontres qui vont avec.
-          </p>
-          <a href="#recherche" className={styles.heroTextLink}>
-            Votre prochain départ commence ici <ArrowDownIcon aria-hidden />
-          </a>
-        </div>
-        <div className={styles.heroVisual}>
-          <div className={styles.heroPhoto}>
-            <Image
-              src="/images/alpine-lake.jpg"
-              alt="Les montagnes de Chamonix et leur reflet dans un lac d’altitude"
-              fill
-              sizes="(max-width: 700px) 90vw, (max-width: 1100px) 48vw, 610px"
-              loading="eager"
-              fetchPriority="high"
-              className={styles.coverImage}
-            />
-            <div className={styles.photoTopline}>
-              <span>
-                <MapPinIcon aria-hidden /> Chamonix, France
-              </span>
-              <span>45°55′ N · 6°52′ E</span>
-            </div>
-            <div className={styles.photoCaption}>
-              <span>CHANGEZ D’AIR.</span>
-              <p>
-                Et si c’était
-                <br />
-                <em>votre quotidien ?</em>
-              </p>
-            </div>
-          </div>
-          <div className={styles.sunSeal} aria-label="L’été comme l’hiver">
-            <SunSnowIcon aria-hidden />
-            <span>L’été comme l’hiver</span>
-          </div>
-          <span className={styles.heroPhotoIndex}>01 — L’ENVIE D’AILLEURS</span>
-        </div>
-        <div className={styles.heroSearch}>
-          <SeasonSearch signedIn={!!session} />
-        </div>
+        <a href="#notre-vision" className={styles.heroEyebrow}>
+          <span /> LA VIE SAISONNIÈRE, AVEC UNE SUITE{" "}
+          <ChevronRightIcon aria-hidden />
+        </a>
+        <h1 id="hero-title">
+          Votre prochaine saison.
+          <br />
+          <em>Et toutes celles d’après.</em>
+        </h1>
+        <p className={styles.heroDescription}>
+          Le logiciel pour construire votre carrière saisonnière.
+          <br className="hidden sm:block" /> Et des équipes qui ont envie de
+          revenir.
+        </p>
+        <a href="#saisonniers" className={styles.heroDiscover}>
+          Deux côtés. Une même envie d’avancer. <ArrowDownIcon aria-hidden />
+        </a>
       </section>
 
-      <dl className={styles.trustStrip} aria-label="Nos engagements">
-        <div>
-          <dt>10 000+</dt>
-          <dd>Entreprises explorées partout en France</dd>
-        </div>
-        <div>
-          <dt>Chaque jour</dt>
-          <dd>Des offres recherchées et actualisées</dd>
-        </div>
-        <div>
-          <dt>100 % humain</dt>
-          <dd>Des échanges directs avec les employeurs</dd>
-        </div>
-      </dl>
-
       <section
-        className={styles.destinations}
-        id="destinations"
-        aria-labelledby="destinations-title"
+        className={styles.audiences}
+        aria-label="Deux espaces, une même plateforme"
       >
-        <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.eyebrow}>
-              UN JOB, OUI. MAIS DANS QUEL DÉCOR ?
-            </p>
-            <h2 id="destinations-title">
-              Suivez votre
-              <br />
-              <em>envie d’ailleurs.</em>
-            </h2>
-          </div>
-          <div className={styles.sectionAside}>
-            <p>
-              Le plus dur, ce sera peut-être
-              <br />
-              de choisir où poser vos valises.
-            </p>
-            <Link href={browse("/offres")} className={styles.textLink}>
-              Explorer toutes les offres <ArrowUpRightIcon aria-hidden />
-            </Link>
-          </div>
-        </div>
-        <div className={styles.destinationGrid}>
-          {destinations.map(
-            (
-              {
-                title,
-                subtitle,
-                image,
-                alt,
-                icon: Icon,
-                label,
-                criteria,
-                searchLabel,
-              },
-              index,
-            ) => (
-              <Link
-                key={title}
-                href={browse(searchHref(criteria))}
-                className={styles.destinationCard}
-                aria-label={searchLabel}
-              >
-                <div className={styles.destinationImage}>
-                  <Image
-                    src={image}
-                    alt={alt}
-                    fill
-                    sizes="(max-width: 700px) 90vw, (max-width: 1000px) 45vw, 390px"
-                    className={styles.coverImage}
-                  />
-                  <span className={styles.destinationPill}>
-                    <Icon aria-hidden /> {label}
-                  </span>
-                  <span className={styles.destinationNumber}>0{index + 1}</span>
-                  <span className={styles.destinationArrow}>
-                    <ArrowUpRightIcon aria-hidden />
-                  </span>
-                </div>
-                <h3>{title}</h3>
-                <p>{subtitle}</p>
+        <article id="saisonniers" className={styles.audience}>
+          <div className={styles.audienceHeading}>
+            <div>
+              <span className={styles.audienceLabel}>
+                <SunIcon aria-hidden /> CÔTÉ SAISONNIERS
+              </span>
+              <h2>
+                Une saison, un job.
+                <br />
+                Et un vrai parcours.
+              </h2>
+            </div>
+            <Button asChild className="h-11 shrink-0 rounded-full px-5">
+              <Link href={candidateHref}>
+                {session ? "Mon espace" : "Créer mon espace"}
+                <ArrowUpRightIcon aria-hidden />
               </Link>
-            ),
-          )}
-        </div>
-        <p className={styles.destinationNote}>
-          Des envies pour vous inspirer. Les offres et leurs conditions se
-          découvrent dans le catalogue.
+            </Button>
+          </div>
+          <p className={styles.audienceDescription}>
+            Trouvez votre prochaine opportunité, gardez le fil de vos
+            candidatures et construisez la suite de votre carrière.
+          </p>
+          <ProductScreenshot
+            src={productImages.candidateTracking}
+            title="L’espace saisonnier : mes offres et mes candidatures"
+            eager
+          />
+          <div className={styles.previewCaption}>
+            <span>Votre espace saisonnier, aujourd’hui.</span>
+            <a href="#le-logiciel">
+              Découvrir <ArrowUpRightIcon aria-hidden />
+            </a>
+          </div>
+        </article>
+        <article id="employeurs" className={styles.audience}>
+          <div className={styles.audienceHeading}>
+            <div>
+              <span className={styles.audienceLabel}>
+                <SproutIcon aria-hidden /> CÔTÉ EMPLOYEURS
+              </span>
+              <h2>
+                Une équipe cette saison.
+                <br />
+                Un lien pour les suivantes.
+              </h2>
+            </div>
+            <Button asChild className="h-11 shrink-0 rounded-full px-5">
+              <Link href={employerHref}>
+                Préparer ma saison
+                <ArrowUpRightIcon aria-hidden />
+              </Link>
+            </Button>
+          </div>
+          <p className={styles.audienceDescription}>
+            Recrutez aujourd’hui. Construisons les outils pour fidéliser vos
+            saisonniers, les réembaucher et anticiper demain.
+          </p>
+          <ProductScreenshot
+            src={productImages.employerOffers}
+            title="L’espace employeur : mes annonces et mes recrutements"
+            tone="peach"
+            eager
+          />
+          <div className={styles.previewCaption}>
+            <span>Votre espace employeur, aujourd’hui.</span>
+            <a href="#le-logiciel">
+              Découvrir <ArrowUpRightIcon aria-hidden />
+            </a>
+          </div>
+        </article>
+        <p className={styles.captureNote}>
+          Captures réelles de l’application · données de démonstration.
         </p>
       </section>
 
-      <section
-        className={styles.humanSection}
-        id="notre-conviction"
-        aria-labelledby="human-title"
-      >
-        <div className={styles.humanInner}>
-          <div className={styles.humanStatement}>
-            <p className={styles.eyebrow}>
-              NOTRE PLUS BELLE TECHNOLOGIE ? VOUS.
-            </p>
-            <div className={styles.humanFigures}>
-              <span>
-                0 % <em>IA.</em>
-              </span>
-              <span>
-                100 %<br />
-                <em>humain.</em>
-              </span>
-            </div>
-          </div>
-          <div className={styles.humanCopy}>
-            <h2 id="human-title">
-              Une bonne saison
-              <br />
-              commence par
-              <br /> <em>une vraie rencontre.</em>
-            </h2>
-            <p>
-              Un employeur qui cherche la bonne personne. Quelqu’un qui a envie
-              de s’investir. Nous sommes là pour les rapprocher.
-            </p>
-            <p>
-              Pas de candidature automatique. Vous choisissez votre destination,
-              vous contactez l’employeur, vous écrivez la suite.
-            </p>
-            <Link href="/contact" className={styles.lightTextLink}>
-              Et derrière ce site ? Un humain aussi.{" "}
-              <ArrowUpRightIcon aria-hidden />
-            </Link>
-          </div>
+      <section className={styles.sectors} aria-label="Les secteurs accompagnés">
+        <p>POUR CELLES ET CEUX QUI FONT VIVRE LES SAISONS</p>
+        <div>
+          {[
+            { icon: HotelIcon, name: "Hôtellerie" },
+            { icon: UtensilsIcon, name: "Restauration" },
+            { icon: TentTreeIcon, name: "Campings" },
+            { icon: MountainSnowIcon, name: "Montagne" },
+            { icon: WavesIcon, name: "Tourisme & loisirs" },
+          ].map(({ icon: Icon, name }) => (
+            <span key={name}>
+              <Icon aria-hidden />
+              {name}
+            </span>
+          ))}
         </div>
       </section>
 
-      <section
-        className={styles.howSection}
-        id="comment-ca-marche"
-        aria-labelledby="how-title"
-      >
-        <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.eyebrow}>
-              MOINS DE DÉMARCHES. PLUS DE DÉPARTS.
-            </p>
-            <h2 id="how-title">
-              La suite tient
-              <br />
-              <em>en trois petits pas.</em>
-            </h2>
-          </div>
-          <p className={styles.handwritten}>
-            À vous les grands horizons <ArrowRightIcon aria-hidden />
-          </p>
-        </div>
-        <ol className={styles.steps}>
-          <li>
-            <span className={styles.stepNumber}>
-              01<span>—</span>
-            </span>
-            <h3>Venez comme vous êtes.</h3>
-            <p>
-              Un compte gratuit, vos envies et c’est parti. Pas besoin de CV
-              pour commencer à explorer.
-            </p>
-            <Link href={accountHref} className={styles.textLink}>
-              {session ? "Accéder à mon espace" : "Créer un compte"}{" "}
-              <ArrowUpRightIcon aria-hidden />
-            </Link>
-          </li>
-          <li>
-            <span className={styles.stepNumber}>
-              02<span>—</span>
-            </span>
-            <h3>Trouvez votre terrain de jeu.</h3>
-            <p>
-              Le métier, le lieu, les dates, le logement : choisissez ce qui
-              compte vraiment pour votre saison.
-            </p>
-            <a href="#recherche" className={styles.textLink}>
-              Lancer ma recherche <ArrowUpRightIcon aria-hidden />
-            </a>
-          </li>
-          <li>
-            <span className={styles.stepNumber}>
-              03<span>↗</span>
-            </span>
-            <h3>Faites le premier pas.</h3>
-            <p>
-              Une offre vous parle ? Complétez votre dossier et échangez
-              directement avec l’employeur.
-            </p>
-            <span className={styles.stepFootnote}>
-              <HandshakeIcon aria-hidden /> La suite, c’est entre vous.
-            </span>
-          </li>
-        </ol>
-      </section>
+      <AudienceFeatures
+        candidateHref={candidateHref}
+        employerHref={employerHref}
+      />
 
       <section
-        className={styles.employerSection}
-        id="recruteurs"
-        aria-labelledby="employer-title"
+        className={styles.vision}
+        id="notre-vision"
+        aria-labelledby="vision-title"
       >
-        <div className={styles.employerVisual} aria-hidden>
-          <div className={styles.employerIcon}>
-            <HandshakeIcon />
-          </div>
-          <span className={styles.employerWord}>
-            L’esprit
+        <div className={styles.visionHeading}>
+          <span className={styles.eyebrow}>NOTRE VISION</span>
+          <h2 id="vision-title">
+            Ne plus repartir de zéro.
             <br />
-            <em>d’équipe.</em>
-          </span>
-          <span className={styles.employerVisualNote}>
-            LES MEILLEURES SAISONS
-            <br />
-            SE VIVENT ENSEMBLE.
-          </span>
-        </div>
-        <div className={styles.employerCopy}>
-          <p className={styles.eyebrow}>CÔTÉ RECRUTEURS</p>
-          <h2 id="employer-title">
-            Les bonnes équipes
-            <br />
-            font les <em>belles saisons.</em>
+            <em>Grandir à chaque saison.</em>
           </h2>
           <p>
-            Hôtel, restaurant, camping ou lieu de loisirs : rencontrez des
-            candidats qui ont choisi la vie de saisonnier.
+            Une carrière ne tient pas dans une annonce.
+            <br />
+            Une bonne équipe ne se construit pas dans l’urgence.
           </p>
-          <ul>
-            <li>
-              <CheckIcon aria-hidden /> Dépôt d’annonce gratuit
-            </li>
-            <li>
-              <CheckIcon aria-hidden /> Des échanges directs avec les candidats
-            </li>
-            <li>
-              <ShieldCheckIcon aria-hidden /> Un lien à l’entreprise vérifié
-              avant publication
-            </li>
-          </ul>
-          <Button asChild size="lg" className={styles.buttonDark}>
-            <Link href={employerHref}>
-              {session?.user.role === "employer"
-                ? "Accéder à mon espace recruteur"
-                : "Publier une offre"}{" "}
-              <ArrowUpRightIcon aria-hidden />
+        </div>
+        <div className={styles.visionGrid}>
+          <div className={styles.visionPhoto}>
+            <Image
+              src="/images/alpine-lake.jpg"
+              alt="Un lac d’altitude et les sommets des Alpes, un des horizons de la vie saisonnière"
+              fill
+              sizes="(max-width: 800px) 90vw, 600px"
+            />
+            <div>
+              <span>LE MÊME ÉLAN.</span>
+              <p>De nouveaux horizons.</p>
+            </div>
+          </div>
+          <div className={styles.visionCopy}>
+            <span className={styles.roadmapTag}>LE CAP POUR LA SUITE</span>
+            <h3>
+              La prochaine saison
+              <br />
+              se prépare maintenant.
+            </h3>
+            <p>
+              Nous construisons ma saison pour que chaque expérience compte.
+              Pour les saisonniers qui veulent avancer. Pour les employeurs qui
+              veulent retrouver leurs talents et faire progresser leurs équipes.
+            </p>
+            <ol className={styles.visionSteps}>
+              <li>
+                <span>
+                  <CalendarDaysIcon aria-hidden />
+                </span>
+                <div>
+                  <h4>Anticiper les besoins</h4>
+                  <p>
+                    Voir les postes à pourvoir et les disponibilités avant que
+                    la saison ne commence.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span>
+                  <HeartHandshakeIcon aria-hidden />
+                </span>
+                <div>
+                  <h4>Entretenir le lien</h4>
+                  <p>
+                    Connaître les envies de retour et préparer la réembauche des
+                    saisonniers.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span>
+                  <Repeat2Icon aria-hidden />
+                </span>
+                <div>
+                  <h4>Apprendre de chaque saison</h4>
+                  <p>
+                    Transformer les retours d’expérience en améliorations
+                    concrètes pour la suivante.
+                  </p>
+                </div>
+              </li>
+            </ol>
+            <Link href="/contact" className={styles.textLink}>
+              Construisons ces outils avec vous <ArrowUpRightIcon aria-hidden />
             </Link>
-          </Button>
+          </div>
         </div>
       </section>
 
-      <section className={styles.faqSection} aria-labelledby="faq-title">
-        <div>
-          <p className={styles.eyebrow}>AVANT DE FAIRE VOS VALISES</p>
-          <h2 id="faq-title">
-            Une dernière
+      <section className={styles.explore} aria-labelledby="explore-title">
+        <div className={styles.sectionIntro}>
+          <span className={styles.eyebrow}>
+            ET SI ON COMMENÇAIT PAR LA PROCHAINE ?
+          </span>
+          <h2 id="explore-title">
+            Votre prochain chapitre
             <br />
-            <em>petite question ?</em>
+            <em>se trouve peut-être ici.</em>
           </h2>
-          <p className={styles.faqIntro}>
-            On préfère quand tout est clair.
+        </div>
+        <SeasonSearch signedIn={!!session} />
+      </section>
+
+      <FeaturedOffers catalogueHref={browse("/offres")} />
+
+      <section
+        id="questions"
+        className={styles.faq}
+        aria-labelledby="faq-title"
+      >
+        <div>
+          <span className={styles.eyebrow}>TOUT SIMPLEMENT</span>
+          <h2 id="faq-title">
+            Les bonnes
             <br />
-            Et si besoin, <Link href="/contact">on est là pour vous.</Link>
+            <em>questions.</em>
+          </h2>
+          <p className="mt-6 text-sm leading-7 text-[var(--ms-muted)]">
+            Une autre question ?<br />
+            <Link href="/contact" className={styles.textLink}>
+              Parlons-en <ArrowUpRightIcon aria-hidden />
+            </Link>
           </p>
         </div>
         <div className={styles.faqList}>
@@ -480,24 +353,27 @@ export default async function HomePage() {
       </section>
 
       <section className={styles.finalCta} aria-labelledby="final-title">
-        <div>
-          <p className={styles.eyebrow}>LE PROCHAIN CHAPITRE VOUS ATTEND.</p>
-          <h2 id="final-title">
-            Ça commence par un job.
-            <br />
-            <em>Ça devient votre histoire.</em>
-          </h2>
-          <Button asChild size="lg" className={styles.buttonDark}>
-            <Link href={accountHref}>
-              {session ? "Accéder à mon espace" : "Je me lance"}{" "}
-              <ArrowUpRightIcon aria-hidden />
+        <SunIcon aria-hidden className={styles.finalSun} />
+        <span className={styles.eyebrow}>
+          LE MEILLEUR MOMENT POUR PRÉPARER LA SUITE
+        </span>
+        <h2 id="final-title">C’est votre saison.</h2>
+        <p>Faisons-en le début de quelque chose qui dure.</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Button asChild className="h-12 rounded-full px-6">
+            <Link href={candidateHref}>
+              Je suis saisonnier <ArrowUpRightIcon aria-hidden />
             </Link>
           </Button>
-          <span className={styles.finalNote}>
-            {session
-              ? "Une nouvelle saison, de nouvelles possibilités."
-              : "Un compte gratuit. Un monde de possibilités."}
-          </span>
+          <Button
+            asChild
+            variant="outline"
+            className="h-12 rounded-full border-[var(--ms-ink)] bg-transparent px-6"
+          >
+            <Link href={employerHref}>
+              Je suis employeur <ArrowUpRightIcon aria-hidden />
+            </Link>
+          </Button>
         </div>
       </section>
     </div>

@@ -14,7 +14,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { signInPath } from "@/domain/redirects"
 import { searchHref } from "@/server/search/search-params"
-import styles from "./public.module.css"
+import styles from "./search.module.css"
 
 export function SeasonSearch({ signedIn }: { signedIn: boolean }) {
   const [occupation, setOccupation] = useState("")
