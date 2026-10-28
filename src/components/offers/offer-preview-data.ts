@@ -55,7 +55,7 @@ export function savedOfferPreview(
     title: offer.title,
     origin: offer.origin,
     companyName: publicCompanyName(offer),
-    details: toOfferDetailsData(offer),
+    details: toOfferDetailsData(offer, { blockedDomains }),
     applicationExplanation: applicationModeExplanation(offer),
     contacts: {
       email: offer.applyEmail,

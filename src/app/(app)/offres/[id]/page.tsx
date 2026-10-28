@@ -34,7 +34,10 @@ import { seasonLabels } from "@/domain/offer-display"
 import { ExternalApplicationBadge } from "@/components/offers/external-application"
 import { requireRole } from "@/lib/dal"
 import { getTracking } from "@/server/candidates/tracking"
-import { getApplicationDetails } from "@/server/offers/application"
+import {
+  getApplicationDetails,
+  getBlockedDomains,
+} from "@/server/offers/application"
 import {
   getOfferWithRelations,
   type OfferWithRelations,
@@ -117,14 +120,15 @@ export default async function OfferPage({ params }: PageProps<"/offres/[id]">) {
     )
   }
 
-  const [application, tracking] = await Promise.all([
+  const [application, tracking, blockedDomains] = await Promise.all([
     getApplicationDetails(offer.id, user),
     // L'admin ne suit pas d'offres.
     isAdmin
       ? null
       : getTracking(user.id, [offer.id]).then((map) => map.get(offer.id)),
+    getBlockedDomains(),
   ])
-  const details = toOfferDetailsData(offer)
+  const details = toOfferDetailsData(offer, { blockedDomains })
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">

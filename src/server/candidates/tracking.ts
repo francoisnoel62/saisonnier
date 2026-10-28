@@ -11,6 +11,7 @@ import {
   offerTracking,
   user,
 } from "@/lib/db/schema"
+import { getBlockedDomains } from "@/server/offers/application"
 import { activeOfferConditions } from "@/server/offers/queries"
 import {
   offerListColumns,
@@ -130,8 +131,9 @@ export async function getTrackedOffers(userId: string) {
     .where(eq(offerTracking.userId, userId))
     .orderBy(desc(offerTracking.updatedAt), desc(offerTracking.createdAt))
 
+  const blockedDomains = await getBlockedDomains()
   return rows.map((row) => ({
-    offer: toOfferListItem(row),
+    offer: toOfferListItem(row, blockedDomains),
     active: isActive(row, today),
     savedAt: row.savedAt,
     appliedAt: row.appliedAt,

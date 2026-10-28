@@ -111,6 +111,7 @@ type OfferDetailsSource = Pick<Offer, (typeof offerDetailsFields)[number]> & {
 // Une offre lue en base (getOfferWithRelations) → ce que la fiche affiche, et rien d'autre.
 export function toOfferDetailsData(
   offer: OfferDetailsSource,
+  { blockedDomains }: { blockedDomains: readonly string[] },
 ): OfferDetailsData {
   const fields = Object.fromEntries(
     offerDetailsFields.map((field) => [field, offer[field]]),
@@ -122,10 +123,13 @@ export function toOfferDetailsData(
     regionName: offer.department.region?.name ?? null,
     provenance: provenanceOf({ ...offer, origin: offer.origin ?? "deposited" }),
     newness: newnessOf(offer),
-    externalApplication: isExternalApplication({
-      ...offer,
-      applicationChannel: offer.applicationChannel ?? "employer",
-    }),
+    externalApplication: isExternalApplication(
+      {
+        ...offer,
+        applicationChannel: offer.applicationChannel ?? "employer",
+      },
+      blockedDomains,
+    ),
     places: offerPlaces(
       { ...offer, departmentCode: offer.department.code },
       offer.extraLocations,

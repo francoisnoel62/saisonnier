@@ -18,6 +18,7 @@ import { decideDuplicate } from "./duplicates"
 import { decideOccupation, type OccupationDecision } from "./occupations"
 import { publishCandidate } from "./publication"
 import {
+  candidateOccupationId,
   nextReviewPath,
   rejectCandidate,
   reviewConflictMessage,
@@ -43,7 +44,9 @@ export async function validateScanCandidate(
     values && typeof values === "object"
       ? (values as Partial<AdminOfferFormValues>)
       : {}
-  const referentials = await getOfferFormReferentials()
+  const referentials = await getOfferFormReferentials(
+    await candidateOccupationId(candidateId),
+  )
   const parsed = adminOfferInputSchema(
     offerInputContext(referentials, todayInParis(new Date())),
   ).safeParse({ ...submitted, origin: "collected" })

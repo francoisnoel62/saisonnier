@@ -41,6 +41,14 @@ describe("provenance", () => {
     ).toBe(false)
     expect(isExternalApplication({ ...form, applyUrl: null })).toBe(false)
   })
+  it("un formulaire sur un domaine devenu exclu n'est plus une candidature externe (plan scan 09)", () => {
+    const form = {
+      applicationChannel: "employer" as const,
+      applyUrl: "https://fr.jobboard.example/offre/12",
+    }
+    expect(isExternalApplication(form, ["jobboard.example"])).toBe(false)
+    expect(isExternalApplication(form, ["autre.example"])).toBe(true)
+  })
 })
 describe("nouveauté", () => {
   const date = new Date("2026-10-24T06:00:00Z")

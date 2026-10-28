@@ -4,6 +4,7 @@ import { publicCompanyName } from "@/domain/application"
 import type { DurationUnit, OfferOrigin, Season } from "@/domain/offer"
 import { todayInParis } from "@/domain/offer-activity"
 import {
+  isExternalApplication,
   provenanceOf,
   newnessOf,
   type Provenance,
@@ -15,6 +16,7 @@ import type { SearchCriteria } from "@/domain/search-criteria"
 import type { TriState } from "@/domain/tri-state"
 import { db } from "@/lib/db"
 import { companies, departments, offers, user } from "@/lib/db/schema"
+import { getBlockedDomains } from "@/server/offers/application"
 
 import { searchConditions } from "./build-conditions"
 
@@ -74,6 +76,8 @@ export const offerListColumns = {
   humanVerifiedAt: offers.humanVerifiedAt,
   createdBy: { role: user.role },
   externalApplication: sql<boolean>`${offers.applicationChannel} = 'employer' and ${offers.applyEmail} is null and ${offers.applyPhone} is null and ${offers.applyUrl} is not null`,
+  // Lu pour écarter un domaine devenu exclu ; jamais transmis à la carte.
+  applyUrl: offers.applyUrl,
   sourcePublishedDate: offers.sourcePublishedDate,
   sourcePublishedAt: offers.sourcePublishedAt,
   firstDiscoveredAt: offers.firstDiscoveredAt,
@@ -96,7 +100,10 @@ function offerListQuery() {
 }
 type OfferListRow = Awaited<ReturnType<typeof offerListQuery>>[number]
 
-export function toOfferListItem(row: OfferListRow): OfferListItem {
+export function toOfferListItem(
+  row: OfferListRow,
+  blockedDomains: readonly string[],
+): OfferListItem {
   return {
     id: row.id,
     title: row.title,
@@ -113,7 +120,12 @@ export function toOfferListItem(row: OfferListRow): OfferListItem {
     meals: row.meals,
     origin: row.origin,
     provenance: provenanceOf(row),
-    externalApplication: row.externalApplication,
+    externalApplication:
+      row.externalApplication &&
+      isExternalApplication(
+        { applicationChannel: "employer", applyUrl: row.applyUrl },
+        blockedDomains,
+      ),
     newness: newnessOf(row),
     fieldsToConfirm: row.fieldsToConfirm,
     placesCount: row.placesCount,
@@ -150,7 +162,7 @@ export async function searchOffers(
   assertPositiveInteger("pageSize", pageSize)
   const where = searchConditions(criteria, today)
 
-  const [rows, total] = await Promise.all([
+  const [rows, total, blockedDomains] = await Promise.all([
     offerListQuery()
       .where(where)
       .orderBy(
@@ -163,7 +175,11 @@ export async function searchOffers(
       .limit(pageSize)
       .offset((page - 1) * pageSize),
     db.$count(offers, where),
+    getBlockedDomains(),
   ])
 
-  return { items: rows.map(toOfferListItem), total }
+  return {
+    items: rows.map((row) => toOfferListItem(row, blockedDomains)),
+    total,
+  }
 }

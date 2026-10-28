@@ -6,24 +6,31 @@ import {
 
 import { valueOf } from "./field"
 import type { ScanProposal } from "./proposal"
-import { proposalToOfferInput } from "./proposal-offer"
+import {
+  conditionPrecisionLimit,
+  proposalTextLimits,
+  proposalToOfferInput,
+  type ProposalTextField,
+} from "./proposal-offer"
 import { scanIssue } from "./vocabulary"
 
 export function proposalFormIssues(proposal: ScanProposal) {
-  return (
-    ["title", "description", "missions", "additionalInfo"] as const
-  ).flatMap((field) => {
+  const fields = Object.keys(proposalTextLimits) as ProposalTextField[]
+  const texts = fields.flatMap((field) => {
     const value = valueOf(proposal[field])
-    const limit = {
-      title: 150,
-      description: 5000,
-      missions: 3000,
-      additionalInfo: 1000,
-    }[field]
-    return value && value.length > limit
+    return value && value.length > proposalTextLimits[field]
       ? [scanIssue("text_truncated", field)]
       : []
   })
+  const precisions = (
+    ["housing", "meals", "drivingLicenceRequired"] as const
+  ).flatMap((condition) =>
+    (proposal.conditionPrecisions[condition]?.length ?? 0) >
+    conditionPrecisionLimit
+      ? [scanIssue("text_truncated", condition)]
+      : [],
+  )
+  return [...texts, ...precisions]
 }
 
 export function proposalToAdminFormValues(
