@@ -32,11 +32,26 @@ test("Scan — sources et navigation accessibles à l'admin sur mobile", async (
   await expect(
     firstSource.getByText(/source officielle de l’employeur/),
   ).toBeVisible()
+  await expect(firstSource.getByText("Prête", { exact: true })).toBeVisible()
+  // Sources testables : France Travail, les trois réserves et les fixtures ; les trois pistes
+  // écartées du plan 01 s'affichent sans bouton de test.
   await expect(
     asAdmin.getByRole("button", {
       name: /Tester l’accès depuis ce déploiement/,
     }),
   ).toHaveCount(5)
+  const sandaya = asAdmin.locator("li").filter({
+    has: asAdmin.getByRole("heading", { name: "Sandaya (WeRecruit)" }),
+  })
+  await expect(sandaya.getByText("Écartée", { exact: true })).toBeVisible()
+  await expect(sandaya.getByRole("button")).toHaveCount(0)
+  // Une réserve non qualifiée ne s'active pas et dit pourquoi.
+  const belambra = asAdmin.locator("li").filter({
+    has: asAdmin.getByRole("heading", { name: "Belambra", exact: true }),
+  })
+  const enabled = belambra.getByRole("switch", { name: "Activée", exact: true })
+  await expect(enabled).toBeDisabled()
+  await expect(enabled).toHaveAccessibleDescription(/À qualifier/)
   await expectNoHorizontalScroll(asAdmin)
 })
 

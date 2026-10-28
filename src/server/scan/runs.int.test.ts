@@ -1,10 +1,14 @@
 import { eq } from "drizzle-orm"
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 
-import { insertScanRun, resetScan } from "../../../e2e/helpers/scan"
+import {
+  enableScanSource,
+  insertScanRun,
+  resetScan,
+} from "../../../e2e/helpers/scan"
 import { dateInZone } from "@/domain/scan/source-date"
 import { db } from "@/lib/db"
-import { scanRuns, user } from "@/lib/db/schema"
+import { scanRuns, scanSourceEvents, user } from "@/lib/db/schema"
 
 import {
   claimRun,
@@ -20,11 +24,8 @@ import {
   updateRunSource,
   waitBeforeNextRequest,
 } from "./run-sources"
-import {
-  listScanSources,
-  setScanSourceAutoPublish,
-  setScanSourceEnabled,
-} from "./sources/state"
+import { listScanSources } from "./sources/registry"
+import { setSourceSwitch } from "./sources/writes"
 import { getActiveRun, getRunState, listRuns } from "./queries"
 
 const now = new Date("2026-10-24T10:00:00Z")
@@ -208,19 +209,69 @@ it("avancement par source : initialisation rejouée, incréments SQL concurrents
   ).toMatchObject({ reason: "superseded" })
 })
 
-it("sources désactivées sans ligne ; mises à jour indépendantes, attribuées à l'admin ; clé inconnue refusée", async () => {
+it("sources désactivées après la migration ; interrupteurs indépendants d'une source prête, attribués à l'admin et journalisés", async () => {
   expect(
-    (await listScanSources()).every((s) => !s.enabled && !s.autoPublish),
+    (await listScanSources()).every(
+      (s) => !s.enabled && !s.dailyEnabled && !s.autoPublish,
+    ),
   ).toBe(true)
-  await setScanSourceEnabled("belambra", true, adminId)
-  await setScanSourceAutoPublish("belambra", true, adminId)
-  await setScanSourceEnabled("belambra", false, adminId)
+  // Belambra n'est qu'un brouillon : on la qualifie pour le test, sans l'activer.
+  await enableScanSource(db.$client, "belambra")
+  await setSourceSwitch("belambra", "enabled", false, adminId)
+  expect(
+    await setSourceSwitch("belambra", "enabled", true, adminId),
+  ).toMatchObject({ ok: true })
+  expect(
+    await setSourceSwitch("belambra", "autoPublish", true, adminId),
+  ).toMatchObject({ ok: true })
+  expect(
+    await setSourceSwitch("belambra", "enabled", false, adminId),
+  ).toMatchObject({ ok: true })
   expect(
     (await listScanSources()).find((s) => s.key === "belambra"),
-  ).toMatchObject({ enabled: false, autoPublish: true })
-  await expect(
-    setScanSourceEnabled("__proto__", true, adminId),
-  ).rejects.toThrow("Source inconnue")
+  ).toMatchObject({ enabled: false, dailyEnabled: false, autoPublish: true })
+  const events = await db
+    .select()
+    .from(scanSourceEvents)
+    .where(eq(scanSourceEvents.sourceKey, "belambra"))
+  expect(
+    events
+      .filter((event) => event.kind === "switched")
+      .map((event) => [event.details, event.actorUserId]),
+  ).toEqual(
+    expect.arrayContaining([
+      [{ flag: "autoPublish", value: true }, adminId],
+      [{ flag: "enabled", value: false }, adminId],
+    ]),
+  )
+})
+
+it("refus motivé d'une source en brouillon, d'une découverte en publication automatique et d'une clé inconnue", async () => {
+  expect(await setSourceSwitch("vvf", "enabled", true, adminId)).toMatchObject({
+    ok: false,
+    reason: "blocked",
+    message: expect.stringContaining("À qualifier"),
+  })
+  expect(
+    await setSourceSwitch("france-travail", "autoPublish", true, adminId),
+  ).toMatchObject({ ok: false, reason: "blocked" })
+  expect(
+    await setSourceSwitch("france-travail", "dailyEnabled", true, adminId),
+  ).toMatchObject({
+    ok: false,
+    message: expect.stringContaining("justification d’accès programmé"),
+  })
+  expect(
+    await setSourceSwitch("__proto__", "enabled", true, adminId),
+  ).toMatchObject({ ok: false, reason: "invalid" })
+  expect(
+    await setSourceSwitch("inconnue", "enabled", true, adminId),
+  ).toMatchObject({ ok: false, reason: "unknown" })
+  expect(
+    await setSourceSwitch("france-travail", "enabled", true, adminId, {
+      version: 999,
+    }),
+  ).toMatchObject({ ok: false, reason: "conflict" })
 })
 
 describe("contraintes des passages", () => {

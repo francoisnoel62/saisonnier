@@ -9,7 +9,7 @@ vi.mock("./http", () => ({
 
 import { franceTravailPostingDataUrl } from "@/domain/scan/france-travail"
 import { probeScanSource } from "./probe"
-import { buildScanSourceDefinitions } from "./sources/registry"
+import { testScanSourceDefinitions } from "@/test/scan-sources"
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -18,7 +18,7 @@ afterEach(() => {
 
 it("sonde la liste France Travail et trois JSON publics, en conservant les fiches de découverte", async () => {
   vi.spyOn(console, "info").mockImplementation(() => {})
-  const source = buildScanSourceDefinitions()["france-travail"]
+  const source = testScanSourceDefinitions()["france-travail"]
   const root = join(
     process.cwd(),
     "src/server/scan/sources/fixtures/france-travail",
@@ -69,7 +69,7 @@ it("sonde la liste France Travail et trois JSON publics, en conservant les fiche
 
 it("arrête la source après un refus de fiche et ne journalise jamais son contenu", async () => {
   const log = vi.spyOn(console, "info").mockImplementation(() => {})
-  const source = buildScanSourceDefinitions().belambra
+  const source = testScanSourceDefinitions().belambra
   mocks.fetch
     .mockResolvedValueOnce({
       ok: true,
@@ -96,7 +96,7 @@ it("arrête la source après un refus de fiche et ne journalise jamais son conte
 
 it("une fiche introuvable n'empêche pas de lire les suivantes", async () => {
   vi.spyOn(console, "info").mockImplementation(() => {})
-  const source = buildScanSourceDefinitions().belambra
+  const source = testScanSourceDefinitions().belambra
   mocks.fetch
     .mockResolvedValueOnce({
       ok: true,

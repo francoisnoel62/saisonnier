@@ -23,7 +23,8 @@ import { listCompanyOptions } from "@/server/companies/companies"
 import { getOfferFormReferentials } from "@/server/offers/employer-offers"
 import { getCandidateForReview, nextReviewPath } from "@/server/scan/review"
 import { validateScanCandidate } from "@/server/scan/review-actions"
-import { scanSourceDefinitions } from "@/server/scan/sources/registry"
+import type { ScanSourceDraftSnapshot } from "@/domain/scan/source"
+import { loadScanSource } from "@/server/scan/sources/registry"
 
 function safeHref(value: string | null | undefined) {
   try {
@@ -67,20 +68,26 @@ export default async function ScanCandidatePage({
   if (!review) notFound()
   const { candidate } = review
   const proposal = candidate.proposal
-  const source = scanSourceDefinitions[candidate.sourceKey]
-  const [referentials, companies, next] = await Promise.all([
+  const [source, referentials, companies, next] = await Promise.all([
+    loadScanSource(candidate.sourceKey),
     getOfferFormReferentials(proposal?.occupationId),
     listCompanyOptions(),
     nextReviewPath(id),
   ])
+  const sourceLabel = source?.row.label ?? "Source du scan"
   const now = new Date()
   const readiness = proposal
     ? publicationReadiness(proposal, {
-        officialHosts: source?.kind === "employer" ? source.officialHosts : [],
+        officialHosts:
+          source?.row.kind === "employer"
+            ? ((source.revision.definition as ScanSourceDraftSnapshot)
+                .officialHosts ?? [])
+            : [],
         blockedDomains: referentials.blockedDomains,
         today: todayInParis(now),
         now: now.toISOString(),
         potentialDuplicate: review.duplicates.length > 0,
+        sourceWithdrawn: source?.row.status === "rejected",
       })
     : { blocking: [], alerts: [] }
   const issues = uniqueIssues([
@@ -109,8 +116,7 @@ export default async function ScanCandidatePage({
           {candidate.title ?? "Dossier du scan"}
         </h2>
         <p>
-          {source?.label ?? "Source inconnue"} ·{" "}
-          {scanCandidateStatusLabels[candidate.status]}
+          {sourceLabel} · {scanCandidateStatusLabels[candidate.status]}
         </p>
         {proposal && (
           <p>
@@ -211,7 +217,7 @@ export default async function ScanCandidatePage({
               action={validateScanCandidate.bind(null, id, candidate.version)}
               defaultValues={proposalToAdminFormValues(proposal, {
                 companyId: review.companyId,
-                sourceName: source?.label ?? "Source du scan",
+                sourceName: sourceLabel,
               })}
               companies={companies}
               referentials={referentials}

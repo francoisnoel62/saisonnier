@@ -7,10 +7,10 @@ import { departmentFromPostalCode } from "@/domain/scan/locale"
 import type { ScanSourceDefinition } from "@/domain/scan/source"
 
 import type { AdapterContext } from "./adapter"
-import { buildScanSourceDefinitions } from "./registry"
+import { testScanSourceDefinitions } from "@/test/scan-sources"
 
 export const sampleNow = "2026-10-24T10:00:00.000Z"
-export const testDefinitions = buildScanSourceDefinitions(
+export const testDefinitions = testScanSourceDefinitions(
   "http://localhost:3200",
 )
 export function fixtureFile(source: string, file: string) {

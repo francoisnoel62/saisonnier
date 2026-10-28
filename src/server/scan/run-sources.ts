@@ -1,24 +1,43 @@
 import "server-only"
 
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, inArray, sql } from "drizzle-orm"
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core"
 
 import { db } from "@/lib/db"
-import { scanRunSources, type ScanRunSource } from "@/lib/db/schema"
+import {
+  scanRunSources,
+  scanSources,
+  type ScanRunSource,
+} from "@/lib/db/schema"
 
 import { withRunClaim } from "./claim"
 
+// SH22 : fige la version courante de chaque source à son entrée dans le passage. À la reprise,
+// les lignes existantes gardent leur version ; une source nouvellement activée rejoint le passage.
 export function initRunSources(
   runId: string,
   keys: readonly string[],
   token: string,
 ) {
   return withRunClaim(runId, token, async (tx) => {
-    if (keys.length)
-      await tx
-        .insert(scanRunSources)
-        .values([...new Set(keys)].map((sourceKey) => ({ runId, sourceKey })))
-        .onConflictDoNothing()
+    const unique = [...new Set(keys)]
+    if (!unique.length) return { ok: true } as const
+    const sources = await tx
+      .select({ key: scanSources.key, revision: scanSources.revision })
+      .from(scanSources)
+      .where(inArray(scanSources.key, unique))
+    if (sources.length !== unique.length)
+      return { ok: false, reason: "unknown_source" } as const
+    await tx
+      .insert(scanRunSources)
+      .values(
+        sources.map((source) => ({
+          runId,
+          sourceKey: source.key,
+          sourceRevision: source.revision,
+        })),
+      )
+      .onConflictDoNothing()
     return { ok: true } as const
   })
 }

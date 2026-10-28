@@ -4,6 +4,7 @@ import {
   boolean,
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -21,22 +22,34 @@ import {
 import type { AdmissionDecision } from "@/domain/scan/admission"
 import type { Observation } from "@/domain/scan/observation"
 import type { ScanProposal } from "@/domain/scan/proposal"
+import type {
+  ScanSourceDraftSnapshot,
+  ScanSourceSnapshot,
+} from "@/domain/scan/source"
+import type { ScanSourceEventDetails } from "@/domain/scan/source-events"
 import {
   exclusionReasons,
   publicationKinds,
   rejectionReasons,
+  scanAdapterKinds,
   scanCandidateStatuses,
   scanModes,
+  scanReuseDecisions,
   scanReviewKinds,
   scanReviewStatuses,
   scanRunSourceStatuses,
   scanRunStatuses,
   scanRunTriggers,
+  scanSourceEventKinds,
+  scanSourceKinds,
+  scanSourceRoles,
+  scanSourceStatuses,
   type ScanIssue,
 } from "@/domain/scan/vocabulary"
 
 import { user } from "./auth"
 import { notBlank, timestamps } from "./columns"
+import { companies } from "./companies"
 import { offers } from "./offers"
 import { occupations } from "./reference"
 
@@ -68,17 +81,197 @@ export const scanReviewStatusEnum = pgEnum(
   "scan_review_status",
   scanReviewStatuses,
 )
+export const scanSourceKindEnum = pgEnum("scan_source_kind", scanSourceKinds)
+export const scanSourceStatusEnum = pgEnum(
+  "scan_source_status",
+  scanSourceStatuses,
+)
+export const scanSourceRoleEnum = pgEnum("scan_source_role", scanSourceRoles)
+export const scanAdapterEnum = pgEnum("scan_adapter", scanAdapterKinds)
+export const scanReuseDecisionEnum = pgEnum(
+  "scan_reuse_decision",
+  scanReuseDecisions,
+)
+export const scanSourceEventKindEnum = pgEnum(
+  "scan_source_event_kind",
+  scanSourceEventKinds,
+)
 const instant = () => timestamp({ withTimezone: true })
 const actor = () => text().references(() => user.id, { onDelete: "set null" })
 
-// SH1 : l'absence de ligne désactive une source ; le registre reste en code.
-export const scanSources = pgTable("scan_sources", {
-  key: text().primaryKey(),
-  enabled: boolean().notNull().default(false),
-  autoPublish: boolean().notNull().default(false),
-  updatedByUserId: actor(),
-  ...timestamps,
-})
+// SH20 : registre administrable. La ligne porte l'identité (reflet de la version courante), le
+// cycle de vie, les décisions et les interrupteurs ; la configuration lue est dans la version.
+export const scanSources = pgTable(
+  "scan_sources",
+  {
+    // Immuable, dans les URL de l'admin ; jamais réattribuée, même archivée.
+    key: text().primaryKey(),
+    label: text().notNull(),
+    kind: scanSourceKindEnum().notNull(),
+    // Nul : connecteur à déterminer (brouillon).
+    adapter: scanAdapterEnum(),
+    status: scanSourceStatusEnum().notNull().default("draft"),
+    // Version courante de la configuration, sans clé étrangère (référence circulaire) :
+    // writes.ts écrit la version et la ligne dans la même transaction.
+    revision: integer().notNull(),
+    role: scanSourceRoleEnum().notNull().default("reserve"),
+    priority: integer().notNull().default(100),
+    employerName: text(),
+    employerSiren: text(),
+    employerWebsite: text(),
+    companyId: uuid().references(() => companies.id, { onDelete: "set null" }),
+    reuseDecision: scanReuseDecisionEnum().notNull().default("pending"),
+    reuseDecisionNote: text(),
+    reuseDecidedAt: instant(),
+    reuseDecidedByUserId: actor(),
+    // Justification des passages quotidiens d'une découverte (SH24).
+    scheduledAccessBasis: text(),
+    enabled: boolean().notNull().default(false),
+    dailyEnabled: boolean().notNull().default(false),
+    autoPublish: boolean().notNull().default(false),
+    suspendedAt: instant(),
+    suspensionReason: text(),
+    rejectionReason: text(),
+    archivedAt: instant(),
+    // Concurrence optimiste des formulaires.
+    version: integer().notNull().default(1),
+    createdByUserId: actor(),
+    updatedByUserId: actor(),
+    ...timestamps,
+  },
+  (t) => [
+    check("scan_sources_key", sql`${t.key} ~ '^[a-z][a-z0-9-]{1,47}$'`),
+    // SH17, D6 : un diffuseur n'est jamais l'employeur et ne publie jamais seul.
+    check(
+      "scan_sources_discovery",
+      sql`${t.kind} <> 'discovery' or (${t.employerName} is null and ${t.employerSiren} is null and ${t.employerWebsite} is null and ${t.companyId} is null and not ${t.autoPublish})`,
+    ),
+    // La clé de Luhn est vérifiée par isValidSiren dans les schémas zod.
+    check(
+      "scan_sources_siren",
+      sql`${t.employerSiren} is null or ${t.employerSiren} ~ '^[0-9]{9}$'`,
+    ),
+    // D5 : une source prête a son connecteur, une décision de reprise favorable et, pour un
+    // portail employeur, l'employeur et son site.
+    check(
+      "scan_sources_ready",
+      sql`${t.status} <> 'ready' or (${t.adapter} is not null and ${t.reuseDecision} in ('authorized', 'accepted') and (${t.kind} = 'discovery' or (${t.employerName} is not null and ${t.employerWebsite} is not null)))`,
+    ),
+    // D5, D11 : hors « Prête », aucun interrupteur.
+    check(
+      "scan_sources_switches",
+      sql`${t.status} = 'ready' or (not ${t.enabled} and not ${t.dailyEnabled} and not ${t.autoPublish})`,
+    ),
+    // SH24 : les passages quotidiens d'une découverte exigent une justification écrite.
+    check(
+      "scan_sources_daily",
+      sql`not ${t.dailyEnabled} or ${t.kind} = 'employer' or ${t.scheduledAccessBasis} is not null`,
+    ),
+    check(
+      "scan_sources_rejected",
+      sql`(${t.status} = 'rejected') = (${t.rejectionReason} is not null)`,
+    ),
+    check(
+      "scan_sources_archived",
+      sql`(${t.status} = 'archived') = (${t.archivedAt} is not null)`,
+    ),
+    // D9 : suspension datée et motivée.
+    check(
+      "scan_sources_suspended",
+      sql`(${t.suspendedAt} is null) = (${t.suspensionReason} is null)`,
+    ),
+    // Décision de reprise datée et motivée.
+    check(
+      "scan_sources_reuse",
+      sql`(${t.reuseDecision} = 'pending') = (${t.reuseDecidedAt} is null) and (${t.reuseDecision} = 'pending' or ${t.reuseDecisionNote} is not null)`,
+    ),
+    check(
+      "scan_sources_counters",
+      sql`${t.revision} >= 1 and ${t.version} >= 1 and ${t.priority} >= 0`,
+    ),
+    // Un texte absent s'écrit NULL ; bornes des libellés, motifs et notes.
+    check(
+      "scan_sources_texts",
+      sql`${notBlank(t.label, t.employerName, t.employerSiren, t.employerWebsite, t.reuseDecisionNote, t.scheduledAccessBasis, t.suspensionReason, t.rejectionReason)} and char_length(${t.label}) <= 80 and char_length(${t.employerName}) <= 200 and char_length(${t.employerWebsite}) <= 2048 and char_length(${t.reuseDecisionNote}) <= 2000 and char_length(${t.suspensionReason}) <= 2000 and char_length(${t.rejectionReason}) <= 2000 and char_length(${t.scheduledAccessBasis}) <= 1000`,
+    ),
+    index().on(t.status, t.priority),
+  ],
+)
+
+// SH22 : une version par modification ; seule une version complète peut être lue par un passage.
+export const scanSourceRevisions = pgTable(
+  "scan_source_revisions",
+  {
+    sourceKey: text()
+      .notNull()
+      .references(() => scanSources.key, { onDelete: "cascade" }),
+    revision: integer().notNull(),
+    // Instantané : ScanSourceDefinition sans key, revision, role ni priority (état de la ligne).
+    definition: jsonb()
+      .$type<ScanSourceSnapshot | ScanSourceDraftSnapshot>()
+      .notNull(),
+    // Conforme au schéma strict (scanSourceSnapshotSchema).
+    complete: boolean().notNull(),
+    // D4 : SHA-256 de sourceFingerprint(definition).
+    configHash: text().notNull(),
+    changedFields: text().array().notNull().default([]),
+    // Motif de la modification.
+    note: text(),
+    createdByUserId: actor(),
+    createdAt: instant().notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.sourceKey, t.revision] }),
+    check(
+      "scan_source_revisions_bounds",
+      sql`${t.revision} >= 1 and jsonb_typeof(${t.definition}) = 'object' and octet_length(${t.definition}::text) <= 65536 and ${t.configHash} ~ '^[0-9a-f]{64}$' and ${notBlank(t.note)} and char_length(${t.note}) <= 2000`,
+    ),
+  ],
+)
+
+// Journal : changements d'état, décisions et tests. Les tests sont bornés et purgés (SH30).
+export const scanSourceEvents = pgTable(
+  "scan_source_events",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    sourceKey: text()
+      .notNull()
+      .references(() => scanSources.key, { onDelete: "cascade" }),
+    kind: scanSourceEventKindEnum().notNull(),
+    revision: integer(),
+    details: jsonb().$type<ScanSourceEventDetails>().notNull().default({}),
+    // Nul : système (migration, disjoncteur).
+    actorUserId: actor(),
+    createdAt: instant().notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      "scan_source_events_details",
+      sql`jsonb_typeof(${t.details}) = 'object' and octet_length(${t.details}::text) <= 32768`,
+    ),
+    index().on(t.sourceKey, t.createdAt),
+    index().on(t.sourceKey, t.kind, t.createdAt),
+  ],
+)
+
+// D7 : un hôte officiel appartient à une seule source non archivée. L'origine locale de test
+// n'y est jamais réservée.
+export const scanSourceHosts = pgTable(
+  "scan_source_hosts",
+  {
+    host: text().primaryKey(),
+    sourceKey: text()
+      .notNull()
+      .references(() => scanSources.key, { onDelete: "cascade" }),
+  },
+  (t) => [
+    check(
+      "scan_source_hosts_host",
+      sql`${t.host} ~ '^[a-z0-9.-]+$' and char_length(${t.host}) <= 253`,
+    ),
+    index().on(t.sourceKey),
+  ],
+)
 
 export const scanRuns = pgTable(
   "scan_runs",
@@ -135,6 +328,8 @@ export const scanRunSources = pgTable(
       .notNull()
       .references(() => scanRuns.id),
     sourceKey: text().notNull(),
+    // SH22 : version de la source figée au démarrage du passage.
+    sourceRevision: integer().notNull(),
     status: scanRunSourceStatusEnum().notNull().default("pending"),
     cursor: jsonb().$type<Record<string, unknown>>(),
     listedCount: integer().notNull().default(0),
@@ -151,6 +346,15 @@ export const scanRunSources = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.runId, t.sourceKey] }),
+    // RESTRICT : une source lue par un passage ne se supprime pas, elle s'archive (D2).
+    foreignKey({
+      name: "scan_run_sources_source_revision_fk",
+      columns: [t.sourceKey, t.sourceRevision],
+      foreignColumns: [
+        scanSourceRevisions.sourceKey,
+        scanSourceRevisions.revision,
+      ],
+    }).onDelete("restrict"),
     check(
       "scan_run_sources_counts",
       sql`${t.listedCount} >= 0 and ${t.fetchedCount} >= 0 and ${t.deliveredCount} >= 0 and ${t.excludedCount} >= 0 and ${t.failedCount} >= 0 and ${t.requestCount} >= 0 and ${t.bytesDownloaded} >= 0`,
@@ -162,7 +366,11 @@ export const scanCandidates = pgTable(
   "scan_candidates",
   {
     id: uuid().primaryKey().defaultRandom(),
-    sourceKey: text().notNull(),
+    sourceKey: text()
+      .notNull()
+      .references(() => scanSources.key, { onDelete: "restrict" }),
+    // Version figée du passage qui a découvert la piste ; nulle pour les pistes antérieures.
+    sourceRevision: integer(),
     identityKey: text().notNull(),
     generation: integer().notNull().default(1),
     externalId: text(),
@@ -264,7 +472,9 @@ export const scanReviews = pgTable(
     candidateId: uuid().references(() => scanCandidates.id),
     otherCandidateId: uuid().references(() => scanCandidates.id),
     offerId: uuid().references(() => offers.id),
-    sourceKey: text(),
+    sourceKey: text().references(() => scanSources.key, {
+      onDelete: "restrict",
+    }),
     details: jsonb().$type<Record<string, unknown>>().notNull().default({}),
     decision: jsonb().$type<Record<string, unknown>>(),
     decidedAt: instant(),
@@ -302,4 +512,7 @@ export const occupationAliases = pgTable(
   ],
 )
 export type ScanRunSource = typeof scanRunSources.$inferSelect
+export type ScanSourceRow = typeof scanSources.$inferSelect
+export type ScanSourceRevision = typeof scanSourceRevisions.$inferSelect
+export type ScanSourceEvent = typeof scanSourceEvents.$inferSelect
 export type ScanCandidate = typeof scanCandidates.$inferSelect

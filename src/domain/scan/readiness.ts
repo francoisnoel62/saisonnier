@@ -22,6 +22,8 @@ export type ReadinessContext = {
   potentialDuplicate?: boolean
   reusedIdentity?: boolean
   occupationKnown?: boolean
+  // Source écartée : une autorisation retirée ne doit plus publier depuis ses dossiers.
+  sourceWithdrawn?: boolean
 }
 export function isOfficialUrl(
   value: string | undefined,
@@ -75,6 +77,7 @@ export function publicationReadiness(
     issues.push(scanIssue("location"))
   if (context.potentialDuplicate) issues.push(scanIssue("duplicate"))
   if (context.reusedIdentity) issues.push(scanIssue("reused_identity"))
+  if (context.sourceWithdrawn) issues.push(scanIssue("source_withdrawn"))
   if (context.occupationKnown === false)
     issues.push(scanIssue("occupation_unknown"))
   const unique = uniqueIssues(issues)

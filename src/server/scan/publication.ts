@@ -17,6 +17,8 @@ import {
   reviewedPublicationProposal,
 } from "@/domain/scan/proposal-offer"
 import { canAutoPublish, publicationReadiness } from "@/domain/scan/readiness"
+import type { ScanSourceDraftSnapshot } from "@/domain/scan/source"
+import { sourceAutoPublishes } from "@/domain/scan/source-lifecycle"
 import {
   scanIssue,
   uniqueIssues,
@@ -29,7 +31,6 @@ import {
   offers,
   scanCandidates,
   scanReviews,
-  scanSources,
   type ScanRun,
 } from "@/lib/db/schema"
 import { getBlockedDomains } from "@/server/offers/application"
@@ -37,7 +38,7 @@ import { isUuid } from "@/server/offers/queries"
 import { replaceOfferLocations } from "@/server/offers/locations"
 
 import { withRunClaim, type ScanTransaction } from "./claim"
-import { scanSourceDefinitions } from "./sources/registry"
+import { isSourceAdapterAvailable, loadScanSource } from "./sources/registry"
 import { attachOccupationInTransaction } from "./occupations"
 
 export type PublicationRequest = { candidateId: string; now?: Date } & (
@@ -86,6 +87,15 @@ async function publish(
   )
     return conflict
 
+  // Même ordre de verrouillage que les écritures du workflow : passage, dossier, puis source.
+  const source = await loadScanSource(candidate.sourceKey, {
+    tx,
+    lock: "share",
+  })
+  if (!source) return conflict
+  // Hôtes officiels de la version courante, même incomplète ou archivée.
+  const sourceHosts =
+    (source.revision.definition as ScanSourceDraftSnapshot).officialHosts ?? []
   const proposal = candidate.proposal
   const proposedCompany = valueOf(proposal.company)
   const [company] =
@@ -119,7 +129,7 @@ async function publish(
           ...proposalToOfferInput(proposal),
           companyId: company?.id ?? "",
           origin: "collected" as const,
-          sourceName: scanSourceDefinitions[candidate.sourceKey]?.label ?? null,
+          sourceName: source.row.label,
           applicationChannel: "employer" as const,
           recruiterName: null,
           hideCompanyIdentity: false,
@@ -140,10 +150,9 @@ async function publish(
         ),
       ),
     )
-  const source = scanSourceDefinitions[candidate.sourceKey]
-  let officialHosts = source?.kind === "employer" ? source.officialHosts : []
+  let officialHosts = source.row.kind === "employer" ? sourceHosts : []
   if (
-    source?.kind === "discovery" &&
+    source.row.kind === "discovery" &&
     request.kind === "admin" &&
     request.input.sourceUrl &&
     URL.canParse(request.input.sourceUrl)
@@ -151,7 +160,7 @@ async function publish(
     // La revue humaine atteste la nouvelle source employeur. L'hôte de
     // découverte ne peut pas devenir officiel ; les exclusions restent relues.
     const host = new URL(request.input.sourceUrl).hostname
-    if (!isBlockedHost(host, source.officialHosts)) officialHosts = [host]
+    if (!isBlockedHost(host, sourceHosts)) officialHosts = [host]
   }
   const readiness = publicationReadiness(
     request.kind === "admin"
@@ -167,6 +176,8 @@ async function publish(
       today,
       now: now.toISOString(),
       potentialDuplicate: duplicates.length > 0,
+      // Une source écartée ne publie plus, même après revue humaine ; archivée, si.
+      sourceWithdrawn: source.row.status === "rejected",
     },
   )
   const knownDepartments = await tx
@@ -221,15 +232,13 @@ async function publish(
   ])
   if (issues.length || !company) return { ok: false, reason: "blocked", issues }
   if (request.kind === "scan") {
-    const [state] = await tx
-      .select()
-      .from(scanSources)
-      .where(eq(scanSources.key, candidate.sourceKey))
     if (
       !run ||
       !canAutoPublish({
         mode: run.mode,
-        sourceAutoPublish: !!state?.enabled && !!state.autoPublish,
+        sourceAutoPublish: sourceAutoPublishes(source.row, {
+          adapterAvailable: isSourceAdapterAvailable(source.row),
+        }),
         readiness,
       })
     )
