@@ -5,12 +5,18 @@ import { notFound } from "next/navigation"
 import { SourceHeader } from "@/components/admin/scan/sources/source-header"
 import { SourceHistory } from "@/components/admin/scan/sources/source-history"
 import { SourceQualification } from "@/components/admin/scan/sources/source-qualification"
+import { QualificationTools } from "@/components/admin/scan/sources/source-qualification-tools"
 import {
   SourceConfiguration,
   SourceTests,
   type SourceTestRow,
 } from "@/components/admin/scan/sources/source-sections"
+import { site } from "@/config/site"
+import { isBlockedHost } from "@/domain/blocked-domains"
+import { authorizationRequestText } from "@/domain/scan/authorization-request"
+import { env } from "@/lib/env"
 import { cn } from "@/lib/utils"
+import { getBlockedDomains } from "@/server/offers/application"
 import { getScanSourceDetail } from "@/server/scan/sources/registry"
 
 export const metadata: Metadata = { title: "Source du scan" }
@@ -37,7 +43,15 @@ export default async function ScanSourcePage({
     tabs.find((item) => item.id === onglet)?.id ?? "configuration"
   const author = (id: string | null) =>
     id ? (detail.actorNames[id] ?? "Compte supprimé") : "Système"
-  const { row, summary } = detail
+  const { row, summary, definition } = detail
+  const blockedDomains =
+    tab === "qualification" && row.kind === "discovery"
+      ? await getBlockedDomains()
+      : []
+  const adapterParams = (definition.adapterParams ?? {}) as Record<
+    string,
+    unknown
+  >
   return (
     <article className="grid min-w-0 gap-6">
       <nav aria-label="Fil d’Ariane" className="text-sm">
@@ -76,6 +90,40 @@ export default async function ScanSourcePage({
             definition={detail.definition}
             company={detail.company}
           />
+        )}
+        {tab === "qualification" && row.status !== "archived" && (
+          <div className="mb-6">
+            <QualificationTools
+              sourceKey={key}
+              uncoveredHosts={
+                row.kind === "discovery"
+                  ? (definition.officialHosts ?? []).filter(
+                      (host) => !isBlockedHost(host, blockedDomains),
+                    )
+                  : []
+              }
+              canCreateCompany={
+                row.kind === "employer" &&
+                !!row.employerSiren &&
+                detail.company === null
+              }
+              authorizationText={
+                row.kind === "employer" && row.reuseDecision === "pending"
+                  ? authorizationRequestText(
+                      {
+                        label: row.label,
+                        employerName: row.employerName,
+                        portalUrl:
+                          typeof adapterParams.portalUrl === "string"
+                            ? adapterParams.portalUrl
+                            : (definition.listUrls?.[0] ?? null),
+                      },
+                      { name: site.name, url: env.BETTER_AUTH_URL },
+                    )
+                  : null
+              }
+            />
+          </div>
         )}
         {tab === "qualification" && (
           <SourceQualification

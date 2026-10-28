@@ -49,7 +49,7 @@ export function SourceHeader({
         )}
       </div>
       {source.status !== "rejected" && source.status !== "archived" && (
-        <ScanSourceSwitches key={source.version} source={source} />
+        <ScanSourceSwitches source={source} />
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {source.testable && <SourceTestButtons source={source} />}

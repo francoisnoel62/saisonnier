@@ -14,6 +14,8 @@ import {
 } from "@/domain/scan/source-form"
 import { db } from "@/lib/db"
 import {
+  blockedDomains,
+  companies,
   scanCandidates,
   scanSourceEvents,
   scanSourceHosts,
@@ -27,12 +29,20 @@ const mocks = vi.hoisted(() => ({ probe: vi.fn(), sample: vi.fn() }))
 vi.mock("../probe", () => ({ probeScanSource: mocks.probe }))
 vi.mock("../sample", () => ({ sampleScanSource: mocks.sample }))
 
-import { getScanSourceDefinition, getScanSource } from "./registry"
+import { sourceQualification } from "./qualification"
+import {
+  employerSourcesOnDomains,
+  getScanSource,
+  getScanSourceDefinition,
+  loadScanSource,
+} from "./registry"
 import { runSourceTest } from "./tests"
 import {
   createSource,
   decideReuse,
   deleteSource,
+  excludeSourceDomain,
+  linkSourceCompany,
   restoreRevision,
   reviseSource,
   setSourceSwitch,
@@ -522,5 +532,101 @@ describe("les portes valent aussi hors de l'écran", () => {
         .from(scanSources)
         .where(inArray(scanSources.label, ["Welcome"])),
     ).toEqual([])
+  })
+})
+
+describe("ajout guidé et job-boards", () => {
+  it("une découverte exige son domaine exclu, ajouté depuis la source", async () => {
+    const created = await createSource(
+      {
+        ...emptySourceFormValues("discovery"),
+        label: "Job-board fictif",
+        manualHosts: "www.jobboard-test.example",
+      },
+      adminId,
+    )
+    if (!created.ok) throw new Error(created.message)
+    try {
+      const gap = async () => {
+        const source = (await loadScanSource(created.key))!
+        return (await sourceQualification(source.row, source.revision)).find(
+          (item) => item.code === "blocked_domains",
+        )
+      }
+      expect(await gap()).toMatchObject({
+        state: "missing",
+        detail: expect.stringContaining("www.jobboard-test.example"),
+      })
+      expect(
+        await excludeSourceDomain(created.key, "autre.example", adminId),
+      ).toMatchObject({ ok: false, reason: "invalid" })
+      expect(
+        await excludeSourceDomain(
+          created.key,
+          "jobboard-test.example",
+          adminId,
+        ),
+      ).toMatchObject({ ok: true })
+      expect(await gap()).toMatchObject({ state: "ok" })
+      const events = await db
+        .select()
+        .from(scanSourceEvents)
+        .where(eq(scanSourceEvents.sourceKey, created.key))
+      expect(events.map((event) => event.kind)).toContain("domain_excluded")
+    } finally {
+      await db
+        .delete(blockedDomains)
+        .where(eq(blockedDomains.domain, "jobboard-test.example"))
+    }
+  })
+
+  it("les sources employeur couvertes par un domaine nouvellement exclu sont signalées", async () => {
+    expect(await employerSourcesOnDomains(["factorial.fr"])).toEqual([
+      { key: "vvf", label: "VVF" },
+    ])
+    expect(await employerSourcesOnDomains(["francetravail.fr"])).toEqual([])
+  })
+
+  it("la fiche entreprise se crée depuis la source, avec l'annuaire, puis lève l'alerte", async () => {
+    const siren = "322706136"
+    await db.delete(companies).where(eq(companies.siren, siren))
+    try {
+      expect(
+        await linkSourceCompany("belambra", adminId, {
+          legalName: "BELAMBRA CLUBS",
+          displayName: "Belambra",
+          nafCode: "55.20Z",
+          communeName: "Paris",
+        }),
+      ).toMatchObject({ ok: true })
+      const [company] = await db
+        .select()
+        .from(companies)
+        .where(eq(companies.siren, siren))
+      expect(company).toMatchObject({
+        legalName: "BELAMBRA CLUBS",
+        nafCode: "55.20Z",
+      })
+      expect(await getScanSource("belambra")).toMatchObject({
+        companyId: company.id,
+      })
+      const source = (await loadScanSource("belambra"))!
+      const items = await sourceQualification(source.row, source.revision)
+      expect(items.find((item) => item.code === "company")).toMatchObject({
+        state: "ok",
+      })
+      expect(items.find((item) => item.code === "scope")).toMatchObject({
+        state: "ok",
+      })
+      expect(
+        await linkSourceCompany("france-travail", adminId, null),
+      ).toMatchObject({ ok: false })
+    } finally {
+      await db
+        .update(scanSources)
+        .set({ companyId: null })
+        .where(eq(scanSources.key, "belambra"))
+      await db.delete(companies).where(eq(companies.siren, siren))
+    }
   })
 })

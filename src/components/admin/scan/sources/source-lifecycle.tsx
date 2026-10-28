@@ -67,7 +67,6 @@ export function useSourceLifecycle(
         if (result.ok) {
           toast.success(`${sourceTransitionLabels[transition]} : fait.`)
           setDialog(null)
-          router.refresh()
         } else if (dialog) setError(result.message)
         else toast.error(result.message)
       } catch (error) {
@@ -88,7 +87,6 @@ export function useSourceLifecycle(
           toast.success("Source supprimée.")
           setDialog(null)
           router.push(afterDelete)
-          router.refresh()
         } else {
           setInUse(result.reason === "in_use")
           setError(result.message)

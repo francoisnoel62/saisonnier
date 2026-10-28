@@ -2,6 +2,7 @@ import "server-only"
 
 import { and, asc, count, desc, eq, inArray, ne, type SQL } from "drizzle-orm"
 
+import { isBlockedHost } from "@/domain/blocked-domains"
 import {
   adapterDescriptor,
   isAdapterAvailable,
@@ -401,3 +402,24 @@ export async function getScanSourceDetail(key: string) {
 export type ScanSourceDetail = NonNullable<
   Awaited<ReturnType<typeof getScanSourceDetail>>
 >
+
+// D6 : sources employeur non archivées couvertes par un domaine nouvellement exclu, à écarter
+// ou archiver (signalées par le gestionnaire des domaines exclus, comme les annonces).
+export async function employerSourcesOnDomains(domains: readonly string[]) {
+  if (!domains.length) return []
+  const rows = await sourceRows(
+    and(ne(scanSources.status, "archived"), eq(scanSources.kind, "employer")),
+  )
+  return rows
+    .filter(({ revision }) => {
+      const definition = revision.definition as ScanSourceDraftSnapshot
+      const hosts = [
+        ...(definition.officialHosts ?? []),
+        ...[...(definition.listUrls ?? []), definition.employerWebsite]
+          .filter((url): url is string => !!url && URL.canParse(url))
+          .map((url) => new URL(url).hostname),
+      ]
+      return hosts.some((host) => isBlockedHost(host, domains))
+    })
+    .map(({ row }) => ({ key: row.key, label: row.label }))
+}

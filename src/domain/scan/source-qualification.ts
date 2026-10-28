@@ -1,6 +1,7 @@
 import { isBlockedHost } from "@/domain/blocked-domains"
 import { isTourismActivity } from "@/domain/naf"
 
+import { deriveSourceConfig } from "./adapter-catalog"
 import { scanLimits } from "./limits"
 import type { ScanSourceDraftSnapshot } from "./source"
 import type { ScanReuseDecision, ScanSourceKind } from "./vocabulary"
@@ -124,14 +125,17 @@ export function qualificationItems(
       context.adapterUnavailableReason ??
         "Connecteur indisponible sur ce déploiement.",
     )
-  else if (!context.complete || context.definitionErrors.length)
+  else if (
+    !deriveSourceConfig(definition.adapter, definition.adapterParams) ||
+    context.definitionErrors.length
+  )
     add(
       "adapter",
       "missing",
       true,
       context.definitionErrors.length
         ? `Configuration incomplète : ${context.definitionErrors.join(" ; ")}.`
-        : "Configuration incomplète.",
+        : "Paramètres du connecteur à compléter.",
     )
   else add("adapter", "ok", true)
 

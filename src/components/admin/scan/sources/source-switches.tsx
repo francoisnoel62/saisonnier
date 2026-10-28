@@ -27,12 +27,20 @@ export type ScanSourceState = Pick<
 // D11 : trois interrupteurs indépendants ; un interrupteur bloqué dit pourquoi.
 export function ScanSourceSwitches({ source }: { source: ScanSourceState }) {
   const [pending, startTransition] = useTransition()
-  const [state, setState] = useState({
+  const fromProps = () => ({
     version: source.version,
     enabled: source.enabled,
     dailyEnabled: source.dailyEnabled,
     autoPublish: source.autoPublish,
   })
+  const [state, setState] = useState(fromProps)
+  // Une écriture d'ailleurs (statut, décision) renvoie une version plus récente : l'état suit,
+  // sans remonter le composant (un clic en cours ne se perd pas).
+  const [seen, setSeen] = useState(source.version)
+  if (source.version !== seen) {
+    setSeen(source.version)
+    if (source.version > state.version) setState(fromProps())
+  }
   function toggle(flag: ScanSourceSwitch, value: boolean) {
     if (pending) return
     const previous = state

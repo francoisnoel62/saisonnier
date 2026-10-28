@@ -93,7 +93,11 @@ function AffectedOffers({ offers }: { offers: AffectedOffer[] }) {
 function AddDomainForm({
   onAdded,
 }: {
-  onAdded: (domain: string, affected: AffectedOffer[]) => void
+  onAdded: (
+    domain: string,
+    affected: AffectedOffer[],
+    sources: { key: string; label: string }[],
+  ) => void
 }) {
   const empty = { domain: "", reason: "" }
   const [values, setValues] = useState(empty)
@@ -118,7 +122,7 @@ function AddDomainForm({
             ? `${result.domain} est exclu.`
             : `${result.domain} était déjà exclu.`,
         )
-        onAdded(result.domain, result.affected)
+        onAdded(result.domain, result.affected, result.affectedSources)
         setValues(empty)
         setErrors({})
       } catch (error) {
@@ -258,6 +262,7 @@ export function BlockedDomainsManager({
   const [added, setAdded] = useState<{
     domain: string
     affected: AffectedOffer[]
+    sources: { key: string; label: string }[]
   } | null>(null)
 
   const affectedBy = (domain: string) =>
@@ -324,8 +329,38 @@ export function BlockedDomainsManager({
         lien n&rsquo;est plus affiché aux candidats.
       </p>
       <AddDomainForm
-        onAdded={(domain, offers) => setAdded({ domain, affected: offers })}
+        onAdded={(domain, offers, sources) =>
+          setAdded({ domain, affected: offers, sources })
+        }
       />
+
+      {added && added.sources.length > 0 && (
+        <Alert variant="destructive">
+          <CircleAlertIcon aria-hidden />
+          <AlertTitle>
+            Source{added.sources.length > 1 ? "s" : ""} employeur du scan sur{" "}
+            {added.domain}
+          </AlertTitle>
+          <AlertDescription>
+            <p>
+              Un portail employeur ne peut pas être hébergé sur un domaine exclu
+              : écartez ou archivez ces sources.
+            </p>
+            <ul className="list-inside list-disc">
+              {added.sources.map((source) => (
+                <li key={source.key}>
+                  <Link
+                    className="underline"
+                    href={`/admin/scan/sources/${source.key}`}
+                  >
+                    {source.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {added && (
         <Alert variant={added.affected.length > 0 ? "destructive" : "default"}>

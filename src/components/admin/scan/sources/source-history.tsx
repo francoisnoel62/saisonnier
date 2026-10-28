@@ -1,6 +1,6 @@
 "use client"
 
-import { unstable_rethrow, useRouter } from "next/navigation"
+import { unstable_rethrow } from "next/navigation"
 import { useTransition } from "react"
 import { toast } from "sonner"
 
@@ -85,7 +85,6 @@ export function SourceHistory({
   revisions: HistoryRevision[]
   events: HistoryEvent[]
 }) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   function restore(revision: number) {
     startTransition(async () => {
@@ -99,7 +98,6 @@ export function SourceHistory({
           toast.success(
             `Version ${revision} rétablie dans une nouvelle version.`,
           )
-          router.refresh()
         } else
           toast.error(
             "reason" in result && result.reason === "needs_test"

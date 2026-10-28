@@ -1,7 +1,7 @@
 "use client"
 
 import { CheckIcon, CircleAlertIcon, XIcon } from "lucide-react"
-import { unstable_rethrow, useRouter } from "next/navigation"
+import { unstable_rethrow } from "next/navigation"
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
 
@@ -66,7 +66,6 @@ export function SourceQualification({
   items: QualificationItem[]
   reuse: ReuseState
 }) {
-  const router = useRouter()
   const [decision, setDecision] = useState<ScanReuseDecision>(reuse.decision)
   const [note, setNote] = useState(reuse.note ?? "")
   const [basis, setBasis] = useState(reuse.scheduledAccessBasis ?? "")
@@ -88,7 +87,6 @@ export function SourceQualification({
         )
         if (result.ok) {
           toast.success("Décision de reprise enregistrée.")
-          router.refresh()
         } else {
           setErrors(("fieldErrors" in result && result.fieldErrors) || {})
           setFormError(result.message)
@@ -112,7 +110,6 @@ export function SourceQualification({
         )
         if (result.ok) {
           toast.success("Source prête : elle peut être activée.")
-          router.refresh()
         } else setFormError(result.message)
       } catch (error) {
         unstable_rethrow(error)

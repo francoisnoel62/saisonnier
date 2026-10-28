@@ -464,7 +464,6 @@ export function SourcesTable({
 
 // Menu d'une source : ouvrir, modifier, tester, cycle de vie, ordre. Le serveur revérifie tout.
 function RowActions({ row }: { row: ScanSourceListRow }) {
-  const router = useRouter()
   const trigger = useRef<HTMLButtonElement>(null)
   const test = useSourceTest(row)
   const lifecycle = useSourceLifecycle(row)
@@ -473,8 +472,7 @@ function RowActions({ row }: { row: ScanSourceListRow }) {
     startMove(async () => {
       try {
         const result = await moveScanSourceAction(row.key, direction)
-        if (result.ok) router.refresh()
-        else toast.error(result.message)
+        if (!result.ok) toast.error(result.message)
       } catch (error) {
         unstable_rethrow(error)
         toast.error("Le déplacement n’a pas abouti.")

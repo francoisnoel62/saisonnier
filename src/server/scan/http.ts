@@ -10,6 +10,7 @@ import { createBrotliDecompress, createGunzip, createInflate } from "node:zlib"
 import robotsParser from "robots-parser"
 
 import { site } from "@/config/site"
+import { scanUserAgent } from "@/domain/scan/authorization-request"
 import { declaredCharset, decodeBody } from "@/domain/scan/charset"
 import type {
   RobotsDecision,
@@ -150,7 +151,7 @@ export function createScanHttpClient(options: ScanHttpOptions = {}) {
   const resolve =
     options.resolve ??
     ((hostname: string) => dns.lookup(hostname, { all: true }))
-  const userAgent = `${site.name}Bot/1.0 (+${env.BETTER_AUTH_URL.replace(/\/$/, "")}/contact)`
+  const userAgent = scanUserAgent({ name: site.name, url: env.BETTER_AUTH_URL })
   const robotsCache = new Map<string, Promise<Robots | ScanFailure>>()
 
   async function checkedAddresses(

@@ -42,7 +42,16 @@ describe("qualification d'un portail employeur", () => {
   })
   it.each<[string, Partial<QualificationContext>, string]>([
     ["connecteur indisponible", { adapterAvailable: false }, "adapter"],
-    ["configuration incomplète", { complete: false }, "adapter"],
+    [
+      "paramètres du connecteur invalides",
+      {
+        definition: {
+          ...vvf,
+          adapterParams: { portalUrl: "http://vvf.example" },
+        } as never,
+      },
+      "adapter",
+    ],
     [
       "employeur sans site",
       { definition: { ...vvf, employerWebsite: undefined } as never },

@@ -49,6 +49,7 @@ import {
 } from "@/domain/scan/vocabulary"
 import { db } from "@/lib/db"
 import {
+  blockedDomains,
   companies,
   scanCandidates,
   scanReviews,
@@ -947,5 +948,116 @@ export async function moveSource(
           .set({ priority: position * 10, updatedByUserId: adminId })
           .where(eq(scanSources.key, row.key))
     return { ok: true, version: rows[index].version, key }
+  })
+}
+
+// « Créer la fiche entreprise » (SH15) : la fiche du SIREN de la source, créée avec les données
+// de l'annuaire si elle n'existe pas encore, puis liée à la source.
+export async function linkSourceCompany(
+  key: string,
+  adminId: string,
+  directory: {
+    legalName: string
+    displayName: string | null
+    nafCode: string | null
+    communeName: string | null
+  } | null,
+): Promise<SourceWriteResult> {
+  if (!isScanSourceKey(key)) return unknownSource
+  return db.transaction(async (tx) => {
+    const row = await lockScanSource(tx, key)
+    if (!row) return unknownSource
+    if (row.kind !== "employer" || !row.employerSiren)
+      return {
+        ok: false,
+        reason: "blocked",
+        message: "Renseignez d'abord le SIREN de l'employeur.",
+      }
+    await tx
+      .insert(companies)
+      .values({
+        legalName: directory?.legalName ?? row.employerName ?? row.label,
+        displayName: directory?.displayName ?? null,
+        siren: row.employerSiren,
+        nafCode: directory?.nafCode ?? null,
+        communeName: directory?.communeName ?? null,
+        website: row.employerWebsite,
+      })
+      .onConflictDoNothing({ target: companies.siren })
+    const [company] = await tx
+      .select({ id: companies.id, legalName: companies.legalName })
+      .from(companies)
+      .where(eq(companies.siren, row.employerSiren))
+    const next = row.version + 1
+    await tx
+      .update(scanSources)
+      .set({ companyId: company.id, version: next, updatedByUserId: adminId })
+      .where(eq(scanSources.key, key))
+    await recordSourceEvent(
+      tx,
+      key,
+      {
+        kind: "company_linked",
+        details: {
+          companyId: company.id,
+          legalName: company.legalName,
+          siren: row.employerSiren,
+        },
+      },
+      { actorUserId: adminId, revision: row.revision },
+    )
+    return { ok: true, version: next, key }
+  })
+}
+
+// D6 : une découverte exige un domaine exclu couvrant ses hôtes ; l'assistant le fait ajouter.
+export async function excludeSourceDomain(
+  key: string,
+  domain: string,
+  adminId: string,
+): Promise<SourceWriteResult> {
+  if (!isScanSourceKey(key)) return unknownSource
+  const normalized = String(domain).trim().toLowerCase()
+  return db.transaction(async (tx) => {
+    const row = await lockScanSource(tx, key)
+    if (!row) return unknownSource
+    const [current] = await tx
+      .select()
+      .from(scanSourceRevisions)
+      .where(
+        and(
+          eq(scanSourceRevisions.sourceKey, key),
+          eq(scanSourceRevisions.revision, row.revision),
+        ),
+      )
+    const hosts =
+      (current.definition as ScanSourceDraftSnapshot).officialHosts ?? []
+    if (
+      row.kind !== "discovery" ||
+      !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(normalized) ||
+      !hosts.some((host) => isBlockedHost(host, [normalized]))
+    )
+      return {
+        ok: false,
+        reason: "invalid",
+        message: "Ce domaine ne couvre aucun hôte de cette découverte.",
+      }
+    await tx
+      .insert(blockedDomains)
+      .values({
+        domain: normalized,
+        reason: `Job-board, source de découverte « ${row.label} ».`.slice(
+          0,
+          200,
+        ),
+      })
+      .onConflictDoNothing()
+    await recordSourceEvent(
+      tx,
+      key,
+      { kind: "domain_excluded", details: { domain: normalized } },
+      { actorUserId: adminId, revision: row.revision },
+    )
+    return { ok: true, version: row.version, key }
   })
 }
