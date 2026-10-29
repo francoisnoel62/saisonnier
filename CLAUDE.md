@@ -7,6 +7,7 @@
 - Besoin : [cahier des charges](docs/cahier-des-charges-job-board-saisonnier-v1.md).
 - Réalisation : [plans, hypothèses H1–H20 et glossaire](docs/plans/README.md). Une branche par plan (`plan/NN-slug`), une PR, une preview Vercel vérifiée avant le merge.
 - Déploiement : projet Vercel `saisonnier` (équipe `francois-noels-projects`), production sur `main`.
+- Scan : V1 livrée le 29/10/2026 (tag `scan-v1.0.0`, [recette](docs/scan/recette-v1.md)) ; plans `docs/plans/scan-v1/` (terminés) et `docs/plans/scan-v2/` (suite : V2-02 à rédiger). En production au 29/10 : France Travail seule activée (remplissage initial et passages quotidiens), « Scan quotidien des offres » actif, « Tâche quotidienne » désactivée.
 
 ## Commandes
 

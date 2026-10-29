@@ -6,7 +6,7 @@
 
 Rédigé le 23/10/2026. **Actualisé le 28/10/2026** après le plan scan V2-01 : les sources se qualifient et s'activent depuis `/admin/scan/sources`, et la recette des sources du 28/10 a fixé l'état de départ ci-dessous.
 
-**État au 28/10/2026** : remplissage initial mené en production (128 dossiers livrés, seuil atteint à T+2 min 12 s), scan quotidien activé ; répétition en preview non faite, sur décision du fondateur. Compte rendu : [`docs/scan/recette-v1.md`](../../scan/recette-v1.md). Reste à contrôler le premier passage quotidien, puis la clôture (étape 7).
+**Terminé le 29/10/2026** : remplissage initial mené en production le 28/10 (128 dossiers livrés, seuil atteint à T+2 min 12 s) ; premier passage quotidien le 29/10 à 3 h 25 (8 dossiers livrés, sans nouvel amorçage) ; répétition en preview non faite, sur décision du fondateur. Compte rendu : [`docs/scan/recette-v1.md`](../../scan/recette-v1.md). V1 du scan livrée, tag `scan-v1.0.0`.
 
 ## Objectif
 
@@ -83,13 +83,15 @@ Réservoir estimé de France Travail : `floor(118 × 8/10) = 94` dossiers potent
    - Poser le tag `scan-v1.0.0`.
    - Ouvrir le plan suivant de la V2 du scan : catalogue par entreprise, et écarts du lot G du plan V2-01 (détection d'un plan de site, JobAnim, demande de flux des job-boards, extraction Club Med).
 
+   Fait le 29/10/2026 ; le plan suivant (plan scan V2-02) est annoncé avec son périmètre et les écarts de la recette, et se rédige dans une session dédiée, sur décision du fondateur.
+
 ## Critères d'acceptation
 
 - [x] ~~La répétition en preview a atteint 50 dossiers exploitables avant T+6 h, avec marge, et elle est consignée.~~ Non faite, sur décision du fondateur du 28/10/2026 (lancement direct en production).
 - [x] En production, `targetReachedAt` et le seuil confirmé précèdent T0 + 6 h (T+2 min 12 s) ; la collecte s'exécute en arrière-plan, sans dépendre de l'écran de l'admin.
 - [x] Aucun frais de fournisseur ; la consommation Vercel est relevée et compatible avec l'offre du compte.
-- [ ] Publications et temps de revue sont mesurés séparément du délai de collecte (publications : 0 à la fin du passage ; minutes de revue à mesurer pendant la revue).
-- [ ] Le scan quotidien est actif, et son premier passage respecte la fenêtre de 72 h sans nouvel amorçage (activé le 28/10 ; premier passage la nuit suivante).
+- [x] Publications et temps de revue sont mesurés séparément du délai de collecte : publications dans le bilan de chaque passage (3 humaines, 0 automatique au 29/10) ; revue estimée par le fondateur à 2 à 3 min par dossier, non chronométrée.
+- [x] Le scan quotidien est actif, et son premier passage respecte la fenêtre de 72 h sans nouvel amorçage (29/10/2026, 3 h 25 à Paris : 8 dossiers livrés, bilan reçu).
 
 ## Hors périmètre
 
