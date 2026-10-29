@@ -78,7 +78,11 @@ Deux pistes peuvent avancer en parallèle : **01 → 05** (sources et extracteur
 | 07 | [Labels et présentation](07-labels-presentation.md) | 04 | M | 6 | labels de provenance, « Candidature externe », dates, « À confirmer », « Divers » | ☑ |
 | 08 | [Lieux multiples](08-lieux-multiples.md) | 07 | M | 6 | une fiche à plusieurs lieux, trouvée par chacun, comptée une fois | ☑ |
 | 09 | [Orchestration durable](09-orchestration-workflow.md) | 03, 05, 06 | L | 7 | lancement admin, cron quotidien, lots bornés, reprise, arrêt, bilan | ☑ |
-| 10 | [Recette et installation](10-recette-installation.md) | 01 à 09 | M | 8 | 50 dossiers livrés avant T+6 h en production, puis scan quotidien actif | en cours : 128 livrés à T+4 min 51 s le 28/10, premier passage quotidien à contrôler |
+| 10 | [Recette et installation](10-recette-installation.md) | 01 à 09 | M | 8 | 50 dossiers livrés avant T+6 h en production, puis scan quotidien actif | ☑ |
+
+**V1 du scan livrée le 29 octobre 2026** (tag `scan-v1.0.0`) : remplissage initial du 28/10 en production, 128 dossiers livrés et seuil de 50 atteint à T+2 min 12 s ; premier passage quotidien le 29/10 à 3 h 25, 8 dossiers livrés. Compte rendu : [`docs/scan/recette-v1.md`](../../scan/recette-v1.md).
+
+**Suite** : plan scan V2-02, à rédiger dans `docs/plans/scan-v2/`. Il couvre le catalogue par entreprise (passage `company_catalog`, [plan technique](../../plan-technique-scan-v1-v5.md) §7), les écarts du lot G du [plan V2-01](../scan-v2/01-gestion-des-sources.md) (détection d'un plan de site, JobAnim, demande de flux des job-boards, extraction Club Med) et les écarts de la recette V1 (temps de revue chronométré, suggestions de métiers, recherche de l'URL officielle de l'employeur).
 
 Taille : **S** = session courte, **M** = une session, **L** = session longue (à découper si besoin).
 
