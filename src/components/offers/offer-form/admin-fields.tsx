@@ -7,6 +7,7 @@ import { Controller, useFormContext, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
 import { FormAlert } from "@/components/auth/form-alert"
+import { CompanySearch } from "@/components/company/company-search"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -48,7 +49,11 @@ import {
   type AdminOfferFormValues,
 } from "@/domain/offer-input"
 import type { CompanyOption } from "@/server/companies/companies"
-import { createCompanyFileAction } from "@/server/offers/admin-actions"
+import type { CompanySuggestion } from "@/server/companies/directory"
+import {
+  createCompanyFileAction,
+  searchCompanyFileAction,
+} from "@/server/offers/admin-actions"
 
 import { describedBy, fieldId, RadioField, TextField } from "./fields"
 
@@ -187,14 +192,76 @@ type CompanyFileField = keyof CompanyFile
 
 const emptyFile: Record<CompanyFileField, string> = {
   legalName: "",
-  displayName: "",
   siren: "",
+  siret: "",
+  nafCode: "",
+  nafLabel: "",
   communeName: "",
+  displayName: "",
   website: "",
 }
 
-// Fiche d'une entreprise sans compte. Le panneau est rendu hors du formulaire de l'annonce :
-// son envoi ne doit pas remonter jusqu'à lui.
+// Ce que l'annuaire remplit, comme à l'onboarding employeur ; le site reste à saisir.
+const directoryFields = [
+  "legalName",
+  "siren",
+  "siret",
+  "nafCode",
+  "nafLabel",
+  "communeName",
+  "displayName",
+] as const satisfies CompanyFileField[]
+
+const fileFields: {
+  name: CompanyFileField
+  label: string
+  hint?: string
+  maxLength: number
+  inputMode?: "numeric" | "url"
+}[] = [
+  { name: "legalName", label: "Raison sociale", maxLength: 200 },
+  {
+    name: "siren",
+    label: "SIREN (facultatif)",
+    hint: "Une entreprise déjà connue par son SIREN est reprise telle quelle.",
+    maxLength: 11,
+    inputMode: "numeric",
+  },
+  {
+    name: "siret",
+    label: "SIRET de l'établissement (facultatif)",
+    maxLength: 17,
+    inputMode: "numeric",
+  },
+  {
+    name: "nafCode",
+    label: "Code NAF / APE (facultatif)",
+    hint: "Par exemple 55.10Z.",
+    maxLength: 10,
+  },
+  {
+    name: "nafLabel",
+    label: "Activité principale (facultatif)",
+    maxLength: 200,
+  },
+  { name: "communeName", label: "Commune (facultatif)", maxLength: 100 },
+  {
+    name: "displayName",
+    label: "Enseigne (facultatif)",
+    hint: "Le nom montré aux candidats, s'il diffère de la raison sociale.",
+    maxLength: 150,
+  },
+  {
+    name: "website",
+    label: "Site web (facultatif)",
+    maxLength: 200,
+    inputMode: "url",
+  },
+]
+
+// Fiche d'une entreprise sans compte, pré-remplie par l'annuaire des entreprises comme à
+// l'onboarding employeur, ou saisie à la main. Le panneau est rendu hors du formulaire de
+// l'annonce : ses envois, recherche comprise, ne doivent pas remonter jusqu'à lui.
 function CompanyFileDialog({
   onCreated,
 }: {
@@ -208,28 +275,16 @@ function CompanyFileDialog({
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
-  const fields: {
-    name: CompanyFileField
-    label: string
-    hint?: string
-    maxLength: number
-  }[] = [
-    { name: "legalName", label: "Raison sociale", maxLength: 200 },
-    {
-      name: "displayName",
-      label: "Enseigne (facultatif)",
-      hint: "Le nom montré aux candidats, s'il diffère de la raison sociale.",
-      maxLength: 150,
-    },
-    {
-      name: "siren",
-      label: "SIREN (facultatif)",
-      hint: "Une entreprise déjà connue par son SIREN est reprise telle quelle.",
-      maxLength: 11,
-    },
-    { name: "communeName", label: "Commune (facultatif)", maxLength: 100 },
-    { name: "website", label: "Site web (facultatif)", maxLength: 200 },
-  ]
+  function choose(suggestion: CompanySuggestion) {
+    setValues((current) => ({
+      ...current,
+      ...Object.fromEntries(
+        directoryFields.map((field) => [field, suggestion[field] ?? ""]),
+      ),
+    }))
+    setErrors({})
+    document.getElementById("fiche-legalName")?.focus()
+  }
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -268,17 +323,23 @@ function CompanyFileDialog({
           Créer une fiche entreprise
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Nouvelle fiche entreprise</DialogTitle>
+          <DialogDescription>
+            Pour une entreprise sans compte : son annonce collectée ou transmise
+            s&rsquo;y rattache.
+          </DialogDescription>
+        </DialogHeader>
+        <CompanySearch
+          search={searchCompanyFileAction}
+          onChoose={choose}
+          title="Rechercher dans l'annuaire des entreprises"
+          unavailable="La recherche est momentanément indisponible : saisissez la fiche à la main."
+        />
         <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-          <DialogHeader>
-            <DialogTitle>Nouvelle fiche entreprise</DialogTitle>
-            <DialogDescription>
-              Pour une entreprise sans compte : son annonce collectée ou
-              transmise s&rsquo;y rattache.
-            </DialogDescription>
-          </DialogHeader>
           <FieldGroup>
-            {fields.map(({ name, label, hint, maxLength }) => {
+            {fileFields.map(({ name, label, hint, maxLength, inputMode }) => {
               const id = `fiche-${name}`
               const error = errors[name]?.[0]
               return (
@@ -288,6 +349,7 @@ function CompanyFileDialog({
                     id={id}
                     value={values[name]}
                     maxLength={maxLength}
+                    inputMode={inputMode}
                     autoComplete="off"
                     onChange={(event) =>
                       setValues({ ...values, [name]: event.target.value })

@@ -153,6 +153,33 @@ const displayName = optionalText(
 // Code NAF rév. 2 (« 55.10Z ») ; certaines entreprises anciennes ont un code sans lettre.
 const NAF_CODE = /^\d{2}\.\d{2}[A-Z]?$/
 
+const siret = z
+  .string()
+  .transform((value) => digits(value) || null)
+  .refine(
+    (value) => value === null || isValidSiret(value),
+    "Ce numéro SIRET (14 chiffres) n'est pas valide.",
+  )
+
+const nafCode = optionalText(10, "Code NAF trop long.")
+  .transform((value) => value?.toUpperCase() ?? null)
+  .refine(
+    (value) => value === null || NAF_CODE.test(value),
+    "Le code NAF s'écrit comme « 55.10Z ».",
+  )
+
+const nafLabel = optionalText(
+  200,
+  "Le libellé d'activité ne doit pas dépasser 200 caractères.",
+)
+
+const communeName = optionalText(
+  100,
+  "La commune ne doit pas dépasser 100 caractères.",
+)
+
+const siretMismatch = "Le SIRET doit commencer par le SIREN de l'entreprise."
+
 export const companyOnboardingSchema = z
   .object({
     legalName: requiredText(
@@ -165,27 +192,10 @@ export const companyOnboardingSchema = z
       .transform(digits)
       .refine((value) => value !== "", "Indiquez le SIREN.")
       .refine(isValidSiren, "Ce numéro SIREN (9 chiffres) n'est pas valide."),
-    siret: z
-      .string()
-      .transform((value) => digits(value) || null)
-      .refine(
-        (value) => value === null || isValidSiret(value),
-        "Ce numéro SIRET (14 chiffres) n'est pas valide.",
-      ),
-    nafCode: optionalText(10, "Code NAF trop long.")
-      .transform((value) => value?.toUpperCase() ?? null)
-      .refine(
-        (value) => value === null || NAF_CODE.test(value),
-        "Le code NAF s'écrit comme « 55.10Z ».",
-      ),
-    nafLabel: optionalText(
-      200,
-      "Le libellé d'activité ne doit pas dépasser 200 caractères.",
-    ),
-    communeName: optionalText(
-      100,
-      "La commune ne doit pas dépasser 100 caractères.",
-    ),
+    siret,
+    nafCode,
+    nafLabel,
+    communeName,
     displayName,
     website,
     jobTitle: requiredText(
@@ -216,7 +226,7 @@ export const companyOnboardingSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["siret"],
-        message: "Le SIRET doit commencer par le SIREN de l'entreprise.",
+        message: siretMismatch,
       })
     }
     if (input.relationship === "other" && !input.relationshipDetails) {
@@ -242,27 +252,35 @@ export const companyDetailsSchema = z.object({ displayName, website, phone })
 export type CompanyDetails = z.infer<typeof companyDetailsSchema>
 
 // Fiche d'une entreprise sans compte, créée par l'admin pour une annonce collectée ou transmise
-// (plan 15). Le SIREN est facultatif ; s'il est donné, une entreprise déjà connue est reprise.
-export const companyFileSchema = z.object({
-  legalName: requiredText(
-    200,
-    "Indiquez la raison sociale.",
-    "La raison sociale ne doit pas dépasser 200 caractères.",
-  ),
-  displayName,
-  siren: z
-    .string()
-    .transform((value) => digits(value) || null)
-    .refine(
-      (value) => value === null || isValidSiren(value),
-      "Ce numéro SIREN (9 chiffres) n'est pas valide.",
+// (plan 15), pré-remplie par l'annuaire comme l'onboarding. Le SIREN est facultatif ; s'il est
+// donné, une entreprise déjà connue est reprise.
+export const companyFileSchema = z
+  .object({
+    legalName: requiredText(
+      200,
+      "Indiquez la raison sociale.",
+      "La raison sociale ne doit pas dépasser 200 caractères.",
     ),
-  communeName: optionalText(
-    100,
-    "La commune ne doit pas dépasser 100 caractères.",
-  ),
-  website,
-})
+    displayName,
+    siren: z
+      .string()
+      .transform((value) => digits(value) || null)
+      .refine(
+        (value) => value === null || isValidSiren(value),
+        "Ce numéro SIREN (9 chiffres) n'est pas valide.",
+      ),
+    siret,
+    nafCode,
+    nafLabel,
+    communeName,
+    website,
+  })
+  .superRefine((input, ctx) => {
+    // Comme en base : pas de SIRET sans le SIREN dont il est un établissement.
+    if (input.siret && !(input.siren && input.siret.startsWith(input.siren))) {
+      ctx.addIssue({ code: "custom", path: ["siret"], message: siretMismatch })
+    }
+  })
 
 export type CompanyFile = z.infer<typeof companyFileSchema>
 
