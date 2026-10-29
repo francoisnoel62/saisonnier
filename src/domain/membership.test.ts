@@ -187,19 +187,27 @@ describe("membershipDecisionSchema", () => {
 })
 
 describe("companyFileSchema", () => {
+  const emptyFile = {
+    legalName: "",
+    displayName: "",
+    siren: "",
+    siret: "",
+    nafCode: "",
+    nafLabel: "",
+    communeName: "",
+    website: "",
+  }
+
   it("crée la fiche d'une entreprise sans compte : la raison sociale suffit", () => {
     expect(
-      companyFileSchema.parse({
-        legalName: " Hôtel du Lac ",
-        displayName: "",
-        siren: "",
-        communeName: "",
-        website: "",
-      }),
+      companyFileSchema.parse({ ...emptyFile, legalName: " Hôtel du Lac " }),
     ).toEqual({
       legalName: "Hôtel du Lac",
       displayName: null,
       siren: null,
+      siret: null,
+      nafCode: null,
+      nafLabel: null,
       communeName: null,
       website: null,
     })
@@ -208,6 +216,7 @@ describe("companyFileSchema", () => {
   it("vérifie le SIREN et complète le site", () => {
     expect(
       companyFileSchema.parse({
+        ...emptyFile,
         legalName: "Hôtel du Lac",
         displayName: "Le Lac",
         siren: "844 190 652",
@@ -220,12 +229,39 @@ describe("companyFileSchema", () => {
     })
     expect(
       companyFileSchema.safeParse({
+        ...emptyFile,
         legalName: "Hôtel du Lac",
-        displayName: "",
         siren: "123456789",
-        communeName: "",
-        website: "",
       }).success,
     ).toBe(false)
+  })
+
+  it("reprend le SIRET et l'activité de l'annuaire, comme l'onboarding", () => {
+    expect(
+      companyFileSchema.parse({
+        ...emptyFile,
+        legalName: "Hôtel du Lac",
+        siren: "844190652",
+        siret: "844 190 652 00025",
+        nafCode: "55.10z",
+        nafLabel: "Hôtels et hébergement similaire",
+      }),
+    ).toMatchObject({
+      siret: "84419065200025",
+      nafCode: "55.10Z",
+      nafLabel: "Hôtels et hébergement similaire",
+    })
+  })
+
+  it("refuse un SIRET sans SIREN ou d'une autre entreprise", () => {
+    const issues = (input: Partial<typeof emptyFile>) =>
+      companyFileSchema
+        .safeParse({ ...emptyFile, legalName: "Hôtel du Lac", ...input })
+        .error?.issues.map((issue) => issue.path.join("."))
+    expect(issues({ siret: "84419065200025" })).toEqual(["siret"])
+    expect(issues({ siren: "356000000", siret: "84419065200025" })).toEqual([
+      "siret",
+    ])
+    expect(issues({ nafCode: "5510" })).toEqual(["nafCode"])
   })
 })

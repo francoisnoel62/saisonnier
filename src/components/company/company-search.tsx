@@ -22,7 +22,8 @@ const countLabel = (count: number) =>
     : `${count} entreprise${count > 1 ? "s" : ""} trouvée${count > 1 ? "s" : ""}`
 
 // Recherche dans l'annuaire des entreprises, par nom ou par numéro SIREN / SIRET. Partagée par
-// l'onboarding employeur et l'assistant d'ajout d'une source du scan.
+// l'onboarding employeur, l'assistant d'ajout d'une source du scan et la fiche entreprise que
+// l'admin crée depuis une annonce ou un dossier du scan.
 export function CompanySearch({
   search,
   onChoose,
@@ -42,6 +43,8 @@ export function CompanySearch({
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
+    // Dans un panneau ouvert depuis un formulaire, l'envoi remonterait jusqu'à lui (portail).
+    event.stopPropagation()
     if (tooShort) return
     startTransition(async () => {
       const result = await search(query).catch(() => ({ ok: false }) as const)

@@ -19,6 +19,7 @@ import {
   createCompanyFile,
   type CompanyOption,
 } from "@/server/companies/companies"
+import { searchCompanyDirectory } from "@/server/companies/directory"
 
 import {
   adminOfferMessages,
@@ -200,6 +201,12 @@ export type CompanyFileResult =
       ok: false
       fieldErrors: Partial<Record<keyof CompanyFile, string[]>>
     }
+
+// Annuaire des entreprises, pour pré-remplir la fiche d'une entreprise sans compte.
+export async function searchCompanyFileAction(query: string) {
+  await requireRole("admin")
+  return searchCompanyDirectory(String(query).slice(0, 100))
+}
 
 // Fiche d'une entreprise sans compte, choisie aussitôt dans le formulaire d'annonce.
 export async function createCompanyFileAction(
